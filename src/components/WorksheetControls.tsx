@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -28,6 +28,7 @@ const MODES: { value: WorksheetMode; label: string }[] = [
   { value: 'figureGround', label: 'Figure Ground' },
   { value: 'closure', label: 'Visual Closure' },
   { value: 'traceName', label: 'Trace Your Name' },
+  { value: 'handwriting', label: 'Handwriting Practice' },
 ];
 
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
@@ -149,6 +150,76 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                   {t.label}
                 </Button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Handwriting Practice Controls */}
+        {config.mode === 'handwriting' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Text to practise</Label>
+              <Input
+                value={config.handwritingText}
+                onChange={(e) => update({ handwritingText: e.target.value })}
+                placeholder="e.g. Hello World"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Practice Rows</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([2, 3, 4] as const).map(n => (
+                  <Button
+                    key={n}
+                    variant={config.handwritingRows === n ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ handwritingRows: n })}
+                    className="font-display"
+                  >
+                    {n} rows
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Paper Style</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'triline' as const, label: 'Tri-line' },
+                  { value: 'gridbox' as const, label: 'Grid Box' },
+                  { value: 'both' as const, label: 'Both' },
+                ]).map(s => (
+                  <Button
+                    key={s.value}
+                    variant={config.handwritingPaperStyle === s.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ handwritingPaperStyle: s.value })}
+                    className="font-display text-xs"
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Font Size</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'large' as const, label: 'Large' },
+                  { value: 'medium' as const, label: 'Medium' },
+                  { value: 'small' as const, label: 'Small' },
+                ]).map(s => (
+                  <Button
+                    key={s.value}
+                    variant={config.handwritingFontSize === s.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ handwritingFontSize: s.value })}
+                    className="font-display text-xs"
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         )}

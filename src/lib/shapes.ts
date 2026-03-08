@@ -19,13 +19,15 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting';
 export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type BorderStyle = 'plain' | 'dotted' | 'rounded';
 export type HeaderFontSize = 'small' | 'medium' | 'large';
+export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
+export type HandwritingFontSize = 'large' | 'medium' | 'small';
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
@@ -44,6 +46,10 @@ export interface WorksheetConfig {
   headerFontSize: HeaderFontSize;
   headerBold: boolean;
   oddOneOutType: OddOneOutType;
+  handwritingText: string;
+  handwritingRows: 2 | 3 | 4;
+  handwritingPaperStyle: HandwritingPaperStyle;
+  handwritingFontSize: HandwritingFontSize;
 }
 
 export interface CellData {
@@ -130,6 +136,14 @@ export interface WorksheetData {
   figureGroundPuzzle?: FigureGroundPuzzle;
   closurePuzzles?: ClosurePuzzle[];
   traceNameData?: TraceNameData;
+  handwritingData?: HandwritingData;
+}
+
+export interface HandwritingData {
+  text: string;
+  rows: number;
+  paperStyle: HandwritingPaperStyle;
+  fontSize: HandwritingFontSize;
 }
 
 function randomFrom<T>(arr: T[]): T {
@@ -744,6 +758,22 @@ function generateTraceNameMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 12: HANDWRITING PRACTICE ==========
+function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
+  const text = config.handwritingText || config.childName || 'Hello';
+  return {
+    mode: 'handwriting',
+    instructions: 'Practise your handwriting! Trace the grey letters, then write on your own.',
+    skillLabel: 'Handwriting · Fine Motor',
+    handwritingData: {
+      text,
+      rows: config.handwritingRows,
+      paperStyle: config.handwritingPaperStyle,
+      fontSize: config.handwritingFontSize,
+    },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -758,6 +788,7 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'figureGround': result = generateFigureGroundMode(config); break;
     case 'closure': result = generateClosureMode(config); break;
     case 'traceName': result = generateTraceNameMode(config); break;
+    case 'handwriting': result = generateHandwritingMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {
