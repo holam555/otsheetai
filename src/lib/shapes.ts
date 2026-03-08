@@ -28,6 +28,7 @@ export type BorderStyle = 'plain' | 'dotted' | 'rounded';
 export type HeaderFontSize = 'small' | 'medium' | 'large';
 export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
 export type HandwritingFontSize = 'large' | 'medium' | 'small';
+export type HandwritingFont = 'print' | 'cursive' | 'manuscript' | 'dotted';
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
@@ -47,9 +48,11 @@ export interface WorksheetConfig {
   headerBold: boolean;
   oddOneOutType: OddOneOutType;
   handwritingText: string;
-  handwritingRows: 2 | 3 | 4;
+  handwritingRows: number;
   handwritingPaperStyle: HandwritingPaperStyle;
   handwritingFontSize: HandwritingFontSize;
+  handwritingFontSizeMm: number;
+  handwritingFont: HandwritingFont;
 }
 
 export interface CellData {
@@ -144,6 +147,8 @@ export interface HandwritingData {
   rows: number;
   paperStyle: HandwritingPaperStyle;
   fontSize: HandwritingFontSize;
+  fontSizeMm: number;
+  font: HandwritingFont;
 }
 
 function randomFrom<T>(arr: T[]): T {
@@ -770,6 +775,8 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
       rows: config.handwritingRows,
       paperStyle: config.handwritingPaperStyle,
       fontSize: config.handwritingFontSize,
+      fontSizeMm: config.handwritingFontSizeMm,
+      font: config.handwritingFont,
     },
   };
 }

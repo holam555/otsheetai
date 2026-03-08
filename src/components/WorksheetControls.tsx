@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -165,22 +165,25 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                 placeholder="e.g. Hello World"
               />
             </div>
+
+            {/* Practice Rows Slider */}
             <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Practice Rows</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([2, 3, 4] as const).map(n => (
-                  <Button
-                    key={n}
-                    variant={config.handwritingRows === n ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ handwritingRows: n })}
-                    className="font-display"
-                  >
-                    {n} rows
-                  </Button>
-                ))}
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Practice Rows</Label>
+                <span className="text-xs font-bold text-primary">{config.handwritingRows}</span>
+              </div>
+              <Slider
+                value={[config.handwritingRows]}
+                min={2}
+                max={8}
+                step={1}
+                onValueChange={([v]) => update({ handwritingRows: v })}
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>2</span><span>8</span>
               </div>
             </div>
+
             <div className="space-y-2">
               <Label className="font-display font-semibold text-sm">Paper Style</Label>
               <div className="grid grid-cols-3 gap-2">
@@ -201,25 +204,61 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                 ))}
               </div>
             </div>
+
+            {/* Font Size Slider (mm) */}
             <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Font Size</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: 'large' as const, label: 'Large' },
-                  { value: 'medium' as const, label: 'Medium' },
-                  { value: 'small' as const, label: 'Small' },
-                ]).map(s => (
-                  <Button
-                    key={s.value}
-                    variant={config.handwritingFontSize === s.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ handwritingFontSize: s.value })}
-                    className="font-display text-xs"
-                  >
-                    {s.label}
-                  </Button>
-                ))}
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Font Size</Label>
+                <span className="text-xs font-bold text-primary">{config.handwritingFontSizeMm}mm</span>
               </div>
+              <Slider
+                value={[config.handwritingFontSizeMm]}
+                min={8}
+                max={35}
+                step={1}
+                onValueChange={([v]) => update({ handwritingFontSizeMm: v })}
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>8mm</span><span>35mm</span>
+              </div>
+            </div>
+
+            {/* Font Selector */}
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Font</Label>
+              <Select value={config.handwritingFont} onValueChange={(v) => update({ handwritingFont: v as HandwritingFont })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {([
+                    { value: 'print' as const, label: 'Print', family: "'Arial', 'Helvetica', sans-serif", weight: '400', style: 'normal', extra: '' },
+                    { value: 'cursive' as const, label: 'Cursive', family: "'Segoe Script', 'Comic Sans MS', cursive", weight: '400', style: 'normal', extra: '' },
+                    { value: 'manuscript' as const, label: 'Manuscript', family: "'Courier New', 'Courier', monospace", weight: '400', style: 'normal', extra: '' },
+                    { value: 'dotted' as const, label: 'Dotted', family: "'Arial', sans-serif", weight: '400', style: 'normal', extra: 'opacity: 0.4; paint-order: stroke; -webkit-text-stroke: 1px #64748B; color: transparent;' },
+                  ]).map(f => (
+                    <SelectItem key={f.value} value={f.value}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm">{f.label}</span>
+                        <span
+                          className="text-muted-foreground"
+                          style={{
+                            fontFamily: f.family,
+                            fontWeight: f.weight,
+                            fontStyle: f.style,
+                            fontSize: '14px',
+                            ...(f.value === 'dotted' ? {
+                              opacity: 0.5,
+                              WebkitTextStroke: '0.8px currentColor',
+                              color: 'transparent',
+                            } : {}),
+                          }}
+                        >
+                          Hello
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         )}

@@ -24,6 +24,8 @@ const defaultConfig: WorksheetConfig = {
   handwritingRows: 3,
   handwritingPaperStyle: 'triline',
   handwritingFontSize: 'large',
+  handwritingFontSizeMm: 15,
+  handwritingFont: 'print',
 };
 
 export default function Index() {
@@ -32,7 +34,7 @@ export default function Index() {
 
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
