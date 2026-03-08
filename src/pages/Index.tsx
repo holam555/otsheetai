@@ -20,6 +20,10 @@ const defaultConfig: WorksheetConfig = {
   headerFontSize: 'medium',
   headerBold: false,
   oddOneOutType: 'shapes',
+  handwritingText: '',
+  handwritingRows: 3,
+  handwritingPaperStyle: 'triline',
+  handwritingFontSize: 'large',
 };
 
 export default function Index() {
