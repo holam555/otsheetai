@@ -877,15 +877,23 @@ function getLetterType(ch: string): 'tall' | 'medium' | 'descender' {
   return 'medium';
 }
 
+// Line color hex mapping
+const LINE_COLOR_MAP: Record<string, string> = {
+  red: '#DC2626', blue: '#2563EB', green: '#16A34A', purple: '#9333EA', black: '#1E293B',
+};
+const LINE_MID_MAP: Record<string, string> = {
+  red: '#F9A8D4', blue: '#93C5FD', green: '#86EFAC', purple: '#C4B5FD', black: '#94A3B8',
+};
+const HIGHLIGHT_SKY_MAP: Record<string, string> = {
+  blue: '#DBEAFE', yellow: '#FEF9C3', green: '#DCFCE7', pink: '#FCE7F3', none: '',
+};
+const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
+  blue: '#DCFCE7', yellow: '#FEF3C7', green: '#D1FAE5', pink: '#FDF2F8', none: '',
+};
+
 // Colored tri-line set (HWT-style) anchored to text baseline
-// baselineY = the y coordinate where text baseline sits (SVG text y)
-// fontPx = font size in px
-// Lines are derived from font metrics relative to baseline:
-//   bottom line = baseline (where a c e m sit)
-//   top line = baseline - capHeight (~70% of fontPx)
-//   middle dotted = baseline - xHeight (~50% of fontPx)
 function renderColoredTrilineSet(
-  x: number, baselineY: number, fontPx: number, width: number
+  x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
 ): string {
   const capHeight = fontPx * 0.7;
   const xHeight = fontPx * 0.5;
@@ -895,17 +903,24 @@ function renderColoredTrilineSet(
   const skyH = capHeight * 0.2;
   const grassH = capHeight * 0.15;
 
+  const useColor = config.handwritingShowColoredLines;
+  const lineColor = useColor ? (LINE_COLOR_MAP[config.handwritingLineColor] || '#DC2626') : '#94A3B8';
+  const midColor = useColor ? (LINE_MID_MAP[config.handwritingLineColor] || '#F9A8D4') : '#CBD5E1';
+  const showHighlight = config.handwritingShowHighlight;
+  const hlColor = config.handwritingHighlightColor || 'blue';
+
   let svg = '';
-  // Sky band (light blue above top line)
-  svg += `<rect x="${x}" y="${topY - skyH}" width="${width}" height="${skyH}" fill="#E0F2FE" opacity="0.6" />`;
-  // Grass band (light green below bottom line)
-  svg += `<rect x="${x}" y="${botY}" width="${width}" height="${grassH}" fill="#DCFCE7" opacity="0.5" />`;
-  // Top line — solid red (cap height)
-  svg += `<line x1="${x}" y1="${topY}" x2="${x + width}" y2="${topY}" stroke="#DC2626" stroke-width="1.2" />`;
-  // Middle dotted line — pink dashed (x-height)
-  svg += `<line x1="${x}" y1="${midY}" x2="${x + width}" y2="${midY}" stroke="#F9A8D4" stroke-width="0.8" stroke-dasharray="4 3" />`;
-  // Bottom baseline — solid red
-  svg += `<line x1="${x}" y1="${botY}" x2="${x + width}" y2="${botY}" stroke="#DC2626" stroke-width="1.2" />`;
+
+  if (showHighlight && hlColor !== 'none') {
+    const skyFill = HIGHLIGHT_SKY_MAP[hlColor] || '#DBEAFE';
+    const grassFill = HIGHLIGHT_GRASS_MAP[hlColor] || '#DCFCE7';
+    svg += `<rect x="${x}" y="${topY - skyH}" width="${width}" height="${skyH}" fill="${skyFill}" opacity="0.6" />`;
+    svg += `<rect x="${x}" y="${botY}" width="${width}" height="${grassH}" fill="${grassFill}" opacity="0.5" />`;
+  }
+
+  svg += `<line x1="${x}" y1="${topY}" x2="${x + width}" y2="${topY}" stroke="${lineColor}" stroke-width="1.2" />`;
+  svg += `<line x1="${x}" y1="${midY}" x2="${x + width}" y2="${midY}" stroke="${midColor}" stroke-width="0.8" stroke-dasharray="4 3" />`;
+  svg += `<line x1="${x}" y1="${botY}" x2="${x + width}" y2="${botY}" stroke="${lineColor}" stroke-width="1.2" />`;
 
   return svg;
 }
@@ -943,7 +958,8 @@ function renderSentenceTrilineMode(
   const triSetH = capHeight + grassH; // total visual height of one tri-line set
   const groupGap = 12 * mmToPx;
   const setGap = 6 * mmToPx;
-  const refTextH = fontPx * 0.85; // reference text row height (generous gap before tri-lines)
+  const refFontPx = fontPx * 0.55;
+  const refTextH = Math.max(fontPx * 0.85, 10 * mmToPx + refFontPx); // min 10mm gap between ref text bottom and top line
   const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
@@ -953,7 +969,6 @@ function renderSentenceTrilineMode(
     const groupY = startY + g * groupH;
 
     // Row 1: Reference text in solid black above the tri-line
-    const refFontPx = fontPx * 0.55;
     const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
     for (let c = 0; c < allChars.length; c++) {
       const cx = MARGIN + 4 + c * charW + charW / 2;
@@ -964,12 +979,12 @@ function renderSentenceTrilineMode(
     // Row 2: Dotted trace on colored tri-lines
     // baseline sits at top of group + refTextH + capHeight (so cap tops touch top line)
     const traceBaselineY = groupY + refTextH + capHeight;
-    svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW);
+    svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
     svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, fontPx, contentW, fontFamily, '#94A3B8', true);
 
     // Row 3: Blank colored tri-lines for independent writing
     const blankBaselineY = traceBaselineY + grassH + setGap + capHeight;
-    svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW);
+    svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW, config);
   }
 
   return svg;
@@ -1064,7 +1079,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const capH = fontPxTrace * 0.7;
     const grassH = capH * 0.15;
     const traceBaselineY = blockY + labelH + capH;
-    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW);
+    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
     svg += renderTextOnTriline(chars, colX, traceBaselineY, fontPxTrace, colW, fontFamily, '#94A3B8', true);
 
     // 3. Adaptive word boxes
@@ -1188,7 +1203,7 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       const blankRows = Math.min(rows - 1, Math.floor(remainH / setH));
       for (let r = 0; r < blankRows; r++) {
         const blankBaselineY = triStartY + r * setH + capHBlank;
-        svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPxBlank, contentW);
+        svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPxBlank, contentW, config);
       }
     } else if (containsChinese) {
       const engChars = allChars.filter(ch => !isChinese(ch));
