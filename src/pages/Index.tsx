@@ -20,6 +20,11 @@ const defaultConfig: WorksheetConfig = {
   headerFontSize: 'medium',
   headerBold: false,
   oddOneOutType: 'shapes',
+  highContrast: false,
+  leftHandLayout: false,
+  largeCells: false,
+  showVisualSchedule: false,
+  showRewardRow: false,
 };
 
 export default function Index() {
