@@ -43,6 +43,7 @@ export interface WorksheetConfig {
   borderStyle: BorderStyle;
   headerFontSize: HeaderFontSize;
   headerBold: boolean;
+  oddOneOutType: OddOneOutType;
 }
 
 export interface CellData {
