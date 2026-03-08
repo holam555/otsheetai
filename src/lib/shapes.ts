@@ -14,7 +14,7 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   oval: '#F97316',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended';
 export type Difficulty = 'easy' | 'medium' | 'hard';
