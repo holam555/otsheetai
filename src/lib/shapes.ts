@@ -136,6 +136,14 @@ export interface WorksheetData {
   figureGroundPuzzle?: FigureGroundPuzzle;
   closurePuzzles?: ClosurePuzzle[];
   traceNameData?: TraceNameData;
+  handwritingData?: HandwritingData;
+}
+
+export interface HandwritingData {
+  text: string;
+  rows: number;
+  paperStyle: HandwritingPaperStyle;
+  fontSize: HandwritingFontSize;
 }
 
 function randomFrom<T>(arr: T[]): T {
