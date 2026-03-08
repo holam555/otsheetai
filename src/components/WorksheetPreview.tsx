@@ -1194,7 +1194,7 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       const triStartY = startY + rowH;
       const remainH = availableH - rowH;
       const fontPxBlank = lineH;
-      const zoneHBlank = fontPxBlank * 0.7;
+      const zoneHBlank = Math.max(fontPxBlank * 0.7, 20 * mmToPx);
       const grassHBlank = zoneHBlank * 0.15;
       const triSetHBlank = zoneHBlank + grassHBlank;
       const setGap = 4 * mmToPx;
