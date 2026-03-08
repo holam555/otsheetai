@@ -931,15 +931,20 @@ function renderTextOnTriline(
 }
 
 // Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
+// lineH here = the raw mm-based size used as fontPx for the trace text
 function renderSentenceTrilineMode(
   text: string, rows: number, startY: number, availableH: number,
   lineH: number, contentW: number, fontFamily: string, config: WorksheetConfig
 ): string {
   const mmToPx = 2.833;
-  const groupGap = 12 * mmToPx; // 12mm gap between groups
-  const setGap = 4 * mmToPx; // gap between rows within a group
-  const refTextH = lineH * 0.4; // height for reference text above tri-line
-  const groupH = refTextH + lineH + setGap + lineH + setGap + lineH + groupGap; // ref + trace + blank
+  const fontPx = lineH; // lineH in px IS the font size
+  const capHeight = fontPx * 0.7;
+  const grassH = capHeight * 0.15;
+  const triSetH = capHeight + grassH; // total visual height of one tri-line set
+  const groupGap = 12 * mmToPx;
+  const setGap = 6 * mmToPx;
+  const refTextH = fontPx * 0.55; // reference text row height
+  const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
   let svg = '';
@@ -947,24 +952,24 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text in solid black above the first tri-line set
-    const refY = groupY;
-    const fontPx = lineH * 0.5;
-    const charW = Math.min(fontPx * 0.62, contentW / Math.max(allChars.length, 1));
+    // Row 1: Reference text in solid black above the tri-line
+    const refFontPx = fontPx * 0.55;
+    const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
     for (let c = 0; c < allChars.length; c++) {
       const cx = MARGIN + 4 + c * charW + charW / 2;
       if (cx > W - MARGIN) break;
-      svg += `<text x="${cx}" y="${refY + refTextH * 0.8}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="600" fill="#1E293B">${escapeXml(allChars[c])}</text>`;
+      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="600" fill="#1E293B">${escapeXml(allChars[c])}</text>`;
     }
 
     // Row 2: Dotted trace on colored tri-lines
-    const traceY = refY + refTextH;
-    svg += renderColoredTrilineSet(MARGIN, traceY, lineH, contentW);
-    svg += renderTextOnTriline(allChars, MARGIN, traceY + lineH, lineH, contentW, fontFamily, '#94A3B8', true);
+    // baseline sits at top of group + refTextH + capHeight (so cap tops touch top line)
+    const traceBaselineY = groupY + refTextH + capHeight;
+    svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW);
+    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, fontPx, contentW, fontFamily, '#94A3B8', true);
 
     // Row 3: Blank colored tri-lines for independent writing
-    const blankY = traceY + lineH + setGap;
-    svg += renderColoredTrilineSet(MARGIN, blankY, lineH, contentW);
+    const blankBaselineY = traceBaselineY + grassH + setGap + capHeight;
+    svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW);
   }
 
   return svg;
