@@ -782,6 +782,8 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
       fontSize: config.handwritingFontSize,
       fontSizeMm: config.handwritingFontSizeMm,
       font: config.handwritingFont,
+      subMode: config.handwritingSubMode,
+      words: config.handwritingWords ? config.handwritingWords.split('\n').filter(w => w.trim()).slice(0, 8) : [],
     },
   };
 }
