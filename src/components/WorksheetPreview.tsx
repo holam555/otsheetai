@@ -44,6 +44,18 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderPatternMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'count') {
     bodySVG = renderCountMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'copy') {
+    bodySVG = renderCopyMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'sequence') {
+    bodySVG = renderSequenceMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'oddOneOut') {
+    bodySVG = renderOddOneOutMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'mirror') {
+    bodySVG = renderMirrorMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'figureGround') {
+    bodySVG = renderFigureGroundMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'closure') {
+    bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   }
 
   const svgContent = `

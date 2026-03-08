@@ -18,6 +18,12 @@ const MODES: { value: WorksheetMode; label: string }[] = [
   { value: 'missing', label: 'Missing Shape' },
   { value: 'pattern', label: 'Match Pattern' },
   { value: 'count', label: 'Find and Count' },
+  { value: 'copy', label: 'Copy the Pattern' },
+  { value: 'sequence', label: 'What Comes Next' },
+  { value: 'oddOneOut', label: 'Odd One Out' },
+  { value: 'mirror', label: 'Mirror Image' },
+  { value: 'figureGround', label: 'Figure Ground' },
+  { value: 'closure', label: 'Visual Closure' },
 ];
 
 const GRID_SIZES: GridSize[] = [2, 3, 4, 5];
