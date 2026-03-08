@@ -11,6 +11,19 @@ const MARGIN = 40;
 const BW_FILL = 'none';
 const BW_STROKE = '#1E293B';
 
+// Border style helpers
+function getBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', width = 1.5): string {
+  const dash = config.borderStyle === 'dotted' ? ` stroke-dasharray="4 4"` : '';
+  const rx = config.borderStyle === 'rounded' ? ` rx="8" ry="8"` : ` rx="3"`;
+  return `fill="none" stroke="${strokeColor}" stroke-width="${width}"${dash}${rx}`;
+}
+
+function getCellBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', width = 1): string {
+  const dash = config.borderStyle === 'dotted' ? ` stroke-dasharray="4 4"` : '';
+  const rx = config.borderStyle === 'rounded' ? ` rx="6" ry="6"` : ` rx="3"`;
+  return `fill="none" stroke="${strokeColor}" stroke-width="${width}"${dash}${rx}`;
+}
+
 export default function WorksheetPreview({ config, data }: Props) {
   const getFill = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_FILL;
   const getStroke = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_STROKE;
@@ -18,16 +31,20 @@ export default function WorksheetPreview({ config, data }: Props) {
 
   const shapeScale = config.difficulty === 'easy' ? 1.15 : config.difficulty === 'medium' ? 1.0 : 0.85;
 
-  // Common header
+  // Header font sizes
+  const nameFontSize = config.headerFontSize === 'small' ? 14 : config.headerFontSize === 'large' ? 24 : 18;
+  const nameWeight = config.headerBold ? '800' : '600';
+  const ageStr = config.childAge !== null ? ` (Age ${config.childAge})` : '';
+  const nameStr = config.childName ? config.childName + ageStr : '___________________';
+
   const headerSVG = `
     <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="#0D9488">OTsheet.ai</text>
     <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="#E2E8F0" stroke-width="1" />
-    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="12" font-weight="600" fill="#334155">Name: ${config.childName || '___________________'}</text>
+    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${nameStr}</text>
     <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#94A3B8">Date: ____/____/________</text>
     <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="700" fill="#1E293B">${data.instructions}</text>
   `;
 
-  // Footer with skill label
   const footerSVG = `
     <line x1="${MARGIN}" y1="${H - MARGIN - 20}" x2="${W - MARGIN}" y2="${H - MARGIN - 20}" stroke="#E2E8F0" stroke-width="1" />
     <text x="${MARGIN}" y="${H - MARGIN - 4}" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#94A3B8">Skill: ${data.skillLabel}</text>
@@ -90,19 +107,16 @@ function renderFindMode(
   const grid = data.grid!;
   const size = config.gridSize;
 
-  // Reference box
   const refBoxY = MARGIN + 85;
   const refBoxH = 64;
   const refBoxW = 200;
   const refBoxX = (W - refBoxW) / 2;
 
   let svg = '';
-  // Dashed reference box
   svg += `<rect x="${refBoxX}" y="${refBoxY}" width="${refBoxW}" height="${refBoxH}" rx="8" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="8,5" />`;
   svg += `<text x="${refBoxX + 12}" y="${refBoxY + 16}" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Find this shape:</text>`;
   svg += getShapeSVG(targetShape, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale, getFill(targetShape), getStroke(targetShape), getStrokeW());
 
-  // Main grid
   const gridTop = refBoxY + refBoxH + 20;
   const gridAreaH = H - gridTop - MARGIN - 35;
   const gridAreaW = W - MARGIN * 2;
@@ -111,7 +125,7 @@ function renderFindMode(
   const gridH = cellSize * size;
   const gridX = (W - gridW) / 2;
 
-  svg += `<rect x="${gridX}" y="${gridTop}" width="${gridW}" height="${gridH}" fill="none" stroke="#CBD5E1" stroke-width="2" rx="4" />`;
+  svg += `<rect x="${gridX}" y="${gridTop}" width="${gridW}" height="${gridH}" ${getBorderAttrs(config, '#CBD5E1', 2)} />`;
 
   if (config.showGridLines) {
     for (let i = 1; i < size; i++) {
@@ -128,7 +142,6 @@ function renderFindMode(
     });
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     let count = 0;
     grid.forEach(row => row.forEach(cell => { if (cell.isTarget) count++; }));
@@ -152,7 +165,6 @@ function renderMissingMode(
 
   let svg = '';
 
-  // Reference bar showing all shapes
   const refY = MARGIN + 85;
   const refH = 56;
   const refW = Math.min(refShapes.length * 80, W - MARGIN * 2);
@@ -169,7 +181,6 @@ function renderMissingMode(
     svg += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${shape}</text>`;
   });
 
-  // Puzzles grid
   const puzzleTop = refY + refH + 24;
   const availH = H - puzzleTop - MARGIN - 35;
   const cols = puzzles.length <= 3 ? puzzles.length : Math.min(3, puzzles.length);
@@ -187,13 +198,9 @@ function renderMissingMode(
     const px = MARGIN + col * puzzleCellW + (puzzleCellW - subGridMaxSize) / 2;
     const py = puzzleTop + row * puzzleCellH + (puzzleCellH - subGridMaxSize) / 2;
 
-    // Puzzle number
     svg += `<text x="${px + subGridMaxSize / 2}" y="${py - 6}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${idx + 1}.</text>`;
+    svg += `<rect x="${px}" y="${py}" width="${subGridMaxSize}" height="${subGridMaxSize}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
 
-    // Grid border
-    svg += `<rect x="${px}" y="${py}" width="${subGridMaxSize}" height="${subGridMaxSize}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
-
-    // Grid lines
     if (config.showGridLines) {
       for (let i = 1; i < pSize; i++) {
         svg += `<line x1="${px + i * cellSz}" y1="${py}" x2="${px + i * cellSz}" y2="${py + subGridMaxSize}" stroke="#E2E8F0" stroke-width="0.8" />`;
@@ -201,7 +208,6 @@ function renderMissingMode(
       }
     }
 
-    // Cells
     puzzle.grid.forEach((gridRow, r) => {
       gridRow.forEach((cell, c) => {
         const cx = px + c * cellSz + cellSz / 2;
@@ -216,7 +222,6 @@ function renderMissingMode(
     });
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = puzzles.map((p, i) => `${i + 1}:${p.answer}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
@@ -252,37 +257,26 @@ function renderPatternMode(
   puzzles.forEach((puzzle, pIdx) => {
     const rowY = startY + pIdx * rowH + (rowH - patternBoxSize) / 2;
 
-    // Row number
     svg += `<text x="${leftColX - 12}" y="${rowY + patternBoxSize / 2 + 4}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="13" font-weight="700" fill="#64748B">${pIdx + 1}.</text>`;
+    svg += renderMiniGrid(puzzle.pattern, leftColX, rowY, patternBoxSize, shapeScale, getFill, getStroke, getStrokeW, config.showGridLines, config);
 
-    // Draw pattern (left side)
-    svg += renderMiniGrid(puzzle.pattern, leftColX, rowY, patternBoxSize, shapeScale, getFill, getStroke, getStrokeW, config.showGridLines);
-
-    // Arrow
     const arrowX = leftColX + patternBoxSize + 14;
     const arrowY = rowY + patternBoxSize / 2;
     svg += `<line x1="${arrowX}" y1="${arrowY}" x2="${arrowX + 20}" y2="${arrowY}" stroke="#94A3B8" stroke-width="1.5" />`;
     svg += `<polygon points="${arrowX + 20},${arrowY - 4} ${arrowX + 28},${arrowY} ${arrowX + 20},${arrowY + 4}" fill="#94A3B8" />`;
 
-    // Draw 3 options (right side)
     puzzle.options.forEach((option, oIdx) => {
       const ox = rightColX + oIdx * optionSpacing;
       const oy = rowY + (patternBoxSize - optionBoxSize) / 2;
 
-      // Option label
       svg += `<text x="${ox + optionBoxSize / 2}" y="${oy - 4}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#94A3B8">${String.fromCharCode(65 + oIdx)}</text>`;
-
-      svg += renderMiniGrid(option, ox, oy, optionBoxSize, shapeScale * 0.85, getFill, getStroke, getStrokeW, false);
-
-      // Connection dot for drawing lines
+      svg += renderMiniGrid(option, ox, oy, optionBoxSize, shapeScale * 0.85, getFill, getStroke, getStrokeW, false, config);
       svg += `<circle cx="${ox + optionBoxSize / 2}" cy="${oy + optionBoxSize + 8}" r="3" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
     });
 
-    // Connection dot on pattern side
     svg += `<circle cx="${leftColX + patternBoxSize / 2}" cy="${rowY + patternBoxSize + 8}" r="3" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = puzzles.map((p, i) => `${i + 1}→${String.fromCharCode(65 + p.correctIndex)}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
@@ -301,6 +295,7 @@ function renderMiniGrid(
   getStroke: (s: ShapeName) => string,
   getStrokeW: () => number,
   showLines: boolean,
+  config?: WorksheetConfig,
 ): string {
   const rows = grid.length;
   const cols = grid[0].length;
@@ -308,7 +303,11 @@ function renderMiniGrid(
   const cellH = size / rows;
   let svg = '';
 
-  svg += `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
+  if (config) {
+    svg += `<rect x="${x}" y="${y}" width="${size}" height="${size}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
+  } else {
+    svg += `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
+  }
 
   if (showLines) {
     for (let i = 1; i < cols; i++) {
@@ -346,7 +345,6 @@ function renderCountMode(
 
   let svg = '';
 
-  // Target shapes reference boxes at top
   const refY = MARGIN + 85;
   const refH = 62;
   const boxCount = targetShapes.length;
@@ -359,11 +357,9 @@ function renderCountMode(
     const bw = boxW - 8;
     svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
     svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
-    // Blank line for writing count
     svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
   });
 
-  // Main 6x8 grid
   const gridTop = refY + refH + 18;
   const gridAreaH = H - gridTop - MARGIN - 35;
   const gridAreaW = W - MARGIN * 2;
@@ -374,7 +370,7 @@ function renderCountMode(
   const gridH = cellSize * ROWS;
   const gridX = (W - gridW) / 2;
 
-  svg += `<rect x="${gridX}" y="${gridTop}" width="${gridW}" height="${gridH}" fill="none" stroke="#CBD5E1" stroke-width="2" rx="4" />`;
+  svg += `<rect x="${gridX}" y="${gridTop}" width="${gridW}" height="${gridH}" ${getBorderAttrs(config, '#CBD5E1', 2)} />`;
 
   if (config.showGridLines) {
     for (let c = 1; c < COLS; c++) {
@@ -393,7 +389,6 @@ function renderCountMode(
     });
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = targetShapes.map(s => `${s}: ${puzzle.counts[s]}`).join('   ');
     svg += `<text x="${W / 2}" y="${gridTop + gridH + 16}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
@@ -429,11 +424,9 @@ function renderCopyMode(
     const leftX = MARGIN + pairW * 0.05;
     const rightX = MARGIN + pairW * 0.55;
 
-    // Row label
     svg += `<text x="${MARGIN}" y="${rowY + gridSz / 2 + 4}" font-family="Nunito, sans-serif" font-size="13" font-weight="700" fill="#64748B">${pIdx + 1}.</text>`;
 
-    // Source grid (filled)
-    svg += `<rect x="${leftX}" y="${rowY}" width="${gridSz}" height="${gridSz}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
+    svg += `<rect x="${leftX}" y="${rowY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
     if (config.showGridLines) {
       for (let i = 1; i < gridSize; i++) {
         svg += `<line x1="${leftX + i * cellSz}" y1="${rowY}" x2="${leftX + i * cellSz}" y2="${rowY + gridSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
@@ -448,14 +441,12 @@ function renderCopyMode(
       });
     });
 
-    // Arrow between grids
     const arrowX = leftX + gridSz + 8;
     const arrowY2 = rowY + gridSz / 2;
     svg += `<line x1="${arrowX}" y1="${arrowY2}" x2="${arrowX + 16}" y2="${arrowY2}" stroke="#94A3B8" stroke-width="1.5" />`;
     svg += `<polygon points="${arrowX + 16},${arrowY2 - 4} ${arrowX + 24},${arrowY2} ${arrowX + 16},${arrowY2 + 4}" fill="#94A3B8" />`;
 
-    // Empty grid (for copying)
-    svg += `<rect x="${rightX}" y="${rowY}" width="${gridSz}" height="${gridSz}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
+    svg += `<rect x="${rightX}" y="${rowY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
     for (let i = 1; i < gridSize; i++) {
       svg += `<line x1="${rightX + i * cellSz}" y1="${rowY}" x2="${rightX + i * cellSz}" y2="${rowY + gridSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
       svg += `<line x1="${rightX}" y1="${rowY + i * cellSz}" x2="${rightX + gridSz}" y2="${rowY + i * cellSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
@@ -486,37 +477,32 @@ function renderSequenceMode(
     const rowY = startY + pIdx * rowH;
     const seqY = rowY + rowH * 0.18;
 
-    // Row number
     svg += `<text x="${MARGIN + 4}" y="${seqY + cellSz / 2 + 4}" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#64748B">${pIdx + 1}.</text>`;
 
-    // 4 sequence shapes
     const seqStartX = MARGIN + 28;
     for (let i = 0; i < 4; i++) {
       const cx = seqStartX + i * (cellSz + 8) + cellSz / 2;
       const cy = seqY + cellSz / 2;
-      svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" rx="4" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
+      svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
       svg += getShapeSVG(puzzle.sequence[i].shape, cx, cy, cellSz * shapeScale, getFill(puzzle.sequence[i].shape), getStroke(puzzle.sequence[i].shape), getStrokeW(), puzzle.sequence[i].rotation);
     }
 
-    // 5th cell with question mark
     const qx = seqStartX + 4 * (cellSz + 8) + cellSz / 2;
     const qy = seqY + cellSz / 2;
     svg += `<rect x="${qx - cellSz / 2}" y="${qy - cellSz / 2}" width="${cellSz}" height="${cellSz}" rx="4" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6,4" />`;
     svg += `<text x="${qx}" y="${qy + 5}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${cellSz * 0.5}" font-weight="700" fill="#CBD5E1">?</text>`;
 
-    // 3 options
     const optStartX = seqStartX + 5 * (cellSz + 8) + 20;
     const optSize = cellSz * 0.85;
     puzzle.options.forEach((opt, oIdx) => {
       const ox = optStartX + oIdx * (optSize + 14) + optSize / 2;
       const oy = seqY + cellSz / 2;
       svg += `<text x="${ox}" y="${oy - optSize / 2 - 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#94A3B8">${String.fromCharCode(65 + oIdx)}</text>`;
-      svg += `<rect x="${ox - optSize / 2}" y="${oy - optSize / 2}" width="${optSize}" height="${optSize}" rx="4" fill="none" stroke="#94A3B8" stroke-width="1" />`;
+      svg += `<rect x="${ox - optSize / 2}" y="${oy - optSize / 2}" width="${optSize}" height="${optSize}" ${getCellBorderAttrs(config, '#94A3B8', 1)} />`;
       svg += getShapeSVG(opt.shape, ox, oy, optSize * shapeScale, getFill(opt.shape), getStroke(opt.shape), getStrokeW());
     });
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = puzzles.map((p, i) => `${i + 1}→${String.fromCharCode(65 + p.correctIndex)}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
@@ -547,18 +533,16 @@ function renderOddOneOutMode(
   rows.forEach((row, rIdx) => {
     const rowY = startY + rIdx * rowH + (rowH - cellSz) / 2;
 
-    // Row number
     svg += `<text x="${rowStartX - 18}" y="${rowY + cellSz / 2 + 4}" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#64748B">${rIdx + 1}.</text>`;
 
     row.items.forEach((cell, i) => {
       const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
       const cy = rowY + cellSz / 2;
-      svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" rx="6" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
+      svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
       svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
     });
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = rows.map((r, i) => `${i + 1}:${r.oddIndex + 1}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers (position): ${answers}</text>`;
@@ -594,14 +578,10 @@ function renderMirrorMode(
     const leftX = centerX - gridSz - 8;
     const rightX = centerX + 8;
 
-    // Puzzle number
     svg += `<text x="${W / 2}" y="${pairY - 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#64748B">${pIdx + 1}.</text>`;
-
-    // Dashed mirror line
     svg += `<line x1="${centerX}" y1="${pairY - 2}" x2="${centerX}" y2="${pairY + gridSz + 2}" stroke="#94A3B8" stroke-width="2" stroke-dasharray="8,5" />`;
 
-    // Source grid (left)
-    svg += `<rect x="${leftX}" y="${pairY}" width="${gridSz}" height="${gridSz}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
+    svg += `<rect x="${leftX}" y="${pairY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
     for (let i = 1; i < gridSize; i++) {
       svg += `<line x1="${leftX + i * cellSz}" y1="${pairY}" x2="${leftX + i * cellSz}" y2="${pairY + gridSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
       svg += `<line x1="${leftX}" y1="${pairY + i * cellSz}" x2="${leftX + gridSz}" y2="${pairY + i * cellSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
@@ -616,14 +596,12 @@ function renderMirrorMode(
       });
     });
 
-    // Empty grid (right)
-    svg += `<rect x="${rightX}" y="${pairY}" width="${gridSz}" height="${gridSz}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="3" />`;
+    svg += `<rect x="${rightX}" y="${pairY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
     for (let i = 1; i < gridSize; i++) {
       svg += `<line x1="${rightX + i * cellSz}" y1="${pairY}" x2="${rightX + i * cellSz}" y2="${pairY + gridSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
       svg += `<line x1="${rightX}" y1="${pairY + i * cellSz}" x2="${rightX + gridSz}" y2="${pairY + i * cellSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
     }
 
-    // Answer key: show mirrored shapes
     if (config.showAnswerKey) {
       puzzle.mirroredGrid.forEach((row, r) => {
         row.forEach((cell, c) => {
@@ -653,7 +631,6 @@ function renderFigureGroundMode(
   const { shapes: placed, targetShapes } = puzzle;
   let svg = '';
 
-  // Target shapes reference at top
   const refY = MARGIN + 85;
   const refH = 56;
   const boxCount = targetShapes.length;
@@ -669,15 +646,13 @@ function renderFigureGroundMode(
     svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
   });
 
-  // Overlapping shapes area
   const areaTop = refY + refH + 18;
   const areaH = H - areaTop - MARGIN - 35;
   const areaW = W - MARGIN * 2;
   const areaX = MARGIN;
 
-  svg += `<rect x="${areaX}" y="${areaTop}" width="${areaW}" height="${areaH}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="4" />`;
+  svg += `<rect x="${areaX}" y="${areaTop}" width="${areaW}" height="${areaH}" ${getBorderAttrs(config, '#CBD5E1', 1.5)} />`;
 
-  // Scale and position shapes within the area
   const scaleX = areaW / 400;
   const scaleY = areaH / 400;
 
@@ -685,13 +660,11 @@ function renderFigureGroundMode(
     const cx = areaX + s.cx * scaleX;
     const cy = areaTop + s.cy * scaleY;
     const r = s.r * Math.min(scaleX, scaleY);
-    // Stroke-only rendering for figure ground
     const raw = getShapeRawSVG(s.shape, cx, cy, r);
     const transform = s.rotation ? ` transform="rotate(${s.rotation}, ${cx}, ${cy})"` : '';
     svg += raw.replace('/>', ` fill="none" stroke="${getStroke(s.shape)}" stroke-width="2.5"${transform} />`);
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = targetShapes.map(s => `${s}: ${puzzle.counts[s]}`).join('   ');
     svg += `<text x="${W / 2}" y="${areaTop + areaH + 14}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
@@ -726,14 +699,11 @@ function renderClosureMode(
     const cx = MARGIN + col * cellW + cellW / 2;
     const cy = startY + row * cellH + cellH * 0.32;
 
-    // Puzzle number
     svg += `<text x="${cx}" y="${cy - shapeSz / 2 - 10}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${idx + 1}.</text>`;
 
-    // Incomplete shape with dashed outline
     const raw = getShapeRawSVG(puzzle.shape, cx, cy, shapeSz);
     svg += raw.replace('/>', ` fill="none" stroke="${getStroke(puzzle.shape)}" stroke-width="3" stroke-dasharray="${puzzle.dashArray}" />`);
 
-    // 3 options below
     const optY = cy + shapeSz / 2 + 20;
     const optSize = 24;
     const optSpacing = 42;
@@ -746,7 +716,6 @@ function renderClosureMode(
     });
   });
 
-  // Answer key
   if (config.showAnswerKey) {
     const answers = puzzles.map((p, i) => `${i + 1}→${String.fromCharCode(65 + p.correctIndex)}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
