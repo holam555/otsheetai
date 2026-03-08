@@ -877,45 +877,54 @@ function getLetterType(ch: string): 'tall' | 'medium' | 'descender' {
   return 'medium';
 }
 
-// Colored tri-line set (HWT-style): red top, pink dashed mid, red bottom, sky/grass bands
+// Colored tri-line set (HWT-style) anchored to text baseline
+// baselineY = the y coordinate where text baseline sits (SVG text y)
+// fontPx = font size in px
+// Lines are derived from font metrics relative to baseline:
+//   bottom line = baseline (where a c e m sit)
+//   top line = baseline - capHeight (~70% of fontPx)
+//   middle dotted = baseline - xHeight (~50% of fontPx)
 function renderColoredTrilineSet(
-  x: number, y: number, lineH: number, width: number
+  x: number, baselineY: number, fontPx: number, width: number
 ): string {
+  const capHeight = fontPx * 0.7;
+  const xHeight = fontPx * 0.5;
+  const topY = baselineY - capHeight;
+  const midY = baselineY - xHeight;
+  const botY = baselineY;
+  const skyH = capHeight * 0.2;
+  const grassH = capHeight * 0.15;
+
   let svg = '';
-  const skyH = lineH * 0.15;
-  const grassH = lineH * 0.12;
-
   // Sky band (light blue above top line)
-  svg += `<rect x="${x}" y="${y - skyH}" width="${width}" height="${skyH}" fill="#E0F2FE" opacity="0.6" />`;
+  svg += `<rect x="${x}" y="${topY - skyH}" width="${width}" height="${skyH}" fill="#E0F2FE" opacity="0.6" />`;
   // Grass band (light green below bottom line)
-  svg += `<rect x="${x}" y="${y + lineH}" width="${width}" height="${grassH}" fill="#DCFCE7" opacity="0.5" />`;
-
-  // Top line — solid red
-  svg += `<line x1="${x}" y1="${y}" x2="${x + width}" y2="${y}" stroke="#DC2626" stroke-width="1.2" />`;
-  // Middle dotted line — pink/grey dashed
-  svg += `<line x1="${x}" y1="${y + lineH / 2}" x2="${x + width}" y2="${y + lineH / 2}" stroke="#F9A8D4" stroke-width="0.8" stroke-dasharray="4 3" />`;
+  svg += `<rect x="${x}" y="${botY}" width="${width}" height="${grassH}" fill="#DCFCE7" opacity="0.5" />`;
+  // Top line — solid red (cap height)
+  svg += `<line x1="${x}" y1="${topY}" x2="${x + width}" y2="${topY}" stroke="#DC2626" stroke-width="1.2" />`;
+  // Middle dotted line — pink dashed (x-height)
+  svg += `<line x1="${x}" y1="${midY}" x2="${x + width}" y2="${midY}" stroke="#F9A8D4" stroke-width="0.8" stroke-dasharray="4 3" />`;
   // Bottom baseline — solid red
-  svg += `<line x1="${x}" y1="${y + lineH}" x2="${x + width}" y2="${y + lineH}" stroke="#DC2626" stroke-width="1.2" />`;
+  svg += `<line x1="${x}" y1="${botY}" x2="${x + width}" y2="${botY}" stroke="#DC2626" stroke-width="1.2" />`;
 
   return svg;
 }
 
-// Render text on a tri-line set at given position
+// Render text on tri-lines — text y = baselineY exactly
 function renderTextOnTriline(
-  chars: string[], x: number, botY: number, lineH: number, contentW: number,
+  chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
   fontFamily: string, color: string, isDottedTrace: boolean
 ): string {
   if (chars.length === 0) return '';
-  const fontPx = lineH * 0.72;
   const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
   let svg = '';
   for (let c = 0; c < chars.length; c++) {
     const cx = x + 4 + c * charW + charW / 2;
     if (cx > x + contentW) break;
     if (isDottedTrace) {
-      svg += `<text x="${cx}" y="${botY - lineH * 0.15}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
+      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
     } else {
-      svg += `<text x="${cx}" y="${botY - lineH * 0.15}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="${isDottedTrace ? '400' : '500'}" fill="${color}">${escapeXml(chars[c])}</text>`;
+      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
     }
   }
   return svg;
