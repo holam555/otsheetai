@@ -954,9 +954,9 @@ function renderSentenceTrilineMode(
 ): string {
   const mmToPx = 2.833;
   const fontPx = lineH; // lineH in px IS the font size
-  const capHeight = fontPx * 0.7;
-  const grassH = capHeight * 0.15;
-  const triSetH = capHeight + grassH; // total visual height of one tri-line set
+  const zoneH = fontPx * 0.7; // top-to-bottom line distance
+  const grassH = zoneH * 0.15;
+  const triSetH = zoneH + grassH; // total visual height of one tri-line set
   const groupGap = 12 * mmToPx;
   const setGap = 6 * mmToPx;
   const refFontPx = fontPx * 0.55;
@@ -964,6 +964,8 @@ function renderSentenceTrilineMode(
   const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
+  // Auto-calculate trace font size so ascenders fill the zone
+  const traceFontPx = zoneH / 0.72;
   let svg = '';
 
   for (let g = 0; g < maxGroups; g++) {
@@ -978,13 +980,13 @@ function renderSentenceTrilineMode(
     }
 
     // Row 2: Dotted trace on colored tri-lines
-    // baseline sits at top of group + refTextH + capHeight (so cap tops touch top line)
-    const traceBaselineY = groupY + refTextH + capHeight;
+    // baseline = botY of the tri-line set; topY = baselineY - zoneH
+    const traceBaselineY = groupY + refTextH + zoneH;
     svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
-    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, fontPx, contentW, fontFamily, '#94A3B8', true);
+    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, fontFamily, '#94A3B8', true);
 
     // Row 3: Blank colored tri-lines for independent writing
-    const blankBaselineY = traceBaselineY + grassH + setGap + capHeight;
+    const blankBaselineY = traceBaselineY + grassH + setGap + zoneH;
     svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW, config);
   }
 
