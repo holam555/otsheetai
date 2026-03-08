@@ -969,7 +969,6 @@ function renderSentenceTrilineMode(
     const groupY = startY + g * groupH;
 
     // Row 1: Reference text in solid black above the tri-line
-    const refFontPx = fontPx * 0.55;
     const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
     for (let c = 0; c < allChars.length; c++) {
       const cx = MARGIN + 4 + c * charW + charW / 2;
