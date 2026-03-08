@@ -317,3 +317,75 @@ function renderMiniGrid(
 
   return svg;
 }
+
+// ========== MODE 4: FIND AND COUNT ==========
+function renderCountMode(
+  config: WorksheetConfig,
+  data: WorksheetData,
+  shapeScale: number,
+  getFill: (s: ShapeName) => string,
+  getStroke: (s: ShapeName) => string,
+  getStrokeW: () => number,
+) {
+  const puzzle = data.countPuzzle!;
+  const { grid, targetShapes } = puzzle;
+  const ROWS = grid.length;
+  const COLS = grid[0].length;
+
+  let svg = '';
+
+  // Target shapes reference boxes at top
+  const refY = MARGIN + 85;
+  const refH = 62;
+  const boxCount = targetShapes.length;
+  const totalRefW = Math.min(boxCount * 100, W - MARGIN * 2);
+  const refX = (W - totalRefW) / 2;
+  const boxW = totalRefW / boxCount;
+
+  targetShapes.forEach((shape, i) => {
+    const bx = refX + i * boxW + 4;
+    const bw = boxW - 8;
+    svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
+    svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
+    // Blank line for writing count
+    svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
+  });
+
+  // Main 6x8 grid
+  const gridTop = refY + refH + 18;
+  const gridAreaH = H - gridTop - MARGIN - 35;
+  const gridAreaW = W - MARGIN * 2;
+  const cellW = gridAreaW / COLS;
+  const cellH = gridAreaH / ROWS;
+  const cellSize = Math.min(cellW, cellH);
+  const gridW = cellSize * COLS;
+  const gridH = cellSize * ROWS;
+  const gridX = (W - gridW) / 2;
+
+  svg += `<rect x="${gridX}" y="${gridTop}" width="${gridW}" height="${gridH}" fill="none" stroke="#CBD5E1" stroke-width="2" rx="4" />`;
+
+  if (config.showGridLines) {
+    for (let c = 1; c < COLS; c++) {
+      svg += `<line x1="${gridX + c * cellSize}" y1="${gridTop}" x2="${gridX + c * cellSize}" y2="${gridTop + gridH}" stroke="#E2E8F0" stroke-width="0.8" />`;
+    }
+    for (let r = 1; r < ROWS; r++) {
+      svg += `<line x1="${gridX}" y1="${gridTop + r * cellSize}" x2="${gridX + gridW}" y2="${gridTop + r * cellSize}" stroke="#E2E8F0" stroke-width="0.8" />`;
+    }
+  }
+
+  grid.forEach((row, r) => {
+    row.forEach((cell, c) => {
+      const cx = gridX + c * cellSize + cellSize / 2;
+      const cy = gridTop + r * cellSize + cellSize / 2;
+      svg += getShapeSVG(cell.shape, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+    });
+  });
+
+  // Answer key
+  if (config.showAnswerKey) {
+    const answers = targetShapes.map(s => `${s}: ${puzzle.counts[s]}`).join('   ');
+    svg += `<text x="${W / 2}" y="${gridTop + gridH + 16}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
+  }
+
+  return svg;
+}
