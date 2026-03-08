@@ -27,6 +27,13 @@ const MODES: { value: WorksheetMode; label: string }[] = [
   { value: 'mirror', label: 'Mirror Image' },
   { value: 'figureGround', label: 'Figure Ground' },
   { value: 'closure', label: 'Visual Closure' },
+  { value: 'traceName', label: 'Trace Your Name' },
+];
+
+const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
+  { value: 'shapes', label: 'Shapes' },
+  { value: 'letters', label: 'Letters' },
+  { value: 'numbers', label: 'Numbers' },
 ];
 
 const GRID_SIZES: GridSize[] = [2, 3, 4, 5];
