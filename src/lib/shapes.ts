@@ -507,7 +507,17 @@ function generateOddOneOutShapes(config: WorksheetConfig): WorksheetData {
 }
 
 function generateOddOneOutLetters(config: WorksheetConfig): WorksheetData {
-  const { SIMILAR_LETTERS, CASE_VARIANTS } = require('@/lib/letterPaths');
+  const SIMILAR_LETTERS: Record<string, string[]> = {
+    b: ['d', 'p', 'q'], d: ['b', 'p', 'q'], p: ['b', 'd', 'q'], q: ['b', 'd', 'p'],
+    E: ['F'], F: ['E'], m: ['n'], n: ['m'], M: ['N', 'W'], N: ['M'], C: ['G'], G: ['C'],
+  };
+  const CASE_VARIANTS: Record<string, string> = {
+    a: 'A', A: 'a', b: 'B', B: 'b', c: 'C', C: 'c', d: 'D', D: 'd', e: 'E', E: 'e',
+    f: 'F', F: 'f', g: 'G', G: 'g', h: 'H', H: 'h', i: 'I', I: 'i', j: 'J', J: 'j',
+    k: 'K', K: 'k', l: 'L', L: 'l', m: 'M', M: 'm', n: 'N', N: 'n', o: 'O', O: 'o',
+    p: 'P', P: 'p', q: 'Q', Q: 'q', r: 'R', R: 'r', s: 'S', S: 's', t: 'T', T: 't',
+    u: 'U', U: 'u', v: 'V', V: 'v', w: 'W', W: 'w', x: 'X', X: 'x', y: 'Y', Y: 'y', z: 'Z', Z: 'z',
+  };
   const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const easyPairs = [
     ['A', 'B'], ['C', 'M'], ['O', 'X'], ['P', 'W'], ['H', 'S'], ['D', 'K'], ['E', 'Z'], ['G', 'T'],
