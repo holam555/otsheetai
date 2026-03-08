@@ -76,6 +76,8 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'traceName') {
     bodySVG = renderTraceNameMode(config, data);
+  } else if (data.mode === 'handwriting') {
+    bodySVG = renderHandwritingMode(config, data);
   }
 
   const svgContent = `
