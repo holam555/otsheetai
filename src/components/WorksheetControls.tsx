@@ -133,7 +133,27 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </Select>
         </div>
 
-        {/* Grid Size */}
+        {/* Odd One Out Type */}
+        {config.mode === 'oddOneOut' && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Item Type</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {ODD_ONE_OUT_TYPES.map(t => (
+                <Button
+                  key={t.value}
+                  variant={config.oddOneOutType === t.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ oddOneOutType: t.value })}
+                  className="font-display text-xs"
+                >
+                  {t.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+
         <div className="space-y-2">
           <Label className="font-display font-semibold text-sm">Grid Size</Label>
           <div className="grid grid-cols-4 gap-2">
