@@ -1,4 +1,5 @@
 import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
+import { LETTER_PATHS, StrokePoint } from '@/lib/letterPaths';
 
 interface Props {
   config: WorksheetConfig;
