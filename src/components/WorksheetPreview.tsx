@@ -892,16 +892,17 @@ const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
 };
 
 // Colored tri-line set (HWT-style) anchored to text baseline
+// zoneH (top-to-bottom line distance) = fontPx * 0.7
+// Middle dotted line is at exact midpoint between top and bottom lines
 function renderColoredTrilineSet(
   x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
 ): string {
-  const capHeight = fontPx * 0.7;
-  const xHeight = fontPx * 0.5;
-  const topY = baselineY - capHeight;
-  const midY = baselineY - xHeight;
+  const zoneH = fontPx * 0.7;
+  const topY = baselineY - zoneH;
+  const midY = baselineY - zoneH / 2; // exact midpoint
   const botY = baselineY;
-  const skyH = capHeight * 0.2;
-  const grassH = capHeight * 0.15;
+  const skyH = zoneH * 0.2;
+  const grassH = zoneH * 0.15;
 
   const useColor = config.handwritingShowColoredLines;
   const lineColor = useColor ? (LINE_COLOR_MAP[config.handwritingLineColor] || '#DC2626') : '#94A3B8';
