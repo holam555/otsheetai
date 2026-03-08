@@ -775,6 +775,8 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
       rows: config.handwritingRows,
       paperStyle: config.handwritingPaperStyle,
       fontSize: config.handwritingFontSize,
+      fontSizeMm: config.handwritingFontSizeMm,
+      font: config.handwritingFont,
     },
   };
 }
