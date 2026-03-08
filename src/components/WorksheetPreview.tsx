@@ -40,8 +40,10 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderFindMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'missing') {
     bodySVG = renderMissingMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
-  } else {
+  } else if (data.mode === 'pattern') {
     bodySVG = renderPatternMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'count') {
+    bodySVG = renderCountMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   }
 
   const svgContent = `
