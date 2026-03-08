@@ -46,6 +46,10 @@ export interface WorksheetConfig {
   headerFontSize: HeaderFontSize;
   headerBold: boolean;
   oddOneOutType: OddOneOutType;
+  handwritingText: string;
+  handwritingRows: 2 | 3 | 4;
+  handwritingPaperStyle: HandwritingPaperStyle;
+  handwritingFontSize: HandwritingFontSize;
 }
 
 export interface CellData {
