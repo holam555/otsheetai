@@ -850,3 +850,95 @@ function renderTraceNameMode(
 
   return svg;
 }
+
+// ========== MODE 12: HANDWRITING PRACTICE ==========
+function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): string {
+  if (!data.handwritingData) return '';
+  const { text, rows, paperStyle, fontSize } = data.handwritingData;
+
+  // mm to SVG pts (A4 at 595px width ≈ 210mm → 1mm ≈ 2.833px)
+  const mmToPx = 2.833;
+  const lineH = fontSize === 'large' ? 20 * mmToPx : fontSize === 'medium' ? 15 * mmToPx : 10 * mmToPx;
+  const gapBetweenSets = 8 * mmToPx;
+  const contentW = W - MARGIN * 2;
+  const startY = MARGIN + 90;
+  const availableH = H - startY - MARGIN - 30;
+
+  let svg = '';
+
+  const fontPx = lineH * 0.75;
+  const ghostColor = '#C8CDD3';
+
+  if (paperStyle === 'triline' || paperStyle === 'both') {
+    const sectionH = paperStyle === 'both' ? availableH * 0.48 : availableH;
+    const setH = lineH + gapBetweenSets;
+    const maxRows = Math.min(rows, Math.floor(sectionH / setH));
+    const sectionStartY = startY;
+
+    if (paperStyle === 'both') {
+      svg += `<text x="${MARGIN}" y="${sectionStartY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Tri-line Paper</text>`;
+    }
+
+    for (let r = 0; r < maxRows; r++) {
+      const baseY = sectionStartY + r * setH;
+      const topY = baseY;
+      const midY = baseY + lineH / 2;
+      const botY = baseY + lineH;
+
+      // Top line (solid)
+      svg += `<line x1="${MARGIN}" y1="${topY}" x2="${W - MARGIN}" y2="${topY}" stroke="#94A3B8" stroke-width="1" />`;
+      // Middle dotted line
+      svg += `<line x1="${MARGIN}" y1="${midY}" x2="${W - MARGIN}" y2="${midY}" stroke="#CBD5E1" stroke-width="0.8" stroke-dasharray="4 3" />`;
+      // Bottom line (solid)
+      svg += `<line x1="${MARGIN}" y1="${botY}" x2="${W - MARGIN}" y2="${botY}" stroke="#94A3B8" stroke-width="1" />`;
+
+      // First row: ghost text
+      if (r === 0) {
+        // Estimate char width to fit text within content area
+        const charW = Math.min(fontPx * 0.6, contentW / Math.max(text.length, 1));
+        const textStartX = MARGIN + 4;
+        for (let c = 0; c < text.length; c++) {
+          const cx = textStartX + c * charW + charW / 2;
+          if (cx > W - MARGIN) break;
+          svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="'Courier New', monospace" font-size="${fontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(text[c])}</text>`;
+        }
+      }
+    }
+  }
+
+  if (paperStyle === 'gridbox' || paperStyle === 'both') {
+    const boxSize = fontSize === 'large' ? 20 * mmToPx : fontSize === 'medium' ? 15 * mmToPx : 10 * mmToPx;
+    const sectionStartY = paperStyle === 'both' ? startY + availableH * 0.52 : startY;
+    const sectionH = paperStyle === 'both' ? availableH * 0.48 : availableH;
+    const rowH = boxSize + gapBetweenSets * 0.5;
+    const maxRows = Math.min(rows, Math.floor(sectionH / rowH));
+    const maxCols = Math.floor(contentW / boxSize);
+    const charCount = Math.min(text.length, maxCols);
+
+    if (paperStyle === 'both') {
+      svg += `<text x="${MARGIN}" y="${sectionStartY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Grid Box Paper (方格紙)</text>`;
+    }
+
+    for (let r = 0; r < maxRows; r++) {
+      const baseY = sectionStartY + r * rowH;
+      for (let c = 0; c < charCount; c++) {
+        const bx = MARGIN + c * boxSize;
+        const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
+        svg += `<rect x="${bx}" y="${baseY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
+
+        // First row: ghost characters
+        if (r === 0) {
+          const ch = text[c];
+          const charFontPx = boxSize * 0.65;
+          svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="'Courier New', monospace" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
+        }
+      }
+    }
+  }
+
+  return svg;
+}
+
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
