@@ -949,7 +949,7 @@ function renderSentenceTrilineMode(
 ): string {
   const mmToPx = 2.833;
   const fontPx = lineH; // lineH in px IS the font size
-  const zoneH = fontPx * 0.7; // top-to-bottom line distance
+  const zoneH = Math.max(fontPx * 0.7, 20 * mmToPx); // min 20mm between top and bottom lines
   const grassH = zoneH * 0.15;
   const triSetH = zoneH + grassH; // total visual height of one tri-line set
   const groupGap = 12 * mmToPx;
