@@ -892,12 +892,10 @@ const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
 };
 
 // Colored tri-line set (HWT-style) anchored to text baseline
-// zoneH (top-to-bottom line distance) = fontPx * 0.7
-// Middle dotted line is at exact midpoint between top and bottom lines
+// zoneH is passed directly — it IS the top-to-bottom line distance
 function renderColoredTrilineSet(
-  x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
+  x: number, baselineY: number, zoneH: number, width: number, config: WorksheetConfig
 ): string {
-  const zoneH = Math.max(fontPx * 0.7, 20 * 2.833); // min 20mm between top and bottom lines
   const topY = baselineY - zoneH;
   const midY = baselineY - zoneH / 2; // exact midpoint
   const botY = baselineY;
