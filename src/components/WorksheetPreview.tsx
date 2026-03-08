@@ -1059,13 +1059,16 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     // 1. Word label in black
     svg += `<text x="${colX}" y="${blockY + 12}" font-family="${fontFamily}" font-size="13" font-weight="700" fill="#1E293B">${escapeXml(word.trim())}</text>`;
 
-    // 2. Tri-line trace with colored lines
-    const traceY = blockY + labelH;
-    svg += renderColoredTrilineSet(colX, traceY, lineH, colW);
-    svg += renderTextOnTriline(chars, colX, traceY + lineH, lineH, colW, fontFamily, '#94A3B8', true);
+    // 2. Tri-line trace with colored lines — baseline-anchored
+    const fontPxTrace = lineH;
+    const capH = fontPxTrace * 0.7;
+    const grassH = capH * 0.15;
+    const traceBaselineY = blockY + labelH + capH;
+    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW);
+    svg += renderTextOnTriline(chars, colX, traceBaselineY, fontPxTrace, colW, fontFamily, '#94A3B8', true);
 
     // 3. Adaptive word boxes
-    const boxesY = traceY + lineH + gapBetweenParts;
+    const boxesY = traceBaselineY + grassH + gapBetweenParts;
     const boxW = Math.min(colW / chars.length, tallH * 0.8); // uniform width
     const baseline = boxesY + tallH; // shared baseline
 
