@@ -852,6 +852,7 @@ function renderTraceNameMode(
 }
 
 // ========== MODE 12: HANDWRITING PRACTICE ==========
+
 function isChinese(ch: string): boolean {
   const code = ch.charCodeAt(0);
   return code >= 0x4e00 && code <= 0x9fff;
@@ -865,45 +866,99 @@ function isAllChinese(text: string): boolean {
   return Array.from(text).every(ch => isChinese(ch) || ch === ' ');
 }
 
-function renderTrilineRows(
-  chars: string[], rows: number, startY: number, availableH: number,
-  lineH: number, gapBetweenSets: number, contentW: number,
-  fontFamily: string, isDotted: boolean, ghostColor: string, config: WorksheetConfig,
-  sectionLabel?: string
-): { svg: string; usedH: number } {
-  const fontPx = lineH * 0.75;
-  const setH = lineH + gapBetweenSets;
-  const maxRows = Math.min(rows, Math.floor(availableH / setH));
+// Letter classification for adaptive box heights
+const ASCENDERS = new Set('bdfhklt'.split(''));
+const DESCENDERS = new Set('gjpqy'.split(''));
+const CAPITALS = new Set('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''));
+
+function getLetterType(ch: string): 'tall' | 'medium' | 'descender' {
+  if (CAPITALS.has(ch) || ASCENDERS.has(ch)) return 'tall';
+  if (DESCENDERS.has(ch)) return 'descender';
+  return 'medium';
+}
+
+// Colored tri-line set (HWT-style): red top, pink dashed mid, red bottom, sky/grass bands
+function renderColoredTrilineSet(
+  x: number, y: number, lineH: number, width: number
+): string {
   let svg = '';
+  const skyH = lineH * 0.15;
+  const grassH = lineH * 0.12;
 
-  if (sectionLabel) {
-    svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${escapeXml(sectionLabel)}</text>`;
-  }
+  // Sky band (light blue above top line)
+  svg += `<rect x="${x}" y="${y - skyH}" width="${width}" height="${skyH}" fill="#E0F2FE" opacity="0.6" />`;
+  // Grass band (light green below bottom line)
+  svg += `<rect x="${x}" y="${y + lineH}" width="${width}" height="${grassH}" fill="#DCFCE7" opacity="0.5" />`;
 
-  for (let r = 0; r < maxRows; r++) {
-    const baseY = startY + r * setH;
-    const topY = baseY;
-    const midY = baseY + lineH / 2;
-    const botY = baseY + lineH;
+  // Top line — solid red
+  svg += `<line x1="${x}" y1="${y}" x2="${x + width}" y2="${y}" stroke="#DC2626" stroke-width="1.2" />`;
+  // Middle dotted line — pink/grey dashed
+  svg += `<line x1="${x}" y1="${y + lineH / 2}" x2="${x + width}" y2="${y + lineH / 2}" stroke="#F9A8D4" stroke-width="0.8" stroke-dasharray="4 3" />`;
+  // Bottom baseline — solid red
+  svg += `<line x1="${x}" y1="${y + lineH}" x2="${x + width}" y2="${y + lineH}" stroke="#DC2626" stroke-width="1.2" />`;
 
-    svg += `<line x1="${MARGIN}" y1="${topY}" x2="${W - MARGIN}" y2="${topY}" stroke="#94A3B8" stroke-width="1" />`;
-    svg += `<line x1="${MARGIN}" y1="${midY}" x2="${W - MARGIN}" y2="${midY}" stroke="#CBD5E1" stroke-width="0.8" stroke-dasharray="4 3" />`;
-    svg += `<line x1="${MARGIN}" y1="${botY}" x2="${W - MARGIN}" y2="${botY}" stroke="#94A3B8" stroke-width="1" />`;
+  return svg;
+}
 
-    if (r === 0 && chars.length > 0) {
-      const charW = Math.min(fontPx * 0.65, contentW / Math.max(chars.length, 1));
-      for (let c = 0; c < chars.length; c++) {
-        const cx = MARGIN + 4 + c * charW + charW / 2;
-        if (cx > W - MARGIN) break;
-        if (isDotted) {
-          svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(chars[c])}</text>`;
-        } else {
-          svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(chars[c])}</text>`;
-        }
-      }
+// Render text on a tri-line set at given position
+function renderTextOnTriline(
+  chars: string[], x: number, botY: number, lineH: number, contentW: number,
+  fontFamily: string, color: string, isDottedTrace: boolean
+): string {
+  if (chars.length === 0) return '';
+  const fontPx = lineH * 0.72;
+  const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
+  let svg = '';
+  for (let c = 0; c < chars.length; c++) {
+    const cx = x + 4 + c * charW + charW / 2;
+    if (cx > x + contentW) break;
+    if (isDottedTrace) {
+      svg += `<text x="${cx}" y="${botY - lineH * 0.15}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
+    } else {
+      svg += `<text x="${cx}" y="${botY - lineH * 0.15}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="${isDottedTrace ? '400' : '500'}" fill="${color}">${escapeXml(chars[c])}</text>`;
     }
   }
-  return { svg, usedH: maxRows * setH };
+  return svg;
+}
+
+// Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
+function renderSentenceTrilineMode(
+  text: string, rows: number, startY: number, availableH: number,
+  lineH: number, contentW: number, fontFamily: string, config: WorksheetConfig
+): string {
+  const mmToPx = 2.833;
+  const groupGap = 12 * mmToPx; // 12mm gap between groups
+  const setGap = 4 * mmToPx; // gap between rows within a group
+  const refTextH = lineH * 0.4; // height for reference text above tri-line
+  const groupH = refTextH + lineH + setGap + lineH + setGap + lineH + groupGap; // ref + trace + blank
+  const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
+  const allChars = Array.from(text);
+  let svg = '';
+
+  for (let g = 0; g < maxGroups; g++) {
+    const groupY = startY + g * groupH;
+
+    // Row 1: Reference text in solid black above the first tri-line set
+    const refY = groupY;
+    const fontPx = lineH * 0.5;
+    const charW = Math.min(fontPx * 0.62, contentW / Math.max(allChars.length, 1));
+    for (let c = 0; c < allChars.length; c++) {
+      const cx = MARGIN + 4 + c * charW + charW / 2;
+      if (cx > W - MARGIN) break;
+      svg += `<text x="${cx}" y="${refY + refTextH * 0.8}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="600" fill="#1E293B">${escapeXml(allChars[c])}</text>`;
+    }
+
+    // Row 2: Dotted trace on colored tri-lines
+    const traceY = refY + refTextH;
+    svg += renderColoredTrilineSet(MARGIN, traceY, lineH, contentW);
+    svg += renderTextOnTriline(allChars, MARGIN, traceY + lineH, lineH, contentW, fontFamily, '#94A3B8', true);
+
+    // Row 3: Blank colored tri-lines for independent writing
+    const blankY = traceY + lineH + setGap;
+    svg += renderColoredTrilineSet(MARGIN, blankY, lineH, contentW);
+  }
+
+  return svg;
 }
 
 function renderGridBoxRows(
@@ -943,9 +998,101 @@ function renderGridBoxRows(
   return { svg, usedH: maxRows * rowH };
 }
 
+// ========== WORD BOXES SUB-MODE ==========
+function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): string {
+  if (!data.handwritingData) return '';
+  const { words, fontSizeMm, font } = data.handwritingData;
+  if (words.length === 0) return '';
+
+  const mmToPx = 2.833;
+  const fontFamilyMap: Record<string, string> = {
+    print: "Arial, Helvetica, sans-serif",
+    cursive: "'Segoe Script', 'Comic Sans MS', cursive",
+    manuscript: "'Courier New', Courier, monospace",
+    dotted: "Arial, sans-serif",
+  };
+  const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
+
+  const contentW = W - MARGIN * 2;
+  const startY = MARGIN + 90;
+  const availableH = H - startY - MARGIN - 30;
+  const colW = (contentW - 20) / 2; // 2 columns with 20px gap
+  const lineH = fontSizeMm * mmToPx;
+
+  // Sizing
+  const tallH = Math.max(25 * mmToPx, lineH);
+  const medH = Math.max(18 * mmToPx, lineH * 0.72);
+  const descH = tallH; // same height but with extra below baseline
+  const descExtra = 7 * mmToPx; // extra space below baseline for descenders
+  const labelH = 16; // label text height
+  const trilineSetH = lineH; // tri-line trace height
+  const gapBetweenParts = 6 * mmToPx;
+  const wordBlockH = labelH + trilineSetH + gapBetweenParts + tallH + descExtra + gapBetweenParts;
+  const maxPerCol = Math.min(4, Math.floor(availableH / wordBlockH));
+
+  let svg = '';
+
+  words.slice(0, maxPerCol * 2).forEach((word, wIdx) => {
+    const col = wIdx % 2;
+    const row = Math.floor(wIdx / 2);
+    if (row >= maxPerCol) return;
+
+    const colX = MARGIN + col * (colW + 20);
+    const blockY = startY + row * wordBlockH;
+    const chars = Array.from(word.trim());
+    if (chars.length === 0) return;
+
+    // 1. Word label in black
+    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${fontFamily}" font-size="13" font-weight="700" fill="#1E293B">${escapeXml(word.trim())}</text>`;
+
+    // 2. Tri-line trace with colored lines
+    const traceY = blockY + labelH;
+    svg += renderColoredTrilineSet(colX, traceY, lineH, colW);
+    svg += renderTextOnTriline(chars, colX, traceY + lineH, lineH, colW, fontFamily, '#94A3B8', true);
+
+    // 3. Adaptive word boxes
+    const boxesY = traceY + lineH + gapBetweenParts;
+    const boxW = Math.min(colW / chars.length, tallH * 0.8); // uniform width
+    const baseline = boxesY + tallH; // shared baseline
+
+    chars.forEach((ch, cIdx) => {
+      const bx = colX + cIdx * boxW;
+      const type = getLetterType(ch);
+      let boxTop: number;
+      let boxHeight: number;
+
+      if (type === 'tall') {
+        boxTop = boxesY;
+        boxHeight = tallH;
+      } else if (type === 'descender') {
+        boxTop = baseline - medH;
+        boxHeight = medH + descExtra;
+      } else {
+        boxTop = baseline - medH;
+        boxHeight = medH;
+      }
+
+      // Thick black border box
+      svg += `<rect x="${bx}" y="${boxTop}" width="${boxW}" height="${boxHeight}" fill="none" stroke="#1E293B" stroke-width="1.8" rx="2" />`;
+
+      // Baseline indicator (thin line across all boxes)
+      if (cIdx === 0) {
+        svg += `<line x1="${colX}" y1="${baseline}" x2="${colX + chars.length * boxW}" y2="${baseline}" stroke="#DC2626" stroke-width="0.6" stroke-dasharray="3 2" />`;
+      }
+    });
+  });
+
+  return svg;
+}
+
 function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): string {
   if (!data.handwritingData) return '';
-  const { text, rows, paperStyle, fontSizeMm, font } = data.handwritingData;
+  const { text, rows, paperStyle, fontSizeMm, font, subMode } = data.handwritingData;
+
+  // Word Boxes sub-mode
+  if (subMode === 'wordBoxes') {
+    return renderWordBoxesMode(config, data);
+  }
 
   const mmToPx = 2.833;
   const lineH = fontSizeMm * mmToPx;
@@ -973,93 +1120,76 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
 
   // Determine rendering strategy based on content + paper style
   if (paperStyle === 'gridbox') {
-    // Pure grid box mode — works for all scripts
     const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
     svg += result.svg;
   } else if (paperStyle === 'both') {
-    // "Both" mode
     if (allChinese) {
-      // All Chinese: grid box for top, empty grid box for bottom
       const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
       svg += result.svg;
     } else if (containsChinese) {
-      // Mixed: English on tri-line top, Chinese on grid box bottom
       const engChars = allChars.filter(ch => !isChinese(ch));
       const chnChars = allChars.filter(isChinese);
       const halfH = availableH * 0.48;
-      const triResult = renderTrilineRows(engChars, Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Tri-line Paper');
-      svg += triResult.svg;
+      // English tri-line (colored) at top
+      svg += renderSentenceTrilineMode(engChars.join(''), Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, contentW, fontFamily, config);
       const gridStartY = startY + availableH * 0.52;
       const gridResult = renderGridBoxRows(chnChars, Math.max(1, Math.ceil(rows / 2)), gridStartY, halfH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
       svg += gridResult.svg;
     } else {
-      // Pure English: tri-line top, grid box bottom
       const halfH = availableH * 0.48;
-      const triResult = renderTrilineRows(allChars, Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Tri-line Paper');
-      svg += triResult.svg;
+      svg += renderSentenceTrilineMode(text, Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, contentW, fontFamily, config);
       const gridStartY = startY + availableH * 0.52;
       const gridResult = renderGridBoxRows(allChars, Math.max(1, Math.ceil(rows / 2)), gridStartY, halfH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
       svg += gridResult.svg;
     }
   } else {
-    // Tri-line mode
+    // Tri-line mode — now uses colored HWT-style lines with sentence groups
     if (allChinese) {
-      // Chinese on tri-line: first row = grid boxes with ghost chars, remaining = blank tri-lines
+      // Chinese: first row grid boxes, remaining blank colored tri-lines
       const rowH = boxSize + gapBetweenSets * 0.5;
       const maxCols = Math.floor(contentW / boxSize);
       const charCount = Math.min(allChars.length, maxCols);
 
-      // Row 1: grid boxes with ghost characters
       for (let c = 0; c < charCount; c++) {
         const bx = MARGIN + c * boxSize;
         const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
         svg += `<rect x="${bx}" y="${startY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
         const ch = allChars[c];
         const charFontPx = boxSize * 0.65;
-        if (isDotted) {
-          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
-        } else {
-          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
-        }
+        svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
       }
 
-      // Remaining rows: blank tri-lines for practice
+      // Blank colored tri-lines below
       const triStartY = startY + rowH;
       const remainH = availableH - rowH;
-      const blankResult = renderTrilineRows([], rows - 1, triStartY, remainH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
-      svg += blankResult.svg;
+      const setGap = 4 * mmToPx;
+      const setH = lineH + setGap;
+      const blankRows = Math.min(rows - 1, Math.floor(remainH / setH));
+      for (let r = 0; r < blankRows; r++) {
+        svg += renderColoredTrilineSet(MARGIN, triStartY + r * setH, lineH, contentW);
+      }
     } else if (containsChinese) {
-      // Mixed: first row = grid boxes for Chinese chars, then tri-line rows for English + blank practice
-      const chnChars = allChars.filter(isChinese);
       const engChars = allChars.filter(ch => !isChinese(ch));
+      const chnChars = allChars.filter(isChinese);
       const rowH = boxSize + gapBetweenSets * 0.5;
       const maxCols = Math.floor(contentW / boxSize);
       const charCount = Math.min(chnChars.length, maxCols);
 
-      // Chinese grid box row
       svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Chinese — Grid Box (方格紙)</text>`;
       for (let c = 0; c < charCount; c++) {
         const bx = MARGIN + c * boxSize;
         const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
         svg += `<rect x="${bx}" y="${startY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
-        const ch = chnChars[c];
         const charFontPx = boxSize * 0.65;
-        if (isDotted) {
-          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
-        } else {
-          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
-        }
+        svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(chnChars[c])}</text>`;
       }
 
-      // English tri-line rows below
       const triStartY = startY + rowH + gapBetweenSets * 0.5;
       const remainH = availableH - rowH - gapBetweenSets * 0.5;
-      const triResult = renderTrilineRows(engChars, Math.max(1, rows - 1), triStartY, remainH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'English — Tri-line');
-      svg += triResult.svg;
+      svg += renderSentenceTrilineMode(engChars.join(''), Math.max(1, rows - 1), triStartY, remainH, lineH, contentW, fontFamily, config);
     } else {
-      // Pure English: normal tri-line
-      const result = renderTrilineRows(allChars, rows, startY, availableH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
-      svg += result.svg;
+      // Pure English: colored tri-line with 3-row sentence groups
+      svg += renderSentenceTrilineMode(text, rows, startY, availableH, lineH, contentW, fontFamily, config);
     }
   }
 
