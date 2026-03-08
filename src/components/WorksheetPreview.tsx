@@ -979,7 +979,7 @@ function renderSentenceTrilineMode(
     // Row 2: Dotted trace on colored tri-lines
     // baseline sits at top of group + refTextH + capHeight (so cap tops touch top line)
     const traceBaselineY = groupY + refTextH + capHeight;
-    svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW);
+    svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
     svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, fontPx, contentW, fontFamily, '#94A3B8', true);
 
     // Row 3: Blank colored tri-lines for independent writing
