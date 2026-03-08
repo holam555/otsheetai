@@ -1203,7 +1203,7 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       const blankRows = Math.min(rows - 1, Math.floor(remainH / setH));
       for (let r = 0; r < blankRows; r++) {
         const blankBaselineY = triStartY + r * setH + capHBlank;
-        svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPxBlank, contentW);
+        svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPxBlank, contentW, config);
       }
     } else if (containsChinese) {
       const engChars = allChars.filter(ch => !isChinese(ch));
