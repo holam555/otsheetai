@@ -897,7 +897,7 @@ const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
 function renderColoredTrilineSet(
   x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
 ): string {
-  const zoneH = fontPx * 0.7;
+  const zoneH = Math.max(fontPx * 0.7, 20 * 2.833); // min 20mm between top and bottom lines
   const topY = baselineY - zoneH;
   const midY = baselineY - zoneH / 2; // exact midpoint
   const botY = baselineY;
