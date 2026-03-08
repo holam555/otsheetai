@@ -926,24 +926,19 @@ function renderColoredTrilineSet(
   return svg;
 }
 
-// Render text on tri-lines — text y = baselineY exactly
+// Render text on tri-lines — text y = baselineY exactly, natural letter spacing
 function renderTextOnTriline(
   chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
   fontFamily: string, color: string, isDottedTrace: boolean
 ): string {
   if (chars.length === 0) return '';
-  const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
-  let svg = '';
-  for (let c = 0; c < chars.length; c++) {
-    const cx = x + 4 + c * charW + charW / 2;
-    if (cx > x + contentW) break;
-    if (isDottedTrace) {
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
-    } else {
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
-    }
+  const textStr = chars.map(escapeXml).join('');
+  const tx = x + 4;
+  if (isDottedTrace) {
+    return `<text x="${tx}" y="${baselineY}" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2" letter-spacing="0">${textStr}</text>`;
+  } else {
+    return `<text x="${tx}" y="${baselineY}" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}" letter-spacing="0">${textStr}</text>`;
   }
-  return svg;
 }
 
 // Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
