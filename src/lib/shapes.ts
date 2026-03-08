@@ -58,6 +58,10 @@ export interface WorksheetConfig {
   handwritingFont: HandwritingFont;
   handwritingSubMode: HandwritingSubMode;
   handwritingWords: string;
+  handwritingShowHighlight: boolean;
+  handwritingShowColoredLines: boolean;
+  handwritingLineColor: HandwritingLineColor;
+  handwritingHighlightColor: HandwritingHighlightColor;
 }
 
 export interface CellData {

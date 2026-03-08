@@ -40,7 +40,7 @@ export default function Index() {
 
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
