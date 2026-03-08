@@ -152,6 +152,8 @@ export interface HandwritingData {
   fontSize: HandwritingFontSize;
   fontSizeMm: number;
   font: HandwritingFont;
+  subMode: HandwritingSubMode;
+  words: string[];
 }
 
 function randomFrom<T>(arr: T[]): T {
