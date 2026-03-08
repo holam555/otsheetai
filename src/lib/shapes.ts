@@ -122,6 +122,7 @@ export interface WorksheetData {
   mirrorPuzzles?: MirrorPuzzle[];
   figureGroundPuzzle?: FigureGroundPuzzle;
   closurePuzzles?: ClosurePuzzle[];
+  traceNameData?: TraceNameData;
 }
 
 function randomFrom<T>(arr: T[]): T {
