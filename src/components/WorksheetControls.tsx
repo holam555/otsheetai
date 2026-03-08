@@ -1,6 +1,7 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -157,53 +158,95 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
         {/* Handwriting Practice Controls */}
         {config.mode === 'handwriting' && (
           <div className="space-y-4">
+            {/* Sub-mode toggle */}
             <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Text to practise</Label>
-              <Input
-                value={config.handwritingText}
-                onChange={(e) => update({ handwritingText: e.target.value })}
-                placeholder="e.g. Hello World"
-              />
-            </div>
-
-            {/* Practice Rows Slider */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="font-display font-semibold text-sm">Practice Rows</Label>
-                <span className="text-xs font-bold text-primary">{config.handwritingRows}</span>
-              </div>
-              <Slider
-                value={[config.handwritingRows]}
-                min={2}
-                max={8}
-                step={1}
-                onValueChange={([v]) => update({ handwritingRows: v })}
-              />
-              <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span>2</span><span>8</span>
+              <Label className="font-display font-semibold text-sm">Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={config.handwritingSubMode === 'sentence' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ handwritingSubMode: 'sentence' })}
+                  className="font-display text-xs"
+                >
+                  Sentence
+                </Button>
+                <Button
+                  variant={config.handwritingSubMode === 'wordBoxes' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ handwritingSubMode: 'wordBoxes' })}
+                  className="font-display text-xs"
+                >
+                  Word Boxes
+                </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Paper Style</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: 'triline' as const, label: 'Tri-line' },
-                  { value: 'gridbox' as const, label: 'Grid Box' },
-                  { value: 'both' as const, label: 'Both' },
-                ]).map(s => (
-                  <Button
-                    key={s.value}
-                    variant={config.handwritingPaperStyle === s.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ handwritingPaperStyle: s.value })}
-                    className="font-display text-xs"
-                  >
-                    {s.label}
-                  </Button>
-                ))}
+            {config.handwritingSubMode === 'sentence' && (
+              <div className="space-y-2">
+                <Label className="font-display font-semibold text-sm">Text to practise</Label>
+                <Input
+                  value={config.handwritingText}
+                  onChange={(e) => update({ handwritingText: e.target.value })}
+                  placeholder="e.g. Hello World"
+                />
               </div>
-            </div>
+            )}
+
+            {config.handwritingSubMode === 'wordBoxes' && (
+              <div className="space-y-2">
+                <Label className="font-display font-semibold text-sm">Words (one per line, max 8)</Label>
+                <Textarea
+                  value={config.handwritingWords}
+                  onChange={(e) => update({ handwritingWords: e.target.value })}
+                  placeholder={"cat\ndog\nbird\nfish"}
+                  rows={4}
+                  className="text-sm font-mono"
+                />
+              </div>
+            )}
+
+            {config.handwritingSubMode === 'sentence' && (
+              <>
+                {/* Practice Rows Slider */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-display font-semibold text-sm">Practice Rows</Label>
+                    <span className="text-xs font-bold text-primary">{config.handwritingRows}</span>
+                  </div>
+                  <Slider
+                    value={[config.handwritingRows]}
+                    min={2}
+                    max={8}
+                    step={1}
+                    onValueChange={([v]) => update({ handwritingRows: v })}
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>2</span><span>8</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-display font-semibold text-sm">Paper Style</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: 'triline' as const, label: 'Tri-line' },
+                      { value: 'gridbox' as const, label: 'Grid Box' },
+                      { value: 'both' as const, label: 'Both' },
+                    ]).map(s => (
+                      <Button
+                        key={s.value}
+                        variant={config.handwritingPaperStyle === s.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => update({ handwritingPaperStyle: s.value })}
+                        className="font-display text-xs"
+                      >
+                        {s.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Font Size Slider (mm) */}
             <div className="space-y-2">

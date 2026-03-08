@@ -29,6 +29,7 @@ export type HeaderFontSize = 'small' | 'medium' | 'large';
 export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
 export type HandwritingFontSize = 'large' | 'medium' | 'small';
 export type HandwritingFont = 'print' | 'cursive' | 'manuscript' | 'dotted';
+export type HandwritingSubMode = 'sentence' | 'wordBoxes';
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
@@ -53,6 +54,8 @@ export interface WorksheetConfig {
   handwritingFontSize: HandwritingFontSize;
   handwritingFontSizeMm: number;
   handwritingFont: HandwritingFont;
+  handwritingSubMode: HandwritingSubMode;
+  handwritingWords: string;
 }
 
 export interface CellData {
@@ -149,6 +152,8 @@ export interface HandwritingData {
   fontSize: HandwritingFontSize;
   fontSizeMm: number;
   font: HandwritingFont;
+  subMode: HandwritingSubMode;
+  words: string[];
 }
 
 function randomFrom<T>(arr: T[]): T {
@@ -777,6 +782,8 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
       fontSize: config.handwritingFontSize,
       fontSizeMm: config.handwritingFontSizeMm,
       font: config.handwritingFont,
+      subMode: config.handwritingSubMode,
+      words: config.handwritingWords ? config.handwritingWords.split('\n').filter(w => w.trim()).slice(0, 8) : [],
     },
   };
 }
