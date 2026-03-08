@@ -966,13 +966,9 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text in solid black above the tri-line
-    const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
-    for (let c = 0; c < allChars.length; c++) {
-      const cx = MARGIN + 4 + c * charW + charW / 2;
-      if (cx > W - MARGIN) break;
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="600" fill="#1E293B">${escapeXml(allChars[c])}</text>`;
-    }
+    // Row 1: Reference text in solid black above the tri-line (natural spacing)
+    const refText = allChars.map(escapeXml).join('');
+    svg += `<text x="${MARGIN + 4}" y="${groupY + refTextH * 0.85}" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="600" fill="#1E293B" letter-spacing="0">${refText}</text>`;
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
