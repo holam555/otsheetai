@@ -1074,7 +1074,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
 
     // 2. Tri-line trace with colored lines — baseline-anchored
     const fontPxTrace = lineH;
-    const zoneH = fontPxTrace * 0.7;
+    const zoneH = Math.max(fontPxTrace * 0.7, 20 * mmToPx);
     const grassH = zoneH * 0.15;
     const traceFontPx = zoneH / 0.72; // auto-size so ascenders fill zone
     const traceBaselineY = blockY + labelH + zoneH;
