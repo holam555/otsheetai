@@ -44,6 +44,11 @@ export interface WorksheetConfig {
   headerFontSize: HeaderFontSize;
   headerBold: boolean;
   oddOneOutType: OddOneOutType;
+  highContrast: boolean;
+  leftHandLayout: boolean;
+  largeCells: boolean;
+  showVisualSchedule: boolean;
+  showRewardRow: boolean;
 }
 
 export interface CellData {

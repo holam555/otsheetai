@@ -346,6 +346,53 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           <Switch checked={config.showAnswerKey} onCheckedChange={(v) => update({ showAnswerKey: v })} />
         </div>
 
+        {/* Accessibility Section */}
+        <div className="pt-3 border-t border-border">
+          <Label className="font-display font-bold text-sm text-primary mb-3 block">♿ Accessibility</Label>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-display font-semibold text-sm">High Contrast</Label>
+                <p className="text-[10px] text-muted-foreground">Bold black outlines, no greys</p>
+              </div>
+              <Switch checked={config.highContrast} onCheckedChange={(v) => update({ highContrast: v })} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-display font-semibold text-sm">Left-Hand Layout</Label>
+                <p className="text-[10px] text-muted-foreground">Drawing area on right side</p>
+              </div>
+              <Switch checked={config.leftHandLayout} onCheckedChange={(v) => update({ leftHandLayout: v })} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-display font-semibold text-sm">Large Cells</Label>
+                <p className="text-[10px] text-muted-foreground">Bigger shapes, fewer per row</p>
+              </div>
+              <Switch checked={config.largeCells} onCheckedChange={(v) => update({ largeCells: v })} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-display font-semibold text-sm">Visual Schedule</Label>
+                <p className="text-[10px] text-muted-foreground">Step icons at top of sheet</p>
+              </div>
+              <Switch checked={config.showVisualSchedule} onCheckedChange={(v) => update({ showVisualSchedule: v })} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-display font-semibold text-sm">Reward Stars</Label>
+                <p className="text-[10px] text-muted-foreground">Star boxes at bottom of sheet</p>
+              </div>
+              <Switch checked={config.showRewardRow} onCheckedChange={(v) => update({ showRewardRow: v })} />
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Button onClick={onGenerate} className="font-display font-bold gap-2">
             <RefreshCw className="w-4 h-4" />
