@@ -59,6 +59,46 @@ export interface CountPuzzle {
   counts: Record<ShapeName, number>; // correct counts
 }
 
+// Mode 5: Copy the Pattern
+export interface CopyPuzzle {
+  sourceGrid: CellData[][];
+}
+
+// Mode 6: What Comes Next
+export interface SequencePuzzle {
+  sequence: CellData[];  // 4 visible + answer
+  answer: CellData;
+  options: CellData[];   // 3 options
+  correctIndex: number;
+}
+
+// Mode 7: Odd One Out
+export interface OddOneOutRow {
+  items: CellData[];     // 5 items
+  oddIndex: number;
+}
+
+// Mode 8: Mirror Image
+export interface MirrorPuzzle {
+  sourceGrid: (CellData | null)[][];
+  mirroredGrid: (CellData | null)[][];
+}
+
+// Mode 9: Figure Ground
+export interface FigureGroundPuzzle {
+  shapes: { shape: ShapeName; cx: number; cy: number; r: number; rotation: number }[];
+  targetShapes: ShapeName[];
+  counts: Record<ShapeName, number>;
+}
+
+// Mode 10: Visual Closure
+export interface ClosurePuzzle {
+  shape: ShapeName;
+  dashArray: string;
+  options: ShapeName[];
+  correctIndex: number;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -73,6 +113,18 @@ export interface WorksheetData {
   patternPuzzles?: PatternPuzzle[];
   // Mode 4
   countPuzzle?: CountPuzzle;
+  // Mode 5
+  copyPuzzles?: CopyPuzzle[];
+  // Mode 6
+  sequencePuzzles?: SequencePuzzle[];
+  // Mode 7
+  oddOneOutRows?: OddOneOutRow[];
+  // Mode 8
+  mirrorPuzzles?: MirrorPuzzle[];
+  // Mode 9
+  figureGroundPuzzle?: FigureGroundPuzzle;
+  // Mode 10
+  closurePuzzles?: ClosurePuzzle[];
 }
 
 function randomFrom<T>(arr: T[]): T {
