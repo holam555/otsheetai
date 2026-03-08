@@ -984,7 +984,7 @@ function renderSentenceTrilineMode(
 
     // Row 3: Blank colored tri-lines for independent writing
     const blankBaselineY = traceBaselineY + grassH + setGap + capHeight;
-    svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW);
+    svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW, config);
   }
 
   return svg;
