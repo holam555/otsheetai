@@ -564,7 +564,9 @@ function generateOddOneOutLetters(config: WorksheetConfig): WorksheetData {
 }
 
 function generateOddOneOutNumbers(config: WorksheetConfig): WorksheetData {
-  const { SIMILAR_NUMBERS } = require('@/lib/letterPaths');
+  const SIMILAR_NUMBERS: Record<string, string[]> = {
+    '6': ['9'], '9': ['6'], '1': ['7', 'l'], '7': ['1'], '2': ['Z'], '5': ['S'], '0': ['O'], '3': ['8'], '8': ['3'],
+  };
   const easyPairs = [
     ['3', '7'], ['1', '4'], ['2', '5'], ['6', '8'], ['0', '9'], ['4', '7'], ['1', '2'], ['5', '8'],
   ];
