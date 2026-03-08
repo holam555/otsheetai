@@ -1,27 +1,33 @@
 import { useState, useCallback, useEffect } from 'react';
-import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetData, generateWorksheet, BASIC_SHAPES } from '@/lib/shapes';
 import WorksheetControls from '@/components/WorksheetControls';
 import WorksheetPreview from '@/components/WorksheetPreview';
 
 const defaultConfig: WorksheetConfig = {
   mode: 'find',
   gridSize: 3,
-  shapeSet: 'basic',
+  shapeSet: 'custom',
+  selectedShapes: [...BASIC_SHAPES],
   difficulty: 'easy',
   childName: '',
+  childAge: null,
   showGridLines: true,
   useColor: true,
   showAnswerKey: false,
+  exerciseCount: 5,
+  customInstruction: '',
+  borderStyle: 'plain',
+  headerFontSize: 'medium',
+  headerBold: false,
 };
 
 export default function Index() {
   const [config, setConfig] = useState<WorksheetConfig>(defaultConfig);
   const [worksheetData, setWorksheetData] = useState<WorksheetData>(() => generateWorksheet(defaultConfig));
 
-  // Auto-regenerate when mode, gridSize, shapeSet, or difficulty changes
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.shapeSet, config.difficulty]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
@@ -49,14 +55,14 @@ export default function Index() {
               <p className="text-[11px] text-muted-foreground leading-none">Pediatric OT Worksheets</p>
             </div>
           </div>
-          <span className="hidden sm:inline text-xs text-muted-foreground font-medium bg-muted px-3 py-1.5 rounded-full">Ages 2–8</span>
+          <span className="hidden sm:inline text-xs text-muted-foreground font-medium bg-muted px-3 py-1.5 rounded-full">Ages 2–12</span>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="grid lg:grid-cols-[340px_1fr] gap-6">
           <aside className="no-print">
-            <div className="bg-card rounded-xl border border-border p-5 sticky top-20">
+            <div className="bg-card rounded-xl border border-border p-5 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <h2 className="font-display text-base font-bold text-foreground mb-4">Worksheet Settings</h2>
               <WorksheetControls
                 config={config}
