@@ -758,6 +758,22 @@ function generateTraceNameMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 12: HANDWRITING PRACTICE ==========
+function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
+  const text = config.handwritingText || config.childName || 'Hello';
+  return {
+    mode: 'handwriting',
+    instructions: 'Practise your handwriting! Trace the grey letters, then write on your own.',
+    skillLabel: 'Handwriting · Fine Motor',
+    handwritingData: {
+      text,
+      rows: config.handwritingRows,
+      paperStyle: config.handwritingPaperStyle,
+      fontSize: config.handwritingFontSize,
+    },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -772,6 +788,7 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'figureGround': result = generateFigureGroundMode(config); break;
     case 'closure': result = generateClosureMode(config); break;
     case 'traceName': result = generateTraceNameMode(config); break;
+    case 'handwriting': result = generateHandwritingMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {
