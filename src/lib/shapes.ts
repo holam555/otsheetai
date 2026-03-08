@@ -52,6 +52,13 @@ export interface PatternPuzzle {
   correctIndex: number;
 }
 
+// Mode 4: Find and Count
+export interface CountPuzzle {
+  grid: CellData[][];          // 6x8 grid
+  targetShapes: ShapeName[];   // shapes to count
+  counts: Record<ShapeName, number>; // correct counts
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -64,6 +71,8 @@ export interface WorksheetData {
   missingPuzzles?: MissingPuzzle[];
   // Mode 3
   patternPuzzles?: PatternPuzzle[];
+  // Mode 4
+  countPuzzle?: CountPuzzle;
 }
 
 function randomFrom<T>(arr: T[]): T {
