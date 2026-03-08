@@ -29,6 +29,7 @@ export type HeaderFontSize = 'small' | 'medium' | 'large';
 export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
 export type HandwritingFontSize = 'large' | 'medium' | 'small';
 export type HandwritingFont = 'print' | 'cursive' | 'manuscript' | 'dotted';
+export type HandwritingSubMode = 'sentence' | 'wordBoxes';
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
@@ -53,6 +54,8 @@ export interface WorksheetConfig {
   handwritingFontSize: HandwritingFontSize;
   handwritingFontSizeMm: number;
   handwritingFont: HandwritingFont;
+  handwritingSubMode: HandwritingSubMode;
+  handwritingWords: string;
 }
 
 export interface CellData {
