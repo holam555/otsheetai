@@ -1179,11 +1179,16 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       // Blank colored tri-lines below
       const triStartY = startY + rowH;
       const remainH = availableH - rowH;
+      const fontPxBlank = lineH;
+      const capHBlank = fontPxBlank * 0.7;
+      const grassHBlank = capHBlank * 0.15;
+      const triSetHBlank = capHBlank + grassHBlank;
       const setGap = 4 * mmToPx;
-      const setH = lineH + setGap;
+      const setH = triSetHBlank + setGap;
       const blankRows = Math.min(rows - 1, Math.floor(remainH / setH));
       for (let r = 0; r < blankRows; r++) {
-        svg += renderColoredTrilineSet(MARGIN, triStartY + r * setH, lineH, contentW);
+        const blankBaselineY = triStartY + r * setH + capHBlank;
+        svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPxBlank, contentW);
       }
     } else if (containsChinese) {
       const engChars = allChars.filter(ch => !isChinese(ch));
