@@ -28,6 +28,10 @@ const defaultConfig: WorksheetConfig = {
   handwritingFont: 'print',
   handwritingSubMode: 'sentence',
   handwritingWords: '',
+  handwritingShowHighlight: true,
+  handwritingShowColoredLines: true,
+  handwritingLineColor: 'red',
+  handwritingHighlightColor: 'blue',
 };
 
 export default function Index() {
