@@ -1079,7 +1079,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const capH = fontPxTrace * 0.7;
     const grassH = capH * 0.15;
     const traceBaselineY = blockY + labelH + capH;
-    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW);
+    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
     svg += renderTextOnTriline(chars, colX, traceBaselineY, fontPxTrace, colW, fontFamily, '#94A3B8', true);
 
     // 3. Adaptive word boxes
