@@ -19,7 +19,8 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName';
+export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -42,6 +43,7 @@ export interface WorksheetConfig {
   borderStyle: BorderStyle;
   headerFontSize: HeaderFontSize;
   headerBold: boolean;
+  oddOneOutType: OddOneOutType;
 }
 
 export interface CellData {
@@ -84,6 +86,13 @@ export interface SequencePuzzle {
 export interface OddOneOutRow {
   items: CellData[];
   oddIndex: number;
+  textItems?: string[];
+  oddText?: string;
+}
+
+export interface TraceNameData {
+  letters: string[];
+  sections: string[][];
 }
 
 export interface MirrorPuzzle {
@@ -120,6 +129,7 @@ export interface WorksheetData {
   mirrorPuzzles?: MirrorPuzzle[];
   figureGroundPuzzle?: FigureGroundPuzzle;
   closurePuzzles?: ClosurePuzzle[];
+  traceNameData?: TraceNameData;
 }
 
 function randomFrom<T>(arr: T[]): T {
@@ -452,6 +462,12 @@ function generateSequenceMode(config: WorksheetConfig): WorksheetData {
 
 // ========== MODE 7: ODD ONE OUT ==========
 function generateOddOneOutMode(config: WorksheetConfig): WorksheetData {
+  if (config.oddOneOutType === 'letters') return generateOddOneOutLetters(config);
+  if (config.oddOneOutType === 'numbers') return generateOddOneOutNumbers(config);
+  return generateOddOneOutShapes(config);
+}
+
+function generateOddOneOutShapes(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
   const rows: OddOneOutRow[] = [];
   const rowCount = config.exerciseCount;
@@ -486,6 +502,114 @@ function generateOddOneOutMode(config: WorksheetConfig): WorksheetData {
     mode: 'oddOneOut',
     instructions: 'Circle the odd one out in each row!',
     skillLabel: 'Visual Discrimination',
+    oddOneOutRows: rows,
+  };
+}
+
+function generateOddOneOutLetters(config: WorksheetConfig): WorksheetData {
+  const SIMILAR_LETTERS: Record<string, string[]> = {
+    b: ['d', 'p', 'q'], d: ['b', 'p', 'q'], p: ['b', 'd', 'q'], q: ['b', 'd', 'p'],
+    E: ['F'], F: ['E'], m: ['n'], n: ['m'], M: ['N', 'W'], N: ['M'], C: ['G'], G: ['C'],
+  };
+  const CASE_VARIANTS: Record<string, string> = {
+    a: 'A', A: 'a', b: 'B', B: 'b', c: 'C', C: 'c', d: 'D', D: 'd', e: 'E', E: 'e',
+    f: 'F', F: 'f', g: 'G', G: 'g', h: 'H', H: 'h', i: 'I', I: 'i', j: 'J', J: 'j',
+    k: 'K', K: 'k', l: 'L', L: 'l', m: 'M', M: 'm', n: 'N', N: 'n', o: 'O', O: 'o',
+    p: 'P', P: 'p', q: 'Q', Q: 'q', r: 'R', R: 'r', s: 'S', S: 's', t: 'T', T: 't',
+    u: 'U', U: 'u', v: 'V', V: 'v', w: 'W', W: 'w', x: 'X', X: 'x', y: 'Y', Y: 'y', z: 'Z', Z: 'z',
+  };
+  const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const easyPairs = [
+    ['A', 'B'], ['C', 'M'], ['O', 'X'], ['P', 'W'], ['H', 'S'], ['D', 'K'], ['E', 'Z'], ['G', 'T'],
+  ];
+  const mediumBase = ['b', 'd', 'E', 'F', 'M', 'N', 'C', 'G'];
+  const hardBase = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+  const rows: OddOneOutRow[] = [];
+  const rowCount = config.exerciseCount;
+
+  for (let r = 0; r < rowCount; r++) {
+    const oddIndex = Math.floor(Math.random() * 5);
+    let baseLetter: string;
+    let oddLetter: string;
+
+    if (config.difficulty === 'easy') {
+      const pair = easyPairs[r % easyPairs.length];
+      baseLetter = pair[0];
+      oddLetter = pair[1];
+    } else if (config.difficulty === 'medium') {
+      baseLetter = mediumBase[r % mediumBase.length];
+      const similar = SIMILAR_LETTERS[baseLetter] || [];
+      oddLetter = similar.length > 0 ? randomFrom(similar) : randomFrom(allLetters.filter(l => l !== baseLetter));
+    } else {
+      baseLetter = hardBase[r % hardBase.length];
+      oddLetter = CASE_VARIANTS[baseLetter] || baseLetter.toUpperCase();
+    }
+
+    const textItems: string[] = [];
+    const items: CellData[] = [];
+    for (let i = 0; i < 5; i++) {
+      textItems.push(i === oddIndex ? oddLetter : baseLetter);
+      items.push({ shape: 'circle' }); // placeholder
+    }
+    rows.push({ items, oddIndex, textItems, oddText: oddLetter });
+  }
+
+  return {
+    mode: 'oddOneOut',
+    instructions: 'Circle the odd letter in each row!',
+    skillLabel: 'Visual Discrimination · Letter Recognition',
+    oddOneOutRows: rows,
+  };
+}
+
+function generateOddOneOutNumbers(config: WorksheetConfig): WorksheetData {
+  const SIMILAR_NUMBERS: Record<string, string[]> = {
+    '6': ['9'], '9': ['6'], '1': ['7', 'l'], '7': ['1'], '2': ['Z'], '5': ['S'], '0': ['O'], '3': ['8'], '8': ['3'],
+  };
+  const easyPairs = [
+    ['3', '7'], ['1', '4'], ['2', '5'], ['6', '8'], ['0', '9'], ['4', '7'], ['1', '2'], ['5', '8'],
+  ];
+  const mediumBase = ['6', '9', '1', '7', '2', '5', '0', '3'];
+  const hardPairs = [
+    ['2', 'Z'], ['5', 'S'], ['0', 'O'], ['1', 'l'], ['8', 'B'], ['6', 'b'], ['9', 'q'], ['3', 'E'],
+  ];
+
+  const rows: OddOneOutRow[] = [];
+  const rowCount = config.exerciseCount;
+
+  for (let r = 0; r < rowCount; r++) {
+    const oddIndex = Math.floor(Math.random() * 5);
+    let baseChar: string;
+    let oddChar: string;
+
+    if (config.difficulty === 'easy') {
+      const pair = easyPairs[r % easyPairs.length];
+      baseChar = pair[0];
+      oddChar = pair[1];
+    } else if (config.difficulty === 'medium') {
+      baseChar = mediumBase[r % mediumBase.length];
+      const similar = SIMILAR_NUMBERS[baseChar] || [];
+      oddChar = similar.length > 0 ? randomFrom(similar) : String((parseInt(baseChar) + 3) % 10);
+    } else {
+      const pair = hardPairs[r % hardPairs.length];
+      baseChar = pair[0];
+      oddChar = pair[1];
+    }
+
+    const textItems: string[] = [];
+    const items: CellData[] = [];
+    for (let i = 0; i < 5; i++) {
+      textItems.push(i === oddIndex ? oddChar : baseChar);
+      items.push({ shape: 'circle' }); // placeholder
+    }
+    rows.push({ items, oddIndex, textItems, oddText: oddChar });
+  }
+
+  return {
+    mode: 'oddOneOut',
+    instructions: 'Circle the odd number in each row!',
+    skillLabel: 'Visual Discrimination · Number Recognition',
     oddOneOutRows: rows,
   };
 }
@@ -603,6 +727,23 @@ function generateClosureMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 11: TRACE YOUR NAME ==========
+function generateTraceNameMode(config: WorksheetConfig): WorksheetData {
+  const name = (config.childName || 'NAME').toUpperCase().replace(/[^A-Z]/g, '');
+  const letters = name.split('');
+  const sections: string[][] = [];
+  for (let i = 0; i < letters.length; i += 5) {
+    sections.push(letters.slice(i, i + 5));
+  }
+
+  return {
+    mode: 'traceName',
+    instructions: `Trace the letters of your name!`,
+    skillLabel: 'Handwriting · Fine Motor',
+    traceNameData: { letters, sections },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -616,6 +757,7 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'mirror': result = generateMirrorMode(config); break;
     case 'figureGround': result = generateFigureGroundMode(config); break;
     case 'closure': result = generateClosureMode(config); break;
+    case 'traceName': result = generateTraceNameMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {

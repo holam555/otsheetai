@@ -1,4 +1,5 @@
 import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
+import { LETTER_PATHS, StrokePoint } from '@/lib/letterPaths';
 
 interface Props {
   config: WorksheetConfig;
@@ -73,6 +74,8 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderFigureGroundMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'closure') {
     bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'traceName') {
+    bodySVG = renderTraceNameMode(config, data);
   }
 
   const svgContent = `
@@ -530,17 +533,29 @@ function renderOddOneOutMode(
   const totalRowW = 5 * cellSz + 4 * 16;
   const rowStartX = (W - totalRowW) / 2;
 
+  const isText = rows.length > 0 && rows[0].textItems && rows[0].textItems.length > 0;
+  const fontSize = config.difficulty === 'easy' ? Math.min(cellSz * 0.7, 36) : config.difficulty === 'medium' ? Math.min(cellSz * 0.6, 28) : Math.min(cellSz * 0.5, 22);
+
   rows.forEach((row, rIdx) => {
     const rowY = startY + rIdx * rowH + (rowH - cellSz) / 2;
 
     svg += `<text x="${rowStartX - 18}" y="${rowY + cellSz / 2 + 4}" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#64748B">${rIdx + 1}.</text>`;
 
-    row.items.forEach((cell, i) => {
-      const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
-      const cy = rowY + cellSz / 2;
-      svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
-      svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
-    });
+    if (isText && row.textItems) {
+      row.textItems.forEach((char, i) => {
+        const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
+        const cy = rowY + cellSz / 2;
+        svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
+        svg += `<text x="${cx}" y="${cy + fontSize * 0.35}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="600" fill="#1E293B">${char}</text>`;
+      });
+    } else {
+      row.items.forEach((cell, i) => {
+        const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
+        const cy = rowY + cellSz / 2;
+        svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
+        svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+      });
+    }
   });
 
   if (config.showAnswerKey) {
@@ -720,6 +735,116 @@ function renderClosureMode(
     const answers = puzzles.map((p, i) => `${i + 1}→${String.fromCharCode(65 + p.correctIndex)}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
   }
+
+  return svg;
+}
+
+// ========== MODE 11: TRACE YOUR NAME ==========
+function renderTraceNameMode(
+  config: WorksheetConfig,
+  data: WorksheetData,
+) {
+  const traceData = data.traceNameData!;
+  if (!traceData || traceData.letters.length === 0) {
+    return `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="16" fill="#94A3B8">Enter a name to generate tracing worksheet</text>`;
+  }
+
+  let svg = '';
+  const letterH = config.difficulty === 'easy' ? 60 : config.difficulty === 'medium' ? 50 : 40;
+  const letterW = letterH * 0.7;
+  const startY = MARGIN + 90;
+  const availH = H - startY - MARGIN - 35;
+
+  // For each section of up to 5 letters
+  const sectionCount = traceData.sections.length;
+  const sectionH = availH / sectionCount;
+
+  traceData.sections.forEach((section, sIdx) => {
+    const secY = startY + sIdx * sectionH;
+    const totalLetterW = section.length * (letterW + 12) - 12;
+    const secStartX = (W - totalLetterW) / 2;
+
+    // 3 rows: reference, dot-trace, blank
+    const rowLabels = ['Reference', 'Trace', 'Write'];
+    const rowH = Math.min(sectionH / 3 - 4, letterH + 20);
+
+    for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
+      const rowY = secY + rowIdx * rowH;
+
+      // Row label
+      svg += `<text x="${MARGIN}" y="${rowY + rowH / 2 + 4}" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${rowLabels[rowIdx]}</text>`;
+
+      // Baseline
+      svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4}" stroke="#E2E8F0" stroke-width="1" />`;
+      // Midline (dashed)
+      svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4 - letterH / 2}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4 - letterH / 2}" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4" />`;
+      // Topline
+      svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4 - letterH}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4 - letterH}" stroke="#E2E8F0" stroke-width="0.5" />`;
+
+      section.forEach((letter, lIdx) => {
+        const lx = secStartX + lIdx * (letterW + 12);
+        const ly = rowY + rowH - 4 - letterH; // top of letter area
+        const strokes = LETTER_PATHS[letter];
+        if (!strokes) return;
+
+        if (rowIdx === 0) {
+          // Reference: solid light grey letter
+          strokes.forEach(stroke => {
+            if (stroke.length < 2) return;
+            const points = stroke.map(([px, py]: StrokePoint) =>
+              `${lx + px * letterW},${ly + py * letterH}`
+            ).join(' ');
+            svg += `<polyline points="${points}" fill="none" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
+          });
+        } else if (rowIdx === 1) {
+          // Dot-trace: dots along the stroke path
+          strokes.forEach((stroke, strokeIdx) => {
+            if (stroke.length < 2) return;
+            // Draw dots along the path
+            const dotSpacing = config.difficulty === 'easy' ? 6 : config.difficulty === 'medium' ? 8 : 10;
+            const dotR = config.difficulty === 'easy' ? 2.5 : 2;
+
+            // Interpolate points along each segment
+            for (let si = 0; si < stroke.length - 1; si++) {
+              const [x1, y1] = stroke[si];
+              const [x2, y2] = stroke[si + 1];
+              const segLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * letterW;
+              const dots = Math.max(2, Math.ceil(segLen / dotSpacing));
+
+              for (let d = 0; d <= dots; d++) {
+                const t = d / dots;
+                const dx = lx + (x1 + (x2 - x1) * t) * letterW;
+                const dy = ly + (y1 + (y2 - y1) * t) * letterH;
+                svg += `<circle cx="${dx}" cy="${dy}" r="${dotR}" fill="#94A3B8" />`;
+              }
+            }
+
+            // Starting dot (large green) for first stroke
+            if (strokeIdx === 0) {
+              const [sx, sy] = stroke[0];
+              const startX = lx + sx * letterW;
+              const startY2 = ly + sy * letterH;
+              svg += `<circle cx="${startX}" cy="${startY2}" r="4.5" fill="#22C55E" />`;
+
+              // Arrow showing direction
+              if (stroke.length >= 2) {
+                const [nx, ny] = stroke[1];
+                const endX = lx + nx * letterW;
+                const endY = ly + ny * letterH;
+                const angle = Math.atan2(endY - startY2, endX - startX);
+                const arrowLen = 10;
+                const ax = startX + Math.cos(angle) * arrowLen;
+                const ay = startY2 + Math.sin(angle) * arrowLen;
+                svg += `<line x1="${startX}" y1="${startY2}" x2="${ax}" y2="${ay}" stroke="#22C55E" stroke-width="1.5" />`;
+                svg += `<polygon points="${ax},${ay} ${ax - 4 * Math.cos(angle - 0.5)},${ay - 4 * Math.sin(angle - 0.5)} ${ax - 4 * Math.cos(angle + 0.5)},${ay - 4 * Math.sin(angle + 0.5)}" fill="#22C55E" />`;
+              }
+            }
+          });
+        }
+        // rowIdx === 2: blank row, just the guidelines (already drawn above)
+      });
+    }
+  });
 
   return svg;
 }
