@@ -277,11 +277,61 @@ function generatePatternMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 4: FIND AND COUNT ==========
+function generateCountMode(config: WorksheetConfig): WorksheetData {
+  const shapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const ROWS = 8;
+  const COLS = 6;
+  const totalCells = ROWS * COLS;
+
+  // Pick target shapes based on difficulty
+  const targetCount = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 4 : Math.min(5, shapes.length);
+  const targetShapes = pickN(shapes, targetCount);
+
+  // Fill grid with random shapes from targets (plus extra distractors on hard)
+  const pool = config.difficulty === 'hard'
+    ? [...targetShapes, ...shapes.filter(s => !targetShapes.includes(s))]
+    : targetShapes;
+
+  const cells: CellData[] = [];
+  for (let i = 0; i < totalCells; i++) {
+    cells.push({
+      shape: randomFrom(pool),
+      rotation: getDifficultyRotation(config.difficulty),
+    });
+  }
+
+  const shuffled = shuffle(cells);
+  const grid: CellData[][] = [];
+  for (let r = 0; r < ROWS; r++) {
+    grid.push(shuffled.slice(r * COLS, (r + 1) * COLS));
+  }
+
+  // Count occurrences
+  const counts: Record<string, number> = {};
+  targetShapes.forEach(s => counts[s] = 0);
+  grid.forEach(row => row.forEach(cell => {
+    if (counts[cell.shape] !== undefined) counts[cell.shape]++;
+  }));
+
+  return {
+    mode: 'count',
+    instructions: 'Count how many of each shape you can find!',
+    skillLabel: 'Visual Scanning · Figure-Ground',
+    countPuzzle: {
+      grid,
+      targetShapes,
+      counts: counts as Record<ShapeName, number>,
+    },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   switch (config.mode) {
     case 'find': return generateFindMode(config);
     case 'missing': return generateMissingMode(config);
     case 'pattern': return generatePatternMode(config);
+    case 'count': return generateCountMode(config);
   }
 }
 
