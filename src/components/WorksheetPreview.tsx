@@ -1004,22 +1004,58 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
   } else {
     // Tri-line mode
     if (allChinese) {
-      // All Chinese on tri-line → auto-switch to grid box
-      const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙) — auto for Chinese');
-      svg += result.svg;
+      // Chinese on tri-line: first row = grid boxes with ghost chars, remaining = blank tri-lines
+      const rowH = boxSize + gapBetweenSets * 0.5;
+      const maxCols = Math.floor(contentW / boxSize);
+      const charCount = Math.min(allChars.length, maxCols);
+
+      // Row 1: grid boxes with ghost characters
+      for (let c = 0; c < charCount; c++) {
+        const bx = MARGIN + c * boxSize;
+        const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
+        svg += `<rect x="${bx}" y="${startY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
+        const ch = allChars[c];
+        const charFontPx = boxSize * 0.65;
+        if (isDotted) {
+          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
+        } else {
+          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
+        }
+      }
+
+      // Remaining rows: blank tri-lines for practice
+      const triStartY = startY + rowH;
+      const remainH = availableH - rowH;
+      const blankResult = renderTrilineRows([], rows - 1, triStartY, remainH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
+      svg += blankResult.svg;
     } else if (containsChinese) {
-      // Mixed: English tri-line rows, then Chinese grid box rows
-      const engChars = allChars.filter(ch => !isChinese(ch));
+      // Mixed: first row = grid boxes for Chinese chars, then tri-line rows for English + blank practice
       const chnChars = allChars.filter(isChinese);
-      const engRows = Math.max(1, Math.floor(rows / 2));
-      const chnRows = Math.max(1, Math.ceil(rows / 2));
-      const engH = availableH * 0.5;
-      const triResult = renderTrilineRows(engChars, engRows, startY, engH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'English — Tri-line');
+      const engChars = allChars.filter(ch => !isChinese(ch));
+      const rowH = boxSize + gapBetweenSets * 0.5;
+      const maxCols = Math.floor(contentW / boxSize);
+      const charCount = Math.min(chnChars.length, maxCols);
+
+      // Chinese grid box row
+      svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Chinese — Grid Box (方格紙)</text>`;
+      for (let c = 0; c < charCount; c++) {
+        const bx = MARGIN + c * boxSize;
+        const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
+        svg += `<rect x="${bx}" y="${startY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
+        const ch = chnChars[c];
+        const charFontPx = boxSize * 0.65;
+        if (isDotted) {
+          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
+        } else {
+          svg += `<text x="${bx + boxSize / 2}" y="${startY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
+        }
+      }
+
+      // English tri-line rows below
+      const triStartY = startY + rowH + gapBetweenSets * 0.5;
+      const remainH = availableH - rowH - gapBetweenSets * 0.5;
+      const triResult = renderTrilineRows(engChars, Math.max(1, rows - 1), triStartY, remainH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'English — Tri-line');
       svg += triResult.svg;
-      const gridStartY = startY + triResult.usedH + gapBetweenSets;
-      const remainH = availableH - triResult.usedH - gapBetweenSets;
-      const gridResult = renderGridBoxRows(chnChars, chnRows, gridStartY, remainH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Chinese — Grid Box (方格紙)');
-      svg += gridResult.svg;
     } else {
       // Pure English: normal tri-line
       const result = renderTrilineRows(allChars, rows, startY, availableH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
