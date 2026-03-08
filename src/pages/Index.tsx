@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { WorksheetConfig, generateWorksheet, CellData, ShapeName } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes';
 import WorksheetControls from '@/components/WorksheetControls';
 import WorksheetPreview from '@/components/WorksheetPreview';
 
@@ -16,11 +16,7 @@ const defaultConfig: WorksheetConfig = {
 
 export default function Index() {
   const [config, setConfig] = useState<WorksheetConfig>(defaultConfig);
-  const [worksheetData, setWorksheetData] = useState<{
-    grid: CellData[][];
-    targetShape?: ShapeName;
-    instructions: string;
-  }>(() => generateWorksheet(defaultConfig));
+  const [worksheetData, setWorksheetData] = useState<WorksheetData>(() => generateWorksheet(defaultConfig));
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
@@ -32,7 +28,6 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="no-print border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -53,10 +48,8 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="grid lg:grid-cols-[340px_1fr] gap-6">
-          {/* Controls */}
           <aside className="no-print">
             <div className="bg-card rounded-xl border border-border p-5 sticky top-20">
               <h2 className="font-display text-base font-bold text-foreground mb-4">Worksheet Settings</h2>
@@ -69,15 +62,9 @@ export default function Index() {
             </div>
           </aside>
 
-          {/* Preview */}
           <div className="flex justify-center">
             <div className="w-full max-w-[520px]">
-              <WorksheetPreview
-                config={config}
-                grid={worksheetData.grid}
-                targetShape={worksheetData.targetShape}
-                instructions={worksheetData.instructions}
-              />
+              <WorksheetPreview config={config} data={worksheetData} />
             </div>
           </div>
         </div>
