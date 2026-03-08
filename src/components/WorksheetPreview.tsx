@@ -897,7 +897,7 @@ const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
 function renderColoredTrilineSet(
   x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
 ): string {
-  const zoneH = fontPx * 0.7;
+  const zoneH = Math.max(fontPx * 0.7, 20 * 2.833); // min 20mm between top and bottom lines
   const topY = baselineY - zoneH;
   const midY = baselineY - zoneH / 2; // exact midpoint
   const botY = baselineY;
@@ -926,24 +926,19 @@ function renderColoredTrilineSet(
   return svg;
 }
 
-// Render text on tri-lines — text y = baselineY exactly
+// Render text on tri-lines — text y = baselineY exactly, natural letter spacing
 function renderTextOnTriline(
   chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
   fontFamily: string, color: string, isDottedTrace: boolean
 ): string {
   if (chars.length === 0) return '';
-  const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
-  let svg = '';
-  for (let c = 0; c < chars.length; c++) {
-    const cx = x + 4 + c * charW + charW / 2;
-    if (cx > x + contentW) break;
-    if (isDottedTrace) {
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
-    } else {
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
-    }
+  const textStr = chars.map(escapeXml).join('');
+  const tx = x + 4;
+  if (isDottedTrace) {
+    return `<text x="${tx}" y="${baselineY}" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2" letter-spacing="0">${textStr}</text>`;
+  } else {
+    return `<text x="${tx}" y="${baselineY}" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}" letter-spacing="0">${textStr}</text>`;
   }
-  return svg;
 }
 
 // Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
@@ -954,7 +949,7 @@ function renderSentenceTrilineMode(
 ): string {
   const mmToPx = 2.833;
   const fontPx = lineH; // lineH in px IS the font size
-  const zoneH = fontPx * 0.7; // top-to-bottom line distance
+  const zoneH = Math.max(fontPx * 0.7, 20 * mmToPx); // min 20mm between top and bottom lines
   const grassH = zoneH * 0.15;
   const triSetH = zoneH + grassH; // total visual height of one tri-line set
   const groupGap = 12 * mmToPx;
@@ -971,13 +966,9 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text in solid black above the tri-line
-    const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
-    for (let c = 0; c < allChars.length; c++) {
-      const cx = MARGIN + 4 + c * charW + charW / 2;
-      if (cx > W - MARGIN) break;
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="600" fill="#1E293B">${escapeXml(allChars[c])}</text>`;
-    }
+    // Row 1: Reference text in solid black above the tri-line (natural spacing)
+    const refText = allChars.map(escapeXml).join('');
+    svg += `<text x="${MARGIN + 4}" y="${groupY + refTextH * 0.85}" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="600" fill="#1E293B" letter-spacing="0">${refText}</text>`;
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
@@ -1079,7 +1070,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
 
     // 2. Tri-line trace with colored lines — baseline-anchored
     const fontPxTrace = lineH;
-    const zoneH = fontPxTrace * 0.7;
+    const zoneH = Math.max(fontPxTrace * 0.7, 20 * mmToPx);
     const grassH = zoneH * 0.15;
     const traceFontPx = zoneH / 0.72; // auto-size so ascenders fill zone
     const traceBaselineY = blockY + labelH + zoneH;
@@ -1199,7 +1190,7 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       const triStartY = startY + rowH;
       const remainH = availableH - rowH;
       const fontPxBlank = lineH;
-      const zoneHBlank = fontPxBlank * 0.7;
+      const zoneHBlank = Math.max(fontPxBlank * 0.7, 20 * mmToPx);
       const grassHBlank = zoneHBlank * 0.15;
       const triSetHBlank = zoneHBlank + grassHBlank;
       const setGap = 4 * mmToPx;
