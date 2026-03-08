@@ -26,6 +26,8 @@ const defaultConfig: WorksheetConfig = {
   handwritingFontSize: 'large',
   handwritingFontSizeMm: 15,
   handwritingFont: 'print',
+  handwritingSubMode: 'sentence',
+  handwritingWords: '',
 };
 
 export default function Index() {
