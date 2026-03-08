@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
 
 interface Props {
   config: WorksheetConfig;
