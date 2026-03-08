@@ -1079,11 +1079,12 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
 
     // 2. Tri-line trace with colored lines — baseline-anchored
     const fontPxTrace = lineH;
-    const capH = fontPxTrace * 0.7;
-    const grassH = capH * 0.15;
-    const traceBaselineY = blockY + labelH + capH;
+    const zoneH = fontPxTrace * 0.7;
+    const grassH = zoneH * 0.15;
+    const traceFontPx = zoneH / 0.72; // auto-size so ascenders fill zone
+    const traceBaselineY = blockY + labelH + zoneH;
     svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-    svg += renderTextOnTriline(chars, colX, traceBaselineY, fontPxTrace, colW, fontFamily, '#94A3B8', true);
+    svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true);
 
     // 3. Adaptive word boxes
     const boxesY = traceBaselineY + grassH + gapBetweenParts;
