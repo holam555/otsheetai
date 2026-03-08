@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes';
 import WorksheetControls from '@/components/WorksheetControls';
 import WorksheetPreview from '@/components/WorksheetPreview';
@@ -17,6 +17,11 @@ const defaultConfig: WorksheetConfig = {
 export default function Index() {
   const [config, setConfig] = useState<WorksheetConfig>(defaultConfig);
   const [worksheetData, setWorksheetData] = useState<WorksheetData>(() => generateWorksheet(defaultConfig));
+
+  // Auto-regenerate when mode, gridSize, shapeSet, or difficulty changes
+  useEffect(() => {
+    setWorksheetData(generateWorksheet(config));
+  }, [config.mode, config.gridSize, config.shapeSet, config.difficulty]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
