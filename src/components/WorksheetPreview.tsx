@@ -924,18 +924,19 @@ function renderColoredTrilineSet(
   return svg;
 }
 
-// Render text on tri-lines — text y = baselineY exactly, natural letter spacing
+// Render copybook-style dotted trace text on tri-lines
+// Trace: fill=none, stroke=#c0c0c0, stroke-width=2, stroke-dasharray=3 4
 function renderTextOnTriline(
   chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
-  fontFamily: string, color: string, isDottedTrace: boolean
+  fontFamily: string, _color: string, isDottedTrace: boolean
 ): string {
   if (chars.length === 0) return '';
   const textStr = chars.map(escapeXml).join('');
   const tx = x + 4;
   if (isDottedTrace) {
-    return `<text x="${tx}" y="${baselineY}" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2" letter-spacing="0">${textStr}</text>`;
+    return `<text x="${tx}" y="${baselineY}" font-family="'Nunito', ${fontFamily}" font-size="${fontPx}" font-weight="700" fill="none" stroke="#c0c0c0" stroke-width="2" stroke-dasharray="3 4" letter-spacing="0">${textStr}</text>`;
   } else {
-    return `<text x="${tx}" y="${baselineY}" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}" letter-spacing="0">${textStr}</text>`;
+    return `<text x="${tx}" y="${baselineY}" font-family="'Nunito', ${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${_color}" letter-spacing="0">${textStr}</text>`;
   }
 }
 
