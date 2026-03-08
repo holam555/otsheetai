@@ -892,16 +892,17 @@ const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
 };
 
 // Colored tri-line set (HWT-style) anchored to text baseline
+// zoneH (top-to-bottom line distance) = fontPx * 0.7
+// Middle dotted line is at exact midpoint between top and bottom lines
 function renderColoredTrilineSet(
   x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
 ): string {
-  const capHeight = fontPx * 0.7;
-  const xHeight = fontPx * 0.5;
-  const topY = baselineY - capHeight;
-  const midY = baselineY - xHeight;
+  const zoneH = fontPx * 0.7;
+  const topY = baselineY - zoneH;
+  const midY = baselineY - zoneH / 2; // exact midpoint
   const botY = baselineY;
-  const skyH = capHeight * 0.2;
-  const grassH = capHeight * 0.15;
+  const skyH = zoneH * 0.2;
+  const grassH = zoneH * 0.15;
 
   const useColor = config.handwritingShowColoredLines;
   const lineColor = useColor ? (LINE_COLOR_MAP[config.handwritingLineColor] || '#DC2626') : '#94A3B8';
@@ -953,9 +954,9 @@ function renderSentenceTrilineMode(
 ): string {
   const mmToPx = 2.833;
   const fontPx = lineH; // lineH in px IS the font size
-  const capHeight = fontPx * 0.7;
-  const grassH = capHeight * 0.15;
-  const triSetH = capHeight + grassH; // total visual height of one tri-line set
+  const zoneH = fontPx * 0.7; // top-to-bottom line distance
+  const grassH = zoneH * 0.15;
+  const triSetH = zoneH + grassH; // total visual height of one tri-line set
   const groupGap = 12 * mmToPx;
   const setGap = 6 * mmToPx;
   const refFontPx = fontPx * 0.55;
@@ -963,6 +964,8 @@ function renderSentenceTrilineMode(
   const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
+  // Auto-calculate trace font size so ascenders fill the zone
+  const traceFontPx = zoneH / 0.72;
   let svg = '';
 
   for (let g = 0; g < maxGroups; g++) {
@@ -977,13 +980,13 @@ function renderSentenceTrilineMode(
     }
 
     // Row 2: Dotted trace on colored tri-lines
-    // baseline sits at top of group + refTextH + capHeight (so cap tops touch top line)
-    const traceBaselineY = groupY + refTextH + capHeight;
+    // baseline = botY of the tri-line set; topY = baselineY - zoneH
+    const traceBaselineY = groupY + refTextH + zoneH;
     svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
-    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, fontPx, contentW, fontFamily, '#94A3B8', true);
+    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, fontFamily, '#94A3B8', true);
 
     // Row 3: Blank colored tri-lines for independent writing
-    const blankBaselineY = traceBaselineY + grassH + setGap + capHeight;
+    const blankBaselineY = traceBaselineY + grassH + setGap + zoneH;
     svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW, config);
   }
 
@@ -1076,11 +1079,12 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
 
     // 2. Tri-line trace with colored lines — baseline-anchored
     const fontPxTrace = lineH;
-    const capH = fontPxTrace * 0.7;
-    const grassH = capH * 0.15;
-    const traceBaselineY = blockY + labelH + capH;
+    const zoneH = fontPxTrace * 0.7;
+    const grassH = zoneH * 0.15;
+    const traceFontPx = zoneH / 0.72; // auto-size so ascenders fill zone
+    const traceBaselineY = blockY + labelH + zoneH;
     svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-    svg += renderTextOnTriline(chars, colX, traceBaselineY, fontPxTrace, colW, fontFamily, '#94A3B8', true);
+    svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true);
 
     // 3. Adaptive word boxes
     const boxesY = traceBaselineY + grassH + gapBetweenParts;
@@ -1195,14 +1199,14 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       const triStartY = startY + rowH;
       const remainH = availableH - rowH;
       const fontPxBlank = lineH;
-      const capHBlank = fontPxBlank * 0.7;
-      const grassHBlank = capHBlank * 0.15;
-      const triSetHBlank = capHBlank + grassHBlank;
+      const zoneHBlank = fontPxBlank * 0.7;
+      const grassHBlank = zoneHBlank * 0.15;
+      const triSetHBlank = zoneHBlank + grassHBlank;
       const setGap = 4 * mmToPx;
       const setH = triSetHBlank + setGap;
       const blankRows = Math.min(rows - 1, Math.floor(remainH / setH));
       for (let r = 0; r < blankRows; r++) {
-        const blankBaselineY = triStartY + r * setH + capHBlank;
+        const blankBaselineY = triStartY + r * setH + zoneHBlank;
         svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPxBlank, contentW, config);
       }
     } else if (containsChinese) {
