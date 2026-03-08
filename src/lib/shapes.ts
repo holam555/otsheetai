@@ -86,6 +86,13 @@ export interface SequencePuzzle {
 export interface OddOneOutRow {
   items: CellData[];
   oddIndex: number;
+  textItems?: string[];
+  oddText?: string;
+}
+
+export interface TraceNameData {
+  letters: string[];
+  sections: string[][];
 }
 
 export interface MirrorPuzzle {

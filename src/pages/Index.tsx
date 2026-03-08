@@ -19,6 +19,7 @@ const defaultConfig: WorksheetConfig = {
   borderStyle: 'plain',
   headerFontSize: 'medium',
   headerBold: false,
+  oddOneOutType: 'shapes',
 };
 
 export default function Index() {
