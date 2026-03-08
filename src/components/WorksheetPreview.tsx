@@ -26,11 +26,28 @@ function getCellBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', wi
 }
 
 export default function WorksheetPreview({ config, data }: Props) {
-  const getFill = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_FILL;
-  const getStroke = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_STROKE;
-  const getStrokeW = () => config.useColor ? 1.5 : 2.5;
+  const hc = config.highContrast;
+  const getFill = (shape: ShapeName) => {
+    if (hc) return 'none';
+    return config.useColor ? SHAPE_COLORS[shape] : BW_FILL;
+  };
+  const getStroke = (shape: ShapeName) => {
+    if (hc) return '#000000';
+    return config.useColor ? SHAPE_COLORS[shape] : BW_STROKE;
+  };
+  const getStrokeW = () => hc ? 3.5 : config.useColor ? 1.5 : 2.5;
 
-  const shapeScale = config.difficulty === 'easy' ? 1.15 : config.difficulty === 'medium' ? 1.0 : 0.85;
+  const cellScale = config.largeCells ? 1.35 : 1.0;
+  const shapeScale = (config.difficulty === 'easy' ? 1.15 : config.difficulty === 'medium' ? 1.0 : 0.85) * cellScale;
+
+  // High-contrast colors
+  const gridStroke = hc ? '#000000' : '#CBD5E1';
+  const gridLineStroke = hc ? '#000000' : '#E2E8F0';
+  const gridStrokeW = hc ? 3 : 2;
+  const textFill = hc ? '#000000' : '#1E293B';
+  const subtleFill = hc ? '#000000' : '#94A3B8';
+  const headerColor = hc ? '#000000' : '#0D9488';
+  const dividerStroke = hc ? '#000000' : '#E2E8F0';
 
   // Header font sizes
   const nameFontSize = config.headerFontSize === 'small' ? 14 : config.headerFontSize === 'large' ? 24 : 18;
@@ -38,18 +55,64 @@ export default function WorksheetPreview({ config, data }: Props) {
   const ageStr = config.childAge !== null ? ` (Age ${config.childAge})` : '';
   const nameStr = config.childName ? config.childName + ageStr : '___________________';
 
+  // Visual schedule strip
+  const scheduleH = config.showVisualSchedule ? 30 : 0;
+  const rewardH = config.showRewardRow ? 35 : 0;
+  const contentShift = scheduleH;
+
+  let scheduleSVG = '';
+  if (config.showVisualSchedule) {
+    const steps = getVisualScheduleSteps(data.mode);
+    const stepW = (W - MARGIN * 2) / steps.length;
+    const sy = MARGIN + 76 + 4;
+    steps.forEach((step, i) => {
+      const sx = MARGIN + i * stepW + stepW / 2;
+      scheduleSVG += `<text x="${sx}" y="${sy + 10}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="${subtleFill}">${i + 1}. ${step.icon} ${step.label}</text>`;
+      if (i < steps.length - 1) {
+        scheduleSVG += `<text x="${MARGIN + (i + 1) * stepW}" y="${sy + 10}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="${subtleFill}">→</text>`;
+      }
+    });
+    scheduleSVG += `<line x1="${MARGIN}" y1="${sy + 18}" x2="${W - MARGIN}" y2="${sy + 18}" stroke="${dividerStroke}" stroke-width="0.5" />`;
+  }
+
+  let rewardSVG = '';
+  if (config.showRewardRow) {
+    const ry = H - MARGIN - 20 - rewardH;
+    const starCount = 5;
+    const starW = 24;
+    const totalW = starCount * (starW + 8) - 8;
+    const startX = (W - totalW) / 2;
+    rewardSVG += `<text x="${W / 2}" y="${ry - 2}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="9" font-weight="700" fill="${subtleFill}">⭐ Great Work! Colour a star for each row you finish!</text>`;
+    for (let i = 0; i < starCount; i++) {
+      const sx = startX + i * (starW + 8);
+      // Star outline
+      const pts = [];
+      for (let j = 0; j < 5; j++) {
+        const aOuter = (Math.PI / 2 + (2 * Math.PI * j) / 5) * -1 + Math.PI;
+        const aInner = aOuter + Math.PI / 5;
+        const ccx = sx + starW / 2;
+        const ccy = ry + 18;
+        pts.push(`${ccx + Math.cos(aOuter) * 10},${ccy + Math.sin(aOuter) * 10}`);
+        pts.push(`${ccx + Math.cos(aInner) * 4.5},${ccy + Math.sin(aInner) * 4.5}`);
+      }
+      rewardSVG += `<polygon points="${pts.join(' ')}" fill="none" stroke="${subtleFill}" stroke-width="1.5" />`;
+    }
+  }
+
   const headerSVG = `
-    <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="#0D9488">OTsheet.ai</text>
-    <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="#E2E8F0" stroke-width="1" />
-    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${nameStr}</text>
-    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#94A3B8">Date: ____/____/________</text>
-    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="700" fill="#1E293B">${data.instructions}</text>
+    <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="${headerColor}">OTsheet.ai</text>
+    <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="${dividerStroke}" stroke-width="${hc ? 2 : 1}" />
+    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="${textFill}">Name: ${nameStr}</text>
+    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="${subtleFill}">Date: ____/____/________</text>
+    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="700" fill="${textFill}">${data.instructions}</text>
+    ${scheduleSVG}
   `;
 
   const footerSVG = `
-    <line x1="${MARGIN}" y1="${H - MARGIN - 20}" x2="${W - MARGIN}" y2="${H - MARGIN - 20}" stroke="#E2E8F0" stroke-width="1" />
-    <text x="${MARGIN}" y="${H - MARGIN - 4}" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#94A3B8">Skill: ${data.skillLabel}</text>
-    <text x="${W - MARGIN}" y="${H - MARGIN - 4}" text-anchor="end" font-family="Inter, sans-serif" font-size="9" fill="#CBD5E1">Generated by OTsheet.ai</text>
+    ${rewardSVG}
+    <line x1="${MARGIN}" y1="${H - MARGIN - 20}" x2="${W - MARGIN}" y2="${H - MARGIN - 20}" stroke="${dividerStroke}" stroke-width="${hc ? 2 : 1}" />
+    <text x="${MARGIN}" y="${H - MARGIN - 4}" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="${subtleFill}">Skill: ${data.skillLabel}</text>
+    <text x="${W - MARGIN}" y="${H - MARGIN - 4}" text-anchor="end" font-family="Inter, sans-serif" font-size="9" fill="${subtleFill}">Generated by OTsheet.ai</text>
   `;
 
   let bodySVG = '';
@@ -95,6 +158,24 @@ export default function WorksheetPreview({ config, data }: Props) {
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
   );
+}
+
+// Visual schedule step definitions
+function getVisualScheduleSteps(mode: string): { icon: string; label: string }[] {
+  switch (mode) {
+    case 'find': return [{ icon: '👀', label: 'Look' }, { icon: '🔍', label: 'Find' }, { icon: '✏️', label: 'Circle' }, { icon: '✅', label: 'Done' }];
+    case 'missing': return [{ icon: '👀', label: 'Look' }, { icon: '🤔', label: 'Think' }, { icon: '✏️', label: 'Draw' }, { icon: '✅', label: 'Done' }];
+    case 'pattern': return [{ icon: '👀', label: 'Look' }, { icon: '🔗', label: 'Match' }, { icon: '✏️', label: 'Draw line' }, { icon: '✅', label: 'Done' }];
+    case 'count': return [{ icon: '👀', label: 'Look' }, { icon: '🔍', label: 'Find' }, { icon: '🔢', label: 'Count' }, { icon: '✏️', label: 'Write' }];
+    case 'copy': return [{ icon: '👀', label: 'Look' }, { icon: '🤔', label: 'Study' }, { icon: '✏️', label: 'Copy' }, { icon: '✅', label: 'Done' }];
+    case 'sequence': return [{ icon: '👀', label: 'Look' }, { icon: '🤔', label: 'Pattern' }, { icon: '✏️', label: 'Circle' }, { icon: '✅', label: 'Done' }];
+    case 'oddOneOut': return [{ icon: '👀', label: 'Look' }, { icon: '🔍', label: 'Compare' }, { icon: '✏️', label: 'Circle odd' }, { icon: '✅', label: 'Done' }];
+    case 'mirror': return [{ icon: '👀', label: 'Look' }, { icon: '🪞', label: 'Flip' }, { icon: '✏️', label: 'Draw' }, { icon: '✅', label: 'Done' }];
+    case 'figureGround': return [{ icon: '👀', label: 'Look' }, { icon: '🔍', label: 'Find' }, { icon: '🔢', label: 'Count' }, { icon: '✏️', label: 'Write' }];
+    case 'closure': return [{ icon: '👀', label: 'Look' }, { icon: '🤔', label: 'Imagine' }, { icon: '✏️', label: 'Circle' }, { icon: '✅', label: 'Done' }];
+    case 'traceName': return [{ icon: '👀', label: 'Look' }, { icon: '☝️', label: 'Start dot' }, { icon: '✏️', label: 'Trace' }, { icon: '✅', label: 'Done' }];
+    default: return [{ icon: '👀', label: 'Look' }, { icon: '🤔', label: 'Think' }, { icon: '✏️', label: 'Do' }, { icon: '✅', label: 'Done' }];
+  }
 }
 
 // ========== MODE 1: FIND THE SHAPE ==========
