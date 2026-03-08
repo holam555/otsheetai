@@ -14,7 +14,7 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   oval: '#F97316',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -59,6 +59,46 @@ export interface CountPuzzle {
   counts: Record<ShapeName, number>; // correct counts
 }
 
+// Mode 5: Copy the Pattern
+export interface CopyPuzzle {
+  sourceGrid: CellData[][];
+}
+
+// Mode 6: What Comes Next
+export interface SequencePuzzle {
+  sequence: CellData[];  // 4 visible + answer
+  answer: CellData;
+  options: CellData[];   // 3 options
+  correctIndex: number;
+}
+
+// Mode 7: Odd One Out
+export interface OddOneOutRow {
+  items: CellData[];     // 5 items
+  oddIndex: number;
+}
+
+// Mode 8: Mirror Image
+export interface MirrorPuzzle {
+  sourceGrid: (CellData | null)[][];
+  mirroredGrid: (CellData | null)[][];
+}
+
+// Mode 9: Figure Ground
+export interface FigureGroundPuzzle {
+  shapes: { shape: ShapeName; cx: number; cy: number; r: number; rotation: number }[];
+  targetShapes: ShapeName[];
+  counts: Record<ShapeName, number>;
+}
+
+// Mode 10: Visual Closure
+export interface ClosurePuzzle {
+  shape: ShapeName;
+  dashArray: string;
+  options: ShapeName[];
+  correctIndex: number;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -73,6 +113,18 @@ export interface WorksheetData {
   patternPuzzles?: PatternPuzzle[];
   // Mode 4
   countPuzzle?: CountPuzzle;
+  // Mode 5
+  copyPuzzles?: CopyPuzzle[];
+  // Mode 6
+  sequencePuzzles?: SequencePuzzle[];
+  // Mode 7
+  oddOneOutRows?: OddOneOutRow[];
+  // Mode 8
+  mirrorPuzzles?: MirrorPuzzle[];
+  // Mode 9
+  figureGroundPuzzle?: FigureGroundPuzzle;
+  // Mode 10
+  closurePuzzles?: ClosurePuzzle[];
 }
 
 function randomFrom<T>(arr: T[]): T {
@@ -326,12 +378,254 @@ function generateCountMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 5: COPY THE PATTERN ==========
+function generateCopyMode(config: WorksheetConfig): WorksheetData {
+  const shapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const gridSize = config.difficulty === 'easy' ? 3 : 4;
+
+  const puzzles: CopyPuzzle[] = [];
+  for (let p = 0; p < 3; p++) {
+    const cells: CellData[][] = [];
+    for (let r = 0; r < gridSize; r++) {
+      const row: CellData[] = [];
+      for (let c = 0; c < gridSize; c++) {
+        row.push({
+          shape: randomFrom(shapes),
+          rotation: getDifficultyRotation(config.difficulty),
+        });
+      }
+      cells.push(row);
+    }
+    puzzles.push({ sourceGrid: cells });
+  }
+
+  return {
+    mode: 'copy',
+    instructions: 'Copy each pattern into the empty grid!',
+    skillLabel: 'Visual Motor Integration · Spatial Relations',
+    copyPuzzles: puzzles,
+  };
+}
+
+// ========== MODE 6: WHAT COMES NEXT ==========
+function generateSequenceMode(config: WorksheetConfig): WorksheetData {
+  const shapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const puzzles: SequencePuzzle[] = [];
+
+  for (let p = 0; p < 6; p++) {
+    let patternLen: number;
+    if (config.difficulty === 'easy') {
+      patternLen = 2; // AB pattern
+    } else if (config.difficulty === 'medium') {
+      patternLen = randomFrom([2, 3]); // AB or AAB
+    } else {
+      patternLen = 3; // ABC
+    }
+
+    const patternShapes = pickN(shapes, patternLen);
+    // Build repeating sequence of 4 visible items
+    const sequence: CellData[] = [];
+    for (let i = 0; i < 4; i++) {
+      sequence.push({
+        shape: patternShapes[i % patternLen],
+        rotation: getDifficultyRotation(config.difficulty),
+      });
+    }
+    const answer: CellData = {
+      shape: patternShapes[4 % patternLen],
+      rotation: getDifficultyRotation(config.difficulty),
+    };
+
+    // 3 options: 1 correct + 2 distractors
+    const distractorShapes = shapes.filter(s => s !== answer.shape);
+    const options: CellData[] = [
+      answer,
+      { shape: randomFrom(distractorShapes) },
+      { shape: randomFrom(distractorShapes.filter(s => s !== answer.shape)) },
+    ];
+    const indices = shuffle([0, 1, 2]);
+    const shuffledOptions = indices.map(i => options[i]);
+    const correctIndex = indices.indexOf(0);
+
+    puzzles.push({ sequence, answer, options: shuffledOptions, correctIndex });
+  }
+
+  return {
+    mode: 'sequence',
+    instructions: 'What comes next? Circle the correct shape!',
+    skillLabel: 'Visual Sequential Memory · Pattern Recognition',
+    sequencePuzzles: puzzles,
+  };
+}
+
+// ========== MODE 7: ODD ONE OUT ==========
+function generateOddOneOutMode(config: WorksheetConfig): WorksheetData {
+  const shapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const rows: OddOneOutRow[] = [];
+
+  for (let r = 0; r < 8; r++) {
+    const baseShape = randomFrom(shapes);
+    const baseRotation = getDifficultyRotation(config.difficulty);
+    const oddIndex = Math.floor(Math.random() * 5);
+
+    const items: CellData[] = [];
+    for (let i = 0; i < 5; i++) {
+      if (i === oddIndex) {
+        if (config.difficulty === 'easy') {
+          // Completely different shape
+          const diffShape = randomFrom(shapes.filter(s => s !== baseShape));
+          items.push({ shape: diffShape, rotation: 0 });
+        } else if (config.difficulty === 'medium') {
+          // Similar shape
+          const similar = getSimilarDistractors(baseShape, shapes, 'hard');
+          const diffShape = similar.length > 0 ? randomFrom(similar) : randomFrom(shapes.filter(s => s !== baseShape));
+          items.push({ shape: diffShape, rotation: baseRotation });
+        } else {
+          // Same shape, different rotation or size
+          const rotDiff = baseRotation === 0 ? randomFrom([15, 30, 45, 90, 180]) : 0;
+          items.push({ shape: baseShape, rotation: rotDiff });
+        }
+      } else {
+        items.push({ shape: baseShape, rotation: baseRotation });
+      }
+    }
+    rows.push({ items, oddIndex });
+  }
+
+  return {
+    mode: 'oddOneOut',
+    instructions: 'Circle the odd one out in each row!',
+    skillLabel: 'Visual Discrimination',
+    oddOneOutRows: rows,
+  };
+}
+
+// ========== MODE 8: MIRROR IMAGE ==========
+function generateMirrorMode(config: WorksheetConfig): WorksheetData {
+  const shapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const gridSize = 4;
+  const shapeCount = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 5 : 7;
+
+  const puzzles: MirrorPuzzle[] = [];
+  for (let p = 0; p < 2; p++) {
+    const sourceGrid: (CellData | null)[][] = Array.from({ length: gridSize }, () =>
+      Array.from({ length: gridSize }, () => null)
+    );
+
+    // Place shapes randomly
+    const positions = shuffle(
+      Array.from({ length: gridSize * gridSize }, (_, i) => i)
+    ).slice(0, shapeCount);
+
+    positions.forEach(pos => {
+      const r = Math.floor(pos / gridSize);
+      const c = pos % gridSize;
+      sourceGrid[r][c] = {
+        shape: randomFrom(shapes),
+        rotation: getDifficultyRotation(config.difficulty),
+      };
+    });
+
+    // Create horizontal mirror
+    const mirroredGrid: (CellData | null)[][] = sourceGrid.map(row =>
+      [...row].reverse().map(cell =>
+        cell ? { ...cell } : null
+      )
+    );
+
+    puzzles.push({ sourceGrid, mirroredGrid });
+  }
+
+  return {
+    mode: 'mirror',
+    instructions: 'Draw the mirror image on the right side!',
+    skillLabel: 'Visual Spatial Relations · Form Constancy',
+    mirrorPuzzles: puzzles,
+  };
+}
+
+// ========== MODE 9: FIGURE GROUND ==========
+function generateFigureGroundMode(config: WorksheetConfig): WorksheetData {
+  const allShapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const targetCount = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 4 : 5;
+  const shapeTotal = config.difficulty === 'easy' ? 6 : config.difficulty === 'medium' ? 8 : 10;
+  const targetShapes = pickN(allShapes, targetCount);
+
+  const placed: { shape: ShapeName; cx: number; cy: number; r: number; rotation: number }[] = [];
+  const counts: Record<string, number> = {};
+  targetShapes.forEach(s => (counts[s] = 0));
+
+  const areaW = 400;
+  const areaH = 400;
+
+  for (let i = 0; i < shapeTotal; i++) {
+    const shape = randomFrom(targetShapes);
+    counts[shape]++;
+    const r = config.difficulty === 'easy' ? randomFrom([50, 60, 70]) : randomFrom([35, 45, 55]);
+    placed.push({
+      shape,
+      cx: 80 + Math.random() * (areaW - 160),
+      cy: 80 + Math.random() * (areaH - 160),
+      r,
+      rotation: getDifficultyRotation(config.difficulty),
+    });
+  }
+
+  return {
+    mode: 'figureGround',
+    instructions: 'Find and count each shape in the overlapping picture!',
+    skillLabel: 'Figure-Ground Perception',
+    figureGroundPuzzle: {
+      shapes: placed,
+      targetShapes,
+      counts: counts as Record<ShapeName, number>,
+    },
+  };
+}
+
+// ========== MODE 10: VISUAL CLOSURE ==========
+function generateClosureMode(config: WorksheetConfig): WorksheetData {
+  const shapes = config.shapeSet === 'basic' ? BASIC_SHAPES : EXTENDED_SHAPES;
+  const puzzles: ClosurePuzzle[] = [];
+
+  for (let i = 0; i < 8; i++) {
+    const shape = randomFrom(shapes);
+    // Determine dash pattern based on difficulty
+    const gapRatio = config.difficulty === 'easy' ? 0.15 : config.difficulty === 'medium' ? 0.3 : 0.5;
+    const dashLen = 8;
+    const gapLen = Math.round(dashLen * gapRatio / (1 - gapRatio));
+    const dashArray = `${dashLen},${Math.max(3, gapLen)}`;
+
+    // Options: 1 correct + 2 distractors
+    const distractors = pickN(shapes.filter(s => s !== shape), 2);
+    const options = [shape, ...distractors];
+    const indices = shuffle([0, 1, 2]);
+    const shuffledOptions = indices.map(i => options[i]);
+    const correctIndex = indices.indexOf(0);
+
+    puzzles.push({ shape, dashArray, options: shuffledOptions, correctIndex });
+  }
+
+  return {
+    mode: 'closure',
+    instructions: 'What shape is it? Circle the correct answer!',
+    skillLabel: 'Visual Closure',
+    closurePuzzles: puzzles,
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   switch (config.mode) {
     case 'find': return generateFindMode(config);
     case 'missing': return generateMissingMode(config);
     case 'pattern': return generatePatternMode(config);
     case 'count': return generateCountMode(config);
+    case 'copy': return generateCopyMode(config);
+    case 'sequence': return generateSequenceMode(config);
+    case 'oddOneOut': return generateOddOneOutMode(config);
+    case 'mirror': return generateMirrorMode(config);
+    case 'figureGround': return generateFigureGroundMode(config);
+    case 'closure': return generateClosureMode(config);
   }
 }
 
