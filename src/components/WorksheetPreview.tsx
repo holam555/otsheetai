@@ -533,17 +533,29 @@ function renderOddOneOutMode(
   const totalRowW = 5 * cellSz + 4 * 16;
   const rowStartX = (W - totalRowW) / 2;
 
+  const isText = rows.length > 0 && rows[0].textItems && rows[0].textItems.length > 0;
+  const fontSize = config.difficulty === 'easy' ? Math.min(cellSz * 0.7, 36) : config.difficulty === 'medium' ? Math.min(cellSz * 0.6, 28) : Math.min(cellSz * 0.5, 22);
+
   rows.forEach((row, rIdx) => {
     const rowY = startY + rIdx * rowH + (rowH - cellSz) / 2;
 
     svg += `<text x="${rowStartX - 18}" y="${rowY + cellSz / 2 + 4}" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#64748B">${rIdx + 1}.</text>`;
 
-    row.items.forEach((cell, i) => {
-      const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
-      const cy = rowY + cellSz / 2;
-      svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
-      svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
-    });
+    if (isText && row.textItems) {
+      row.textItems.forEach((char, i) => {
+        const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
+        const cy = rowY + cellSz / 2;
+        svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
+        svg += `<text x="${cx}" y="${cy + fontSize * 0.35}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="600" fill="#1E293B">${char}</text>`;
+      });
+    } else {
+      row.items.forEach((cell, i) => {
+        const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
+        const cy = rowY + cellSz / 2;
+        svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
+        svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+      });
+    }
   });
 
   if (config.showAnswerKey) {
