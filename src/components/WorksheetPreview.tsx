@@ -958,6 +958,7 @@ function renderSentenceTrilineMode(
   const triSetH = capHeight + grassH; // total visual height of one tri-line set
   const groupGap = 12 * mmToPx;
   const setGap = 6 * mmToPx;
+  const refFontPx = fontPx * 0.55;
   const refTextH = Math.max(fontPx * 0.85, 10 * mmToPx + refFontPx); // min 10mm gap between ref text bottom and top line
   const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
