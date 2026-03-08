@@ -839,8 +839,8 @@ export function getShapeRawSVG(shape: ShapeName, cx: number, cy: number, r: numb
     case 'oval':
       return `<ellipse cx="${cx}" cy="${cy}" rx="${r * 0.42}" ry="${r * 0.28}" />`;
     case 'heart': {
-      const s = r * 0.025;
-      return `<path d="M ${cx} ${cy + s * 14} C ${cx - s * 18} ${cy - s * 2} ${cx - s * 18} ${cy - s * 14} ${cx} ${cy - s * 6} C ${cx + s * 18} ${cy - s * 14} ${cx + s * 18} ${cy - s * 2} ${cx} ${cy + s * 14} Z" />`;
+      const s = r * 0.32;
+      return `<path d="M ${cx} ${cy + s * 0.9} Q ${cx - s * 0.4} ${cy + s * 0.5} ${cx - s * 0.9} ${cy - s * 0.1} A ${s * 0.55} ${s * 0.55} 0 0 1 ${cx} ${cy - s * 0.7} A ${s * 0.55} ${s * 0.55} 0 0 1 ${cx + s * 0.9} ${cy - s * 0.1} Q ${cx + s * 0.4} ${cy + s * 0.5} ${cx} ${cy + s * 0.9} Z" />`;
     }
     case 'arrow': {
       const w = r * 0.2;
