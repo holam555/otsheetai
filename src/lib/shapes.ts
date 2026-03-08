@@ -455,6 +455,12 @@ function generateSequenceMode(config: WorksheetConfig): WorksheetData {
 
 // ========== MODE 7: ODD ONE OUT ==========
 function generateOddOneOutMode(config: WorksheetConfig): WorksheetData {
+  if (config.oddOneOutType === 'letters') return generateOddOneOutLetters(config);
+  if (config.oddOneOutType === 'numbers') return generateOddOneOutNumbers(config);
+  return generateOddOneOutShapes(config);
+}
+
+function generateOddOneOutShapes(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
   const rows: OddOneOutRow[] = [];
   const rowCount = config.exerciseCount;
@@ -489,6 +495,102 @@ function generateOddOneOutMode(config: WorksheetConfig): WorksheetData {
     mode: 'oddOneOut',
     instructions: 'Circle the odd one out in each row!',
     skillLabel: 'Visual Discrimination',
+    oddOneOutRows: rows,
+  };
+}
+
+function generateOddOneOutLetters(config: WorksheetConfig): WorksheetData {
+  const { SIMILAR_LETTERS, CASE_VARIANTS } = require('@/lib/letterPaths');
+  const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const easyPairs = [
+    ['A', 'B'], ['C', 'M'], ['O', 'X'], ['P', 'W'], ['H', 'S'], ['D', 'K'], ['E', 'Z'], ['G', 'T'],
+  ];
+  const mediumBase = ['b', 'd', 'E', 'F', 'M', 'N', 'C', 'G'];
+  const hardBase = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+  const rows: OddOneOutRow[] = [];
+  const rowCount = config.exerciseCount;
+
+  for (let r = 0; r < rowCount; r++) {
+    const oddIndex = Math.floor(Math.random() * 5);
+    let baseLetter: string;
+    let oddLetter: string;
+
+    if (config.difficulty === 'easy') {
+      const pair = easyPairs[r % easyPairs.length];
+      baseLetter = pair[0];
+      oddLetter = pair[1];
+    } else if (config.difficulty === 'medium') {
+      baseLetter = mediumBase[r % mediumBase.length];
+      const similar = SIMILAR_LETTERS[baseLetter] || [];
+      oddLetter = similar.length > 0 ? randomFrom(similar) : randomFrom(allLetters.filter(l => l !== baseLetter));
+    } else {
+      baseLetter = hardBase[r % hardBase.length];
+      oddLetter = CASE_VARIANTS[baseLetter] || baseLetter.toUpperCase();
+    }
+
+    const textItems: string[] = [];
+    const items: CellData[] = [];
+    for (let i = 0; i < 5; i++) {
+      textItems.push(i === oddIndex ? oddLetter : baseLetter);
+      items.push({ shape: 'circle' }); // placeholder
+    }
+    rows.push({ items, oddIndex, textItems, oddText: oddLetter });
+  }
+
+  return {
+    mode: 'oddOneOut',
+    instructions: 'Circle the odd letter in each row!',
+    skillLabel: 'Visual Discrimination · Letter Recognition',
+    oddOneOutRows: rows,
+  };
+}
+
+function generateOddOneOutNumbers(config: WorksheetConfig): WorksheetData {
+  const { SIMILAR_NUMBERS } = require('@/lib/letterPaths');
+  const easyPairs = [
+    ['3', '7'], ['1', '4'], ['2', '5'], ['6', '8'], ['0', '9'], ['4', '7'], ['1', '2'], ['5', '8'],
+  ];
+  const mediumBase = ['6', '9', '1', '7', '2', '5', '0', '3'];
+  const hardPairs = [
+    ['2', 'Z'], ['5', 'S'], ['0', 'O'], ['1', 'l'], ['8', 'B'], ['6', 'b'], ['9', 'q'], ['3', 'E'],
+  ];
+
+  const rows: OddOneOutRow[] = [];
+  const rowCount = config.exerciseCount;
+
+  for (let r = 0; r < rowCount; r++) {
+    const oddIndex = Math.floor(Math.random() * 5);
+    let baseChar: string;
+    let oddChar: string;
+
+    if (config.difficulty === 'easy') {
+      const pair = easyPairs[r % easyPairs.length];
+      baseChar = pair[0];
+      oddChar = pair[1];
+    } else if (config.difficulty === 'medium') {
+      baseChar = mediumBase[r % mediumBase.length];
+      const similar = SIMILAR_NUMBERS[baseChar] || [];
+      oddChar = similar.length > 0 ? randomFrom(similar) : String((parseInt(baseChar) + 3) % 10);
+    } else {
+      const pair = hardPairs[r % hardPairs.length];
+      baseChar = pair[0];
+      oddChar = pair[1];
+    }
+
+    const textItems: string[] = [];
+    const items: CellData[] = [];
+    for (let i = 0; i < 5; i++) {
+      textItems.push(i === oddIndex ? oddChar : baseChar);
+      items.push({ shape: 'circle' }); // placeholder
+    }
+    rows.push({ items, oddIndex, textItems, oddText: oddChar });
+  }
+
+  return {
+    mode: 'oddOneOut',
+    instructions: 'Circle the odd number in each row!',
+    skillLabel: 'Visual Discrimination · Number Recognition',
     oddOneOutRows: rows,
   };
 }
