@@ -708,6 +708,23 @@ function generateClosureMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 11: TRACE YOUR NAME ==========
+function generateTraceNameMode(config: WorksheetConfig): WorksheetData {
+  const name = (config.childName || 'NAME').toUpperCase().replace(/[^A-Z]/g, '');
+  const letters = name.split('');
+  const sections: string[][] = [];
+  for (let i = 0; i < letters.length; i += 5) {
+    sections.push(letters.slice(i, i + 5));
+  }
+
+  return {
+    mode: 'traceName',
+    instructions: `Trace the letters of your name!`,
+    skillLabel: 'Handwriting · Fine Motor',
+    traceNameData: { letters, sections },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -721,6 +738,7 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'mirror': result = generateMirrorMode(config); break;
     case 'figureGround': result = generateFigureGroundMode(config); break;
     case 'closure': result = generateClosureMode(config); break;
+    case 'traceName': result = generateTraceNameMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {
