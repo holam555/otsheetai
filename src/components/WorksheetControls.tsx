@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
