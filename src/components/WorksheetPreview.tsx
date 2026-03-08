@@ -74,6 +74,8 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderFigureGroundMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'closure') {
     bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+  } else if (data.mode === 'traceName') {
+    bodySVG = renderTraceNameMode(config, data);
   }
 
   const svgContent = `
