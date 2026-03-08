@@ -19,7 +19,8 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName';
+export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
