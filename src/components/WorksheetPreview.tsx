@@ -852,19 +852,109 @@ function renderTraceNameMode(
 }
 
 // ========== MODE 12: HANDWRITING PRACTICE ==========
+function isChinese(ch: string): boolean {
+  const code = ch.charCodeAt(0);
+  return code >= 0x4e00 && code <= 0x9fff;
+}
+
+function hasChinese(text: string): boolean {
+  return Array.from(text).some(isChinese);
+}
+
+function isAllChinese(text: string): boolean {
+  return Array.from(text).every(ch => isChinese(ch) || ch === ' ');
+}
+
+function renderTrilineRows(
+  chars: string[], rows: number, startY: number, availableH: number,
+  lineH: number, gapBetweenSets: number, contentW: number,
+  fontFamily: string, isDotted: boolean, ghostColor: string, config: WorksheetConfig,
+  sectionLabel?: string
+): { svg: string; usedH: number } {
+  const fontPx = lineH * 0.75;
+  const setH = lineH + gapBetweenSets;
+  const maxRows = Math.min(rows, Math.floor(availableH / setH));
+  let svg = '';
+
+  if (sectionLabel) {
+    svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${escapeXml(sectionLabel)}</text>`;
+  }
+
+  for (let r = 0; r < maxRows; r++) {
+    const baseY = startY + r * setH;
+    const topY = baseY;
+    const midY = baseY + lineH / 2;
+    const botY = baseY + lineH;
+
+    svg += `<line x1="${MARGIN}" y1="${topY}" x2="${W - MARGIN}" y2="${topY}" stroke="#94A3B8" stroke-width="1" />`;
+    svg += `<line x1="${MARGIN}" y1="${midY}" x2="${W - MARGIN}" y2="${midY}" stroke="#CBD5E1" stroke-width="0.8" stroke-dasharray="4 3" />`;
+    svg += `<line x1="${MARGIN}" y1="${botY}" x2="${W - MARGIN}" y2="${botY}" stroke="#94A3B8" stroke-width="1" />`;
+
+    if (r === 0 && chars.length > 0) {
+      const charW = Math.min(fontPx * 0.65, contentW / Math.max(chars.length, 1));
+      for (let c = 0; c < chars.length; c++) {
+        const cx = MARGIN + 4 + c * charW + charW / 2;
+        if (cx > W - MARGIN) break;
+        if (isDotted) {
+          svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(chars[c])}</text>`;
+        } else {
+          svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(chars[c])}</text>`;
+        }
+      }
+    }
+  }
+  return { svg, usedH: maxRows * setH };
+}
+
+function renderGridBoxRows(
+  chars: string[], rows: number, startY: number, availableH: number,
+  boxSize: number, gapBetweenSets: number, contentW: number,
+  fontFamily: string, isDotted: boolean, ghostColor: string, config: WorksheetConfig,
+  sectionLabel?: string
+): { svg: string; usedH: number } {
+  const rowH = boxSize + gapBetweenSets * 0.5;
+  const maxRows = Math.min(rows, Math.floor(availableH / rowH));
+  const maxCols = Math.floor(contentW / boxSize);
+  const charCount = Math.min(chars.length, maxCols);
+  let svg = '';
+
+  if (sectionLabel) {
+    svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${escapeXml(sectionLabel)}</text>`;
+  }
+
+  for (let r = 0; r < maxRows; r++) {
+    const baseY = startY + r * rowH;
+    for (let c = 0; c < charCount; c++) {
+      const bx = MARGIN + c * boxSize;
+      const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
+      svg += `<rect x="${bx}" y="${baseY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
+
+      if (r === 0) {
+        const ch = chars[c];
+        const charFontPx = boxSize * 0.65;
+        if (isDotted) {
+          svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
+        } else {
+          svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
+        }
+      }
+    }
+  }
+  return { svg, usedH: maxRows * rowH };
+}
+
 function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): string {
   if (!data.handwritingData) return '';
   const { text, rows, paperStyle, fontSizeMm, font } = data.handwritingData;
 
-  // mm to SVG pts (A4 at 595px width ≈ 210mm → 1mm ≈ 2.833px)
   const mmToPx = 2.833;
   const lineH = fontSizeMm * mmToPx;
+  const boxSize = fontSizeMm * mmToPx;
   const gapBetweenSets = 8 * mmToPx;
   const contentW = W - MARGIN * 2;
   const startY = MARGIN + 90;
   const availableH = H - startY - MARGIN - 30;
 
-  // Font family mapping
   const fontFamilyMap: Record<string, string> = {
     print: "Arial, Helvetica, sans-serif",
     cursive: "'Segoe Script', 'Comic Sans MS', cursive",
@@ -872,84 +962,68 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
     dotted: "Arial, sans-serif",
   };
   const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
+  const ghostColor = '#C8CDD3';
+  const isDotted = font === 'dotted';
+  const allChars = Array.from(text);
 
   let svg = '';
 
-  const fontPx = lineH * 0.75;
-  const ghostColor = '#C8CDD3';
-  const isDotted = font === 'dotted';
+  const containsChinese = hasChinese(text);
+  const allChinese = isAllChinese(text);
 
-  if (paperStyle === 'triline' || paperStyle === 'both') {
-    const sectionH = paperStyle === 'both' ? availableH * 0.48 : availableH;
-    const setH = lineH + gapBetweenSets;
-    const maxRows = Math.min(rows, Math.floor(sectionH / setH));
-    const sectionStartY = startY;
-
-    if (paperStyle === 'both') {
-      svg += `<text x="${MARGIN}" y="${sectionStartY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Tri-line Paper</text>`;
+  // Determine rendering strategy based on content + paper style
+  if (paperStyle === 'gridbox') {
+    // Pure grid box mode — works for all scripts
+    const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
+    svg += result.svg;
+  } else if (paperStyle === 'both') {
+    // "Both" mode
+    if (allChinese) {
+      // All Chinese: grid box for top, empty grid box for bottom
+      const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
+      svg += result.svg;
+    } else if (containsChinese) {
+      // Mixed: English on tri-line top, Chinese on grid box bottom
+      const engChars = allChars.filter(ch => !isChinese(ch));
+      const chnChars = allChars.filter(isChinese);
+      const halfH = availableH * 0.48;
+      const triResult = renderTrilineRows(engChars, Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Tri-line Paper');
+      svg += triResult.svg;
+      const gridStartY = startY + availableH * 0.52;
+      const gridResult = renderGridBoxRows(chnChars, Math.max(1, Math.ceil(rows / 2)), gridStartY, halfH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
+      svg += gridResult.svg;
+    } else {
+      // Pure English: tri-line top, grid box bottom
+      const halfH = availableH * 0.48;
+      const triResult = renderTrilineRows(allChars, Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Tri-line Paper');
+      svg += triResult.svg;
+      const gridStartY = startY + availableH * 0.52;
+      const gridResult = renderGridBoxRows(allChars, Math.max(1, Math.ceil(rows / 2)), gridStartY, halfH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
+      svg += gridResult.svg;
     }
-
-    for (let r = 0; r < maxRows; r++) {
-      const baseY = sectionStartY + r * setH;
-      const topY = baseY;
-      const midY = baseY + lineH / 2;
-      const botY = baseY + lineH;
-
-      // Top line (solid)
-      svg += `<line x1="${MARGIN}" y1="${topY}" x2="${W - MARGIN}" y2="${topY}" stroke="#94A3B8" stroke-width="1" />`;
-      // Middle dotted line
-      svg += `<line x1="${MARGIN}" y1="${midY}" x2="${W - MARGIN}" y2="${midY}" stroke="#CBD5E1" stroke-width="0.8" stroke-dasharray="4 3" />`;
-      // Bottom line (solid)
-      svg += `<line x1="${MARGIN}" y1="${botY}" x2="${W - MARGIN}" y2="${botY}" stroke="#94A3B8" stroke-width="1" />`;
-
-      // First row: ghost text
-      if (r === 0) {
-        const charW = Math.min(fontPx * 0.6, contentW / Math.max(text.length, 1));
-        const textStartX = MARGIN + 4;
-        for (let c = 0; c < text.length; c++) {
-          const cx = textStartX + c * charW + charW / 2;
-          if (cx > W - MARGIN) break;
-          if (isDotted) {
-            svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(text[c])}</text>`;
-          } else {
-            svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(text[c])}</text>`;
-          }
-        }
-      }
-    }
-  }
-
-  if (paperStyle === 'gridbox' || paperStyle === 'both') {
-    const boxSize = fontSizeMm * mmToPx;
-    const sectionStartY = paperStyle === 'both' ? startY + availableH * 0.52 : startY;
-    const sectionH = paperStyle === 'both' ? availableH * 0.48 : availableH;
-    const rowH = boxSize + gapBetweenSets * 0.5;
-    const maxRows = Math.min(rows, Math.floor(sectionH / rowH));
-    const maxCols = Math.floor(contentW / boxSize);
-    const charCount = Math.min(text.length, maxCols);
-
-    if (paperStyle === 'both') {
-      svg += `<text x="${MARGIN}" y="${sectionStartY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Grid Box Paper (方格紙)</text>`;
-    }
-
-    for (let r = 0; r < maxRows; r++) {
-      const baseY = sectionStartY + r * rowH;
-      for (let c = 0; c < charCount; c++) {
-        const bx = MARGIN + c * boxSize;
-        const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);
-        svg += `<rect x="${bx}" y="${baseY}" width="${boxSize}" height="${boxSize}" ${borderAttrs} />`;
-
-        // First row: ghost characters
-        if (r === 0) {
-          const ch = text[c];
-          const charFontPx = boxSize * 0.65;
-          if (isDotted) {
-            svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
-          } else {
-            svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
-          }
-        }
-      }
+  } else {
+    // Tri-line mode
+    if (allChinese) {
+      // All Chinese on tri-line → auto-switch to grid box
+      const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙) — auto for Chinese');
+      svg += result.svg;
+    } else if (containsChinese) {
+      // Mixed: English tri-line rows, then Chinese grid box rows
+      const engChars = allChars.filter(ch => !isChinese(ch));
+      const chnChars = allChars.filter(isChinese);
+      const engRows = Math.max(1, Math.floor(rows / 2));
+      const chnRows = Math.max(1, Math.ceil(rows / 2));
+      const engH = availableH * 0.5;
+      const triResult = renderTrilineRows(engChars, engRows, startY, engH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'English — Tri-line');
+      svg += triResult.svg;
+      const gridStartY = startY + triResult.usedH + gapBetweenSets;
+      const remainH = availableH - triResult.usedH - gapBetweenSets;
+      const gridResult = renderGridBoxRows(chnChars, chnRows, gridStartY, remainH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Chinese — Grid Box (方格紙)');
+      svg += gridResult.svg;
+    } else {
+      // Pure English: normal tri-line
+      const result = renderTrilineRows(allChars, rows, startY, availableH, lineH, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
+      svg += result.svg;
     }
   }
 
