@@ -24,6 +24,8 @@ const defaultConfig: WorksheetConfig = {
   handwritingRows: 3,
   handwritingPaperStyle: 'triline',
   handwritingFontSize: 'large',
+  handwritingFontSizeMm: 15,
+  handwritingFont: 'print',
 };
 
 export default function Index() {
