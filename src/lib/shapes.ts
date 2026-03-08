@@ -19,13 +19,15 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting';
 export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type BorderStyle = 'plain' | 'dotted' | 'rounded';
 export type HeaderFontSize = 'small' | 'medium' | 'large';
+export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
+export type HandwritingFontSize = 'large' | 'medium' | 'small';
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
