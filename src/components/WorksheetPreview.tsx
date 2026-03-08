@@ -854,20 +854,30 @@ function renderTraceNameMode(
 // ========== MODE 12: HANDWRITING PRACTICE ==========
 function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): string {
   if (!data.handwritingData) return '';
-  const { text, rows, paperStyle, fontSize } = data.handwritingData;
+  const { text, rows, paperStyle, fontSizeMm, font } = data.handwritingData;
 
   // mm to SVG pts (A4 at 595px width ≈ 210mm → 1mm ≈ 2.833px)
   const mmToPx = 2.833;
-  const lineH = fontSize === 'large' ? 20 * mmToPx : fontSize === 'medium' ? 15 * mmToPx : 10 * mmToPx;
+  const lineH = fontSizeMm * mmToPx;
   const gapBetweenSets = 8 * mmToPx;
   const contentW = W - MARGIN * 2;
   const startY = MARGIN + 90;
   const availableH = H - startY - MARGIN - 30;
 
+  // Font family mapping
+  const fontFamilyMap: Record<string, string> = {
+    print: "Arial, Helvetica, sans-serif",
+    cursive: "'Segoe Script', 'Comic Sans MS', cursive",
+    manuscript: "'Courier New', Courier, monospace",
+    dotted: "Arial, sans-serif",
+  };
+  const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
+
   let svg = '';
 
   const fontPx = lineH * 0.75;
   const ghostColor = '#C8CDD3';
+  const isDotted = font === 'dotted';
 
   if (paperStyle === 'triline' || paperStyle === 'both') {
     const sectionH = paperStyle === 'both' ? availableH * 0.48 : availableH;
@@ -894,20 +904,23 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
 
       // First row: ghost text
       if (r === 0) {
-        // Estimate char width to fit text within content area
         const charW = Math.min(fontPx * 0.6, contentW / Math.max(text.length, 1));
         const textStartX = MARGIN + 4;
         for (let c = 0; c < text.length; c++) {
           const cx = textStartX + c * charW + charW / 2;
           if (cx > W - MARGIN) break;
-          svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="'Courier New', monospace" font-size="${fontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(text[c])}</text>`;
+          if (isDotted) {
+            svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(text[c])}</text>`;
+          } else {
+            svg += `<text x="${cx}" y="${botY - lineH * 0.18}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(text[c])}</text>`;
+          }
         }
       }
     }
   }
 
   if (paperStyle === 'gridbox' || paperStyle === 'both') {
-    const boxSize = fontSize === 'large' ? 20 * mmToPx : fontSize === 'medium' ? 15 * mmToPx : 10 * mmToPx;
+    const boxSize = fontSizeMm * mmToPx;
     const sectionStartY = paperStyle === 'both' ? startY + availableH * 0.52 : startY;
     const sectionH = paperStyle === 'both' ? availableH * 0.48 : availableH;
     const rowH = boxSize + gapBetweenSets * 0.5;
@@ -930,7 +943,11 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
         if (r === 0) {
           const ch = text[c];
           const charFontPx = boxSize * 0.65;
-          svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="'Courier New', monospace" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
+          if (isDotted) {
+            svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
+          } else {
+            svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
+          }
         }
       }
     }
