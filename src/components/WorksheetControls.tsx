@@ -17,6 +17,7 @@ const MODES: { value: WorksheetMode; label: string }[] = [
   { value: 'find', label: 'Find the Shape' },
   { value: 'missing', label: 'Missing Shape' },
   { value: 'pattern', label: 'Match Pattern' },
+  { value: 'count', label: 'Find and Count' },
 ];
 
 const GRID_SIZES: GridSize[] = [2, 3, 4, 5];
