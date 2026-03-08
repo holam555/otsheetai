@@ -28,6 +28,7 @@ const MODES: { value: WorksheetMode; label: string }[] = [
   { value: 'figureGround', label: 'Figure Ground' },
   { value: 'closure', label: 'Visual Closure' },
   { value: 'traceName', label: 'Trace Your Name' },
+  { value: 'handwriting', label: 'Handwriting Practice' },
 ];
 
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
