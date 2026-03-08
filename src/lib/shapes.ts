@@ -147,6 +147,8 @@ export interface HandwritingData {
   rows: number;
   paperStyle: HandwritingPaperStyle;
   fontSize: HandwritingFontSize;
+  fontSizeMm: number;
+  font: HandwritingFont;
 }
 
 function randomFrom<T>(arr: T[]): T {
