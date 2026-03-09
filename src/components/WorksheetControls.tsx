@@ -910,30 +910,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         </div>
 
-        {/* Border Style — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
-          <div className="space-y-2">
-            <Label className="font-display font-semibold text-sm">Border Style</Label>
-            <div className="flex gap-2">
-              {BORDER_STYLES.map(b => (
-                <BorderPreview
-                  key={b.value}
-                  style={b.value}
-                  selected={config.borderStyle === b.value}
-                  onClick={() => update({ borderStyle: b.value })}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Grid Lines — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
-          <div className="flex items-center justify-between">
-            <Label className="font-display font-semibold text-sm">Grid Lines</Label>
-            <Switch checked={config.showGridLines} onCheckedChange={(v) => update({ showGridLines: v })} />
-          </div>
-        )}
 
         {/* Colour — VP modes only */}
         {!isHandwritingMode(config.mode) && (
