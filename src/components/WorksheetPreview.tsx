@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
 import { LETTER_PATHS, StrokePoint } from '@/lib/letterPaths';
 
@@ -9,11 +10,10 @@ interface Props {
 // Trace overlay data: collected during SVG generation, rendered as HTML divs
 interface TraceOverlay {
   text: string;
-  // Positions as percentage of SVG viewBox (0-100)
-  xPct: number;
-  yPct: number;
+  x: number;
+  y: number;
   fontPx: number;
-  widthPct: number;
+  width: number;
 }
 
 let _traceOverlays: TraceOverlay[] = [];
