@@ -25,6 +25,18 @@ const MARGIN = 40;
 const BW_FILL = 'none';
 const BW_STROKE = '#1E293B';
 
+// Render emoji as SVG text element
+function getEmojiSVG(emoji: string, cx: number, cy: number, size: number): string {
+  const fontSize = size * 0.7;
+  return `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" style="font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${emoji}</text>`;
+}
+
+// Render shape or emoji
+function getCellSVG(cell: { shape: ShapeName; emoji?: string; rotation?: number }, cx: number, cy: number, size: number, fill: string, stroke: string, strokeW: number): string {
+  if (cell.emoji) return getEmojiSVG(cell.emoji, cx, cy, size);
+  return getShapeSVG(cell.shape, cx, cy, size, fill, stroke, strokeW, cell.rotation);
+}
+
 // Border style helpers
 function getBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', width = 1.5): string {
   const dash = config.borderStyle === 'dotted' ? ` stroke-dasharray="4 4"` : '';
