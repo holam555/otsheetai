@@ -19,11 +19,17 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots' | 'tracingPaths' | 'scissorSkills' | 'colorByNumber' | 'gridDesigns';
 export type MazeSize = 'small' | 'medium' | 'large';
 export type MazeShape = 'square' | 'rectangle' | 'circle';
 export type ConnectDotsShape = 'star' | 'heart' | 'house' | 'fish' | 'sun' | 'butterfly' | 'rocket' | 'tree' | 'catFace' | 'flower';
 export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
+export type TracingStrokeType = 'vertical' | 'horizontal' | 'diagonal' | 'curved' | 'waves' | 'zigzag' | 'spiral' | 'loops' | 'mixed';
+export type TracingThickness = 'thick' | 'medium' | 'thin';
+export type ScissorLineType = 'straight' | 'wavy' | 'zigzag' | 'mixed';
+export type ColorByNumberTheme = 'shapes' | 'animal' | 'pattern';
+export type GridDesignSize = 3 | 4 | 5;
+export type GridDesignPattern = 'shapes' | 'colors' | 'lines';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -69,6 +75,16 @@ export interface WorksheetConfig {
   mazeShape: MazeShape;
   mazeShowSolution: boolean;
   connectDotsShape: ConnectDotsShape;
+  tracingStrokeType: TracingStrokeType;
+  tracingRows: number;
+  tracingThickness: TracingThickness;
+  scissorLineType: ScissorLineType;
+  scissorLineCount: number;
+  colorByNumberTheme: ColorByNumberTheme;
+  colorByNumberColors: number;
+  colorByNumberBW: boolean;
+  gridDesignSize: GridDesignSize;
+  gridDesignPattern: GridDesignPattern;
 }
 
 export interface CellData {
@@ -160,6 +176,32 @@ export interface ConnectDotsData {
   completedPath: string;
 }
 
+export interface TracingPathsData {
+  rows: { pathD: string; startX: number; startY: number; endX: number; endY: number; strokeType: string }[];
+}
+
+export interface ScissorSkillsData {
+  lines: { pathD: string; startX: number; startY: number }[];
+}
+
+export interface ColorByNumberRegion {
+  pathD: string;
+  colorIndex: number;
+  labelX: number;
+  labelY: number;
+}
+
+export interface ColorByNumberData {
+  regions: ColorByNumberRegion[];
+  colorKey: { index: number; color: string; name: string }[];
+}
+
+export interface GridDesignData {
+  grid: { type: string; value: string; color?: string }[][];
+  gridSize: number;
+  pattern: GridDesignPattern;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -180,6 +222,10 @@ export interface WorksheetData {
   handwritingData?: HandwritingData;
   mazeData?: MazeData;
   connectDotsData?: ConnectDotsData;
+  tracingPathsData?: TracingPathsData;
+  scissorSkillsData?: ScissorSkillsData;
+  colorByNumberData?: ColorByNumberData;
+  gridDesignData?: GridDesignData;
 }
 
 export interface HandwritingData {
@@ -1130,6 +1176,382 @@ function generateConnectDotsMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 15: TRACING PATHS ==========
+function generateTracingPathsMode(config: WorksheetConfig): WorksheetData {
+  const strokeTypes: TracingStrokeType[] = ['vertical', 'horizontal', 'diagonal', 'curved', 'waves', 'zigzag', 'spiral', 'loops'];
+  const rowCount = config.tracingRows;
+  const isEasy = config.difficulty === 'easy';
+  const isMedium = config.difficulty === 'medium';
+  const areaW = 460;
+  const rowH = isEasy ? 100 : isMedium ? 80 : 60;
+
+  const rows: TracingPathsData['rows'] = [];
+  for (let i = 0; i < rowCount; i++) {
+    const type = config.tracingStrokeType === 'mixed' ? strokeTypes[i % strokeTypes.length] : config.tracingStrokeType;
+    const y = i * rowH + rowH / 2;
+    const margin = 20;
+    let pathD = '';
+    let startX = margin, startY = y, endX = areaW - margin, endY = y;
+
+    switch (type) {
+      case 'vertical':
+        startX = areaW / 2; endX = areaW / 2;
+        startY = 10; endY = rowH - 10;
+        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
+        break;
+      case 'horizontal':
+        startY = rowH / 2; endY = rowH / 2;
+        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
+        break;
+      case 'diagonal':
+        startY = 10; endY = rowH - 10;
+        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
+        break;
+      case 'curved':
+        startY = rowH / 2; endY = rowH / 2;
+        pathD = `M ${startX} ${startY} Q ${areaW / 2} ${10} ${endX} ${endY}`;
+        break;
+      case 'waves': {
+        const amp = isEasy ? rowH * 0.3 : rowH * 0.35;
+        const segments = isEasy ? 3 : isMedium ? 4 : 5;
+        const segW = (areaW - 2 * margin) / segments;
+        startY = rowH / 2; endY = rowH / 2;
+        pathD = `M ${startX} ${startY}`;
+        for (let s = 0; s < segments; s++) {
+          const cx1 = startX + s * segW + segW * 0.25;
+          const cx2 = startX + s * segW + segW * 0.75;
+          const ex = startX + (s + 1) * segW;
+          const dir = s % 2 === 0 ? -1 : 1;
+          pathD += ` C ${cx1} ${startY + dir * amp} ${cx2} ${startY + dir * amp} ${ex} ${startY}`;
+        }
+        endX = startX + segments * segW;
+        break;
+      }
+      case 'zigzag': {
+        const points = isEasy ? 4 : isMedium ? 6 : 8;
+        const segW = (areaW - 2 * margin) / points;
+        const amp = isEasy ? rowH * 0.3 : rowH * 0.35;
+        startY = rowH / 2; endY = rowH / 2;
+        pathD = `M ${startX} ${startY}`;
+        for (let p = 1; p <= points; p++) {
+          const px = startX + p * segW;
+          const py = startY + (p % 2 === 1 ? -amp : amp);
+          pathD += ` L ${px} ${py}`;
+          if (p === points) { endX = px; endY = py; }
+        }
+        break;
+      }
+      case 'spiral': {
+        const cx = areaW / 2, cy = rowH / 2;
+        const maxR = Math.min(rowH * 0.4, areaW * 0.2);
+        const turns = isEasy ? 2 : 3;
+        const steps = turns * 20;
+        pathD = `M ${cx + maxR} ${cy}`;
+        startX = cx + maxR; startY = cy;
+        for (let s = 1; s <= steps; s++) {
+          const angle = (s / steps) * turns * Math.PI * 2;
+          const r = maxR * (1 - s / steps);
+          const px = cx + Math.cos(angle) * r;
+          const py = cy + Math.sin(angle) * r;
+          pathD += ` L ${px} ${py}`;
+          if (s === steps) { endX = px; endY = py; }
+        }
+        break;
+      }
+      case 'loops': {
+        const loopCount = isEasy ? 3 : isMedium ? 4 : 5;
+        const loopW = (areaW - 2 * margin) / loopCount;
+        const loopR = Math.min(loopW * 0.4, rowH * 0.35);
+        startY = rowH / 2; endY = rowH / 2;
+        pathD = `M ${startX} ${startY}`;
+        for (let l = 0; l < loopCount; l++) {
+          const lx = startX + l * loopW + loopW / 2;
+          pathD += ` Q ${lx - loopR} ${startY - loopR * 2} ${lx} ${startY}`;
+          pathD += ` Q ${lx + loopR} ${startY + loopR * 2} ${lx + loopW / 2} ${startY}`;
+        }
+        endX = startX + loopCount * loopW;
+        break;
+      }
+    }
+
+    rows.push({ pathD, startX, startY: startY + i * rowH, endX, endY: endY + i * rowH, strokeType: type });
+  }
+
+  // Recalculate with absolute positioning
+  const absoluteRows: TracingPathsData['rows'] = [];
+  for (let i = 0; i < rowCount; i++) {
+    const type = config.tracingStrokeType === 'mixed' ? strokeTypes[i % strokeTypes.length] : config.tracingStrokeType;
+    const baseY = i * rowH;
+    const margin = 20;
+    let pathD = '';
+    let sX = margin, sY = rowH / 2, eX = areaW - margin, eY = rowH / 2;
+
+    switch (type) {
+      case 'vertical':
+        sX = areaW / 2; eX = areaW / 2; sY = 10; eY = rowH - 10;
+        pathD = `M ${sX} ${baseY + sY} L ${eX} ${baseY + eY}`;
+        break;
+      case 'horizontal':
+        pathD = `M ${sX} ${baseY + sY} L ${eX} ${baseY + eY}`;
+        break;
+      case 'diagonal':
+        sY = 10; eY = rowH - 10;
+        pathD = `M ${sX} ${baseY + sY} L ${eX} ${baseY + eY}`;
+        break;
+      case 'curved':
+        pathD = `M ${sX} ${baseY + sY} Q ${areaW / 2} ${baseY + 10} ${eX} ${baseY + eY}`;
+        break;
+      case 'waves': {
+        const amp = isEasy ? rowH * 0.3 : rowH * 0.35;
+        const segments = isEasy ? 3 : isMedium ? 4 : 5;
+        const segW = (areaW - 2 * margin) / segments;
+        pathD = `M ${sX} ${baseY + sY}`;
+        for (let s = 0; s < segments; s++) {
+          const cx1 = sX + s * segW + segW * 0.25;
+          const cx2 = sX + s * segW + segW * 0.75;
+          const ex = sX + (s + 1) * segW;
+          const dir = s % 2 === 0 ? -1 : 1;
+          pathD += ` C ${cx1} ${baseY + sY + dir * amp} ${cx2} ${baseY + sY + dir * amp} ${ex} ${baseY + sY}`;
+        }
+        eX = sX + segments * segW;
+        break;
+      }
+      case 'zigzag': {
+        const points = isEasy ? 4 : isMedium ? 6 : 8;
+        const segW = (areaW - 2 * margin) / points;
+        const amp = isEasy ? rowH * 0.3 : rowH * 0.35;
+        pathD = `M ${sX} ${baseY + sY}`;
+        for (let p = 1; p <= points; p++) {
+          const px = sX + p * segW;
+          const py = baseY + sY + (p % 2 === 1 ? -amp : amp);
+          pathD += ` L ${px} ${py}`;
+          if (p === points) { eX = px; eY = py - baseY; }
+        }
+        break;
+      }
+      case 'spiral': {
+        const cx = areaW / 2, cy = baseY + rowH / 2;
+        const maxR = Math.min(rowH * 0.4, areaW * 0.2);
+        const turns = isEasy ? 2 : 3;
+        const steps = turns * 20;
+        sX = cx + maxR; sY = rowH / 2;
+        pathD = `M ${sX} ${cy}`;
+        for (let s = 1; s <= steps; s++) {
+          const angle = (s / steps) * turns * Math.PI * 2;
+          const r = maxR * (1 - s / steps);
+          pathD += ` L ${cx + Math.cos(angle) * r} ${cy + Math.sin(angle) * r}`;
+          if (s === steps) { eX = cx + Math.cos(angle) * r; eY = cy + Math.sin(angle) * r - baseY; }
+        }
+        break;
+      }
+      case 'loops': {
+        const loopCount = isEasy ? 3 : isMedium ? 4 : 5;
+        const loopW = (areaW - 2 * margin) / loopCount;
+        const loopR = Math.min(loopW * 0.4, rowH * 0.35);
+        pathD = `M ${sX} ${baseY + sY}`;
+        for (let l = 0; l < loopCount; l++) {
+          const lx = sX + l * loopW + loopW / 2;
+          pathD += ` Q ${lx - loopR} ${baseY + sY - loopR * 2} ${lx} ${baseY + sY}`;
+          pathD += ` Q ${lx + loopR} ${baseY + sY + loopR * 2} ${lx + loopW / 2} ${baseY + sY}`;
+        }
+        eX = sX + loopCount * loopW;
+        break;
+      }
+    }
+
+    absoluteRows.push({ pathD, startX: sX, startY: baseY + sY, endX: eX, endY: baseY + eY, strokeType: type });
+  }
+
+  return {
+    mode: 'tracingPaths',
+    instructions: 'Trace along each path from the green dot to the red dot!',
+    skillLabel: 'Pre-Writing Skills · Fine Motor',
+    tracingPathsData: { rows: absoluteRows },
+  };
+}
+
+// ========== MODE 16: SCISSOR SKILLS ==========
+function generateScissorSkillsMode(config: WorksheetConfig): WorksheetData {
+  const lineCount = config.scissorLineCount;
+  const areaW = 460;
+  const margin = 40;
+
+  const lineTypes: ScissorLineType[] = ['straight', 'wavy', 'zigzag'];
+  const lines: ScissorSkillsData['lines'] = [];
+
+  for (let i = 0; i < lineCount; i++) {
+    const type = config.scissorLineType === 'mixed' ? lineTypes[i % lineTypes.length] : config.scissorLineType;
+    const startX = margin;
+    const y = 0; // will be offset in renderer
+    let pathD = '';
+
+    switch (type) {
+      case 'straight':
+        pathD = `M ${startX} 0 L ${areaW - margin} 0`;
+        break;
+      case 'wavy': {
+        const segments = 5;
+        const segW = (areaW - 2 * margin) / segments;
+        const amp = 12;
+        pathD = `M ${startX} 0`;
+        for (let s = 0; s < segments; s++) {
+          const cx1 = startX + s * segW + segW * 0.25;
+          const cx2 = startX + s * segW + segW * 0.75;
+          const ex = startX + (s + 1) * segW;
+          const dir = s % 2 === 0 ? -1 : 1;
+          pathD += ` C ${cx1} ${dir * amp} ${cx2} ${dir * amp} ${ex} 0`;
+        }
+        break;
+      }
+      case 'zigzag': {
+        const points = 8;
+        const segW = (areaW - 2 * margin) / points;
+        const amp = 10;
+        pathD = `M ${startX} 0`;
+        for (let p = 1; p <= points; p++) {
+          pathD += ` L ${startX + p * segW} ${p % 2 === 1 ? -amp : amp}`;
+        }
+        break;
+      }
+    }
+
+    lines.push({ pathD, startX, startY: y });
+  }
+
+  return {
+    mode: 'scissorSkills',
+    instructions: 'Cut along each line carefully! ✂️',
+    skillLabel: 'Scissor Skills · Fine Motor · Bilateral Coordination',
+    scissorSkillsData: { lines },
+  };
+}
+
+// ========== MODE 17: COLOR BY NUMBER ==========
+function generateColorByNumberMode(config: WorksheetConfig): WorksheetData {
+  const numColors = config.colorByNumberColors;
+  const COLOR_PALETTE = [
+    { color: '#EF4444', name: 'Red' },
+    { color: '#3B82F6', name: 'Blue' },
+    { color: '#22C55E', name: 'Green' },
+    { color: '#F59E0B', name: 'Yellow' },
+    { color: '#8B5CF6', name: 'Purple' },
+    { color: '#EC4899', name: 'Pink' },
+  ];
+  const colorKey = COLOR_PALETTE.slice(0, numColors).map((c, i) => ({ index: i + 1, ...c }));
+  const regions: ColorByNumberRegion[] = [];
+
+  if (config.colorByNumberTheme === 'shapes') {
+    // House + sun + tree scene
+    // Sky/background
+    regions.push({ pathD: 'M 30 30 L 430 30 L 430 280 L 30 280 Z', colorIndex: 2, labelX: 230, labelY: 120 });
+    // Sun
+    regions.push({ pathD: 'M 370 80 m -35 0 a 35 35 0 1 0 70 0 a 35 35 0 1 0 -70 0', colorIndex: 4, labelX: 370, labelY: 85 });
+    // House body
+    regions.push({ pathD: 'M 120 180 L 120 350 L 300 350 L 300 180 Z', colorIndex: 1, labelX: 210, labelY: 280 });
+    // Roof
+    regions.push({ pathD: 'M 100 180 L 210 100 L 320 180 Z', colorIndex: Math.min(numColors, 5), labelX: 210, labelY: 155 });
+    // Door
+    regions.push({ pathD: 'M 185 260 L 185 350 L 235 350 L 235 260 Z', colorIndex: Math.min(numColors, 3), labelX: 210, labelY: 310 });
+    // Window
+    regions.push({ pathD: 'M 245 210 L 245 250 L 285 250 L 285 210 Z', colorIndex: 2, labelX: 265, labelY: 235 });
+    // Tree trunk
+    regions.push({ pathD: 'M 60 280 L 60 370 L 80 370 L 80 280 Z', colorIndex: Math.min(numColors, 3), labelX: 70, labelY: 330 });
+    // Tree top
+    regions.push({ pathD: 'M 70 200 m -40 0 a 40 45 0 1 0 80 0 a 40 45 0 1 0 -80 0', colorIndex: 3, labelX: 70, labelY: 210 });
+    // Ground
+    regions.push({ pathD: 'M 30 340 L 430 340 L 430 400 L 30 400 Z', colorIndex: 3, labelX: 230, labelY: 375 });
+  } else if (config.colorByNumberTheme === 'animal') {
+    // Cat face
+    const cx = 230, cy = 220;
+    // Face
+    regions.push({ pathD: `M ${cx} ${cy} m -100 0 a 100 90 0 1 0 200 0 a 100 90 0 1 0 -200 0`, colorIndex: 4, labelX: cx, labelY: cy + 20 });
+    // Left ear
+    regions.push({ pathD: `M ${cx - 80} ${cy - 60} L ${cx - 50} ${cy - 130} L ${cx - 20} ${cy - 60} Z`, colorIndex: 4, labelX: cx - 50, labelY: cy - 90 });
+    // Right ear
+    regions.push({ pathD: `M ${cx + 80} ${cy - 60} L ${cx + 50} ${cy - 130} L ${cx + 20} ${cy - 60} Z`, colorIndex: 4, labelX: cx + 50, labelY: cy - 90 });
+    // Left eye
+    regions.push({ pathD: `M ${cx - 35} ${cy - 10} m -15 0 a 15 12 0 1 0 30 0 a 15 12 0 1 0 -30 0`, colorIndex: 3, labelX: cx - 35, labelY: cy - 5 });
+    // Right eye
+    regions.push({ pathD: `M ${cx + 35} ${cy - 10} m -15 0 a 15 12 0 1 0 30 0 a 15 12 0 1 0 -30 0`, colorIndex: 3, labelX: cx + 35, labelY: cy - 5 });
+    // Nose
+    regions.push({ pathD: `M ${cx} ${cy + 15} L ${cx - 10} ${cy + 30} L ${cx + 10} ${cy + 30} Z`, colorIndex: 1, labelX: cx, labelY: cy + 25 });
+    // Inner left ear
+    regions.push({ pathD: `M ${cx - 65} ${cy - 65} L ${cx - 50} ${cy - 110} L ${cx - 35} ${cy - 65} Z`, colorIndex: Math.min(numColors, 6), labelX: cx - 50, labelY: cy - 80 });
+    // Inner right ear
+    regions.push({ pathD: `M ${cx + 65} ${cy - 65} L ${cx + 50} ${cy - 110} L ${cx + 35} ${cy - 65} Z`, colorIndex: Math.min(numColors, 6), labelX: cx + 50, labelY: cy - 80 });
+  } else {
+    // Abstract pattern - geometric regions
+    const gridN = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 4 : 5;
+    const cellW = 380 / gridN;
+    const cellH = 350 / gridN;
+    const ox = 40, oy = 40;
+    for (let r = 0; r < gridN; r++) {
+      for (let c = 0; c < gridN; c++) {
+        const x = ox + c * cellW;
+        const y = oy + r * cellH;
+        const ci = ((r + c) % numColors) + 1;
+        // Alternate between shapes for visual interest
+        if ((r + c) % 3 === 0) {
+          // Diamond
+          const mx = x + cellW / 2, my = y + cellH / 2;
+          const hw = cellW * 0.4, hh = cellH * 0.4;
+          regions.push({ pathD: `M ${mx} ${my - hh} L ${mx + hw} ${my} L ${mx} ${my + hh} L ${mx - hw} ${my} Z`, colorIndex: ci, labelX: mx, labelY: my + 5 });
+        } else if ((r + c) % 3 === 1) {
+          // Circle
+          const mx = x + cellW / 2, my = y + cellH / 2;
+          const rad = Math.min(cellW, cellH) * 0.35;
+          regions.push({ pathD: `M ${mx} ${my} m -${rad} 0 a ${rad} ${rad} 0 1 0 ${rad * 2} 0 a ${rad} ${rad} 0 1 0 -${rad * 2} 0`, colorIndex: ci, labelX: mx, labelY: my + 5 });
+        } else {
+          // Triangle
+          const mx = x + cellW / 2;
+          regions.push({ pathD: `M ${mx} ${y + cellH * 0.15} L ${x + cellW * 0.85} ${y + cellH * 0.85} L ${x + cellW * 0.15} ${y + cellH * 0.85} Z`, colorIndex: ci, labelX: mx, labelY: y + cellH * 0.65 });
+        }
+      }
+    }
+  }
+
+  return {
+    mode: 'colorByNumber',
+    instructions: 'Colour each section using the number key!',
+    skillLabel: 'Visual Motor Integration · Colour Recognition',
+    colorByNumberData: { regions, colorKey },
+  };
+}
+
+// ========== MODE 18: GRID DESIGNS ==========
+function generateGridDesignsMode(config: WorksheetConfig): WorksheetData {
+  const size = config.gridDesignSize;
+  const pattern = config.gridDesignPattern;
+  const SHAPE_OPTIONS = ['circle', 'square', 'triangle', 'cross', 'dot'];
+  const COLOR_OPTIONS = ['#EF4444', '#3B82F6', '#22C55E', '#F59E0B'];
+  const LINE_OPTIONS = ['diagonal-lr', 'diagonal-rl', 'cross', 'dot'];
+
+  const grid: GridDesignData['grid'] = [];
+  for (let r = 0; r < size; r++) {
+    const row: { type: string; value: string; color?: string }[] = [];
+    for (let c = 0; c < size; c++) {
+      if (pattern === 'shapes') {
+        const shape = SHAPE_OPTIONS[Math.floor(Math.random() * SHAPE_OPTIONS.length)];
+        row.push({ type: 'shape', value: shape });
+      } else if (pattern === 'colors') {
+        const color = COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+        row.push({ type: 'color', value: color, color });
+      } else {
+        const line = LINE_OPTIONS[Math.floor(Math.random() * LINE_OPTIONS.length)];
+        row.push({ type: 'line', value: line });
+      }
+    }
+    grid.push(row);
+  }
+
+  return {
+    mode: 'gridDesigns',
+    instructions: 'Copy the pattern from the left grid to the right grid!',
+    skillLabel: 'Visual Motor Integration · Spatial Relations · Copying',
+    gridDesignData: { grid, gridSize: size, pattern },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -1147,6 +1569,10 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'handwriting': result = generateHandwritingMode(config); break;
     case 'maze': result = generateMazeMode(config); break;
     case 'connectDots': result = generateConnectDotsMode(config); break;
+    case 'tracingPaths': result = generateTracingPathsMode(config); break;
+    case 'scissorSkills': result = generateScissorSkillsMode(config); break;
+    case 'colorByNumber': result = generateColorByNumberMode(config); break;
+    case 'gridDesigns': result = generateGridDesignsMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {

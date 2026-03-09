@@ -82,6 +82,14 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderMazeMode(config, data);
   } else if (data.mode === 'connectDots') {
     bodySVG = renderConnectDotsMode(config, data);
+  } else if (data.mode === 'tracingPaths') {
+    bodySVG = renderTracingPathsMode(config, data);
+  } else if (data.mode === 'scissorSkills') {
+    bodySVG = renderScissorSkillsMode(config, data);
+  } else if (data.mode === 'colorByNumber') {
+    bodySVG = renderColorByNumberMode(config, data);
+  } else if (data.mode === 'gridDesigns') {
+    bodySVG = renderGridDesignsMode(config, data);
   }
 
   const svgContent = `
@@ -1366,6 +1374,271 @@ function renderConnectDotsMode(config: WorksheetConfig, data: WorksheetData): st
   const colorY = offsetY + drawSize + 15;
   svg += `<text x="${W / 2}" y="${colorY}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">✏️ Colour your picture here!</text>`;
   svg += `<rect x="${offsetX}" y="${colorY + 8}" width="${drawSize}" height="${availH * 0.2}" rx="6" fill="none" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="6,4" />`;
+
+  return svg;
+}
+
+// ========== MODE 15: TRACING PATHS ==========
+function renderTracingPathsMode(config: WorksheetConfig, data: WorksheetData): string {
+  const paths = data.tracingPathsData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const rowCount = paths.rows.length;
+  const rowH = availH / rowCount;
+  const scaleX = availW / 460;
+
+  const thickness = config.tracingThickness === 'thick' ? 4 : config.tracingThickness === 'thin' ? 1.5 : 2.5;
+  const dashArray = config.tracingThickness === 'thick' ? '10 6' : config.tracingThickness === 'thin' ? '4 3' : '6 4';
+
+  let svg = '';
+
+  paths.rows.forEach((row, i) => {
+    const offsetY = startY + i * rowH;
+    // Scale the path
+    const pathD = row.pathD.replace(/(\d+\.?\d*)\s+(\d+\.?\d*)/g, (_, x, y) => {
+      return `${MARGIN + parseFloat(x) * scaleX} ${offsetY + parseFloat(y) * (rowH / (availH / rowCount))}`;
+    });
+
+    // Actually, let's compute more carefully
+    const baseRowH = availH / rowCount; // expected unscaled row height
+    const totalUnscaledH = paths.rows.length > 0 ? (() => {
+      // Rows are generated with varying rowH based on difficulty
+      const isEasy = config.difficulty === 'easy';
+      const isMedium = config.difficulty === 'medium';
+      return isEasy ? 100 : isMedium ? 80 : 60;
+    })() : 80;
+    const scaleY2 = rowH / totalUnscaledH;
+
+    // Re-render path with proper transforms
+    const sX = MARGIN + row.startX * scaleX;
+    const sY = offsetY + (row.startY - i * totalUnscaledH) * scaleY2;
+    const eX = MARGIN + row.endX * scaleX;
+    const eY = offsetY + (row.endY - i * totalUnscaledH) * scaleY2;
+
+    // Transform path coordinates
+    const transformedPath = row.pathD.replace(/([ML])\s*([\d.]+)\s+([\d.]+)/g, (_, cmd, x, y) => {
+      const tx = MARGIN + parseFloat(x) * scaleX;
+      const ty = offsetY + (parseFloat(y) - i * totalUnscaledH) * scaleY2;
+      return `${cmd} ${tx} ${ty}`;
+    }).replace(/([CQ])\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/g, (_, cmd, x1, y1, x2, y2, x3, y3) => {
+      const tx1 = MARGIN + parseFloat(x1) * scaleX;
+      const ty1 = offsetY + (parseFloat(y1) - i * totalUnscaledH) * scaleY2;
+      const tx2 = MARGIN + parseFloat(x2) * scaleX;
+      const ty2 = offsetY + (parseFloat(y2) - i * totalUnscaledH) * scaleY2;
+      const tx3 = MARGIN + parseFloat(x3) * scaleX;
+      const ty3 = offsetY + (parseFloat(y3) - i * totalUnscaledH) * scaleY2;
+      return `${cmd} ${tx1} ${ty1} ${tx2} ${ty2} ${tx3} ${ty3}`;
+    }).replace(/([Q])\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/g, (_, cmd, x1, y1, x2, y2) => {
+      const tx1 = MARGIN + parseFloat(x1) * scaleX;
+      const ty1 = offsetY + (parseFloat(y1) - i * totalUnscaledH) * scaleY2;
+      const tx2 = MARGIN + parseFloat(x2) * scaleX;
+      const ty2 = offsetY + (parseFloat(y2) - i * totalUnscaledH) * scaleY2;
+      return `${cmd} ${tx1} ${ty1} ${tx2} ${ty2}`;
+    });
+
+    // Dotted guide path
+    svg += `<path d="${transformedPath}" fill="none" stroke="#94A3B8" stroke-width="${thickness}" stroke-dasharray="${dashArray}" stroke-linecap="round" />`;
+
+    // Start (green) and end (red) markers
+    svg += `<circle cx="${sX}" cy="${sY}" r="${thickness + 3}" fill="#22C55E" />`;
+    svg += `<circle cx="${eX}" cy="${eY}" r="${thickness + 2}" fill="#EF4444" />`;
+
+    // Direction arrow near start
+    const arrowAngle = Math.atan2(eY - sY, eX - sX);
+    const arrowLen = 12;
+    const ax = sX + Math.cos(arrowAngle) * arrowLen;
+    const ay = sY + Math.sin(arrowAngle) * arrowLen;
+    svg += `<line x1="${sX}" y1="${sY}" x2="${ax}" y2="${ay}" stroke="#22C55E" stroke-width="2" />`;
+    svg += `<polygon points="${ax},${ay} ${ax - 5 * Math.cos(arrowAngle - 0.5)},${ay - 5 * Math.sin(arrowAngle - 0.5)} ${ax - 5 * Math.cos(arrowAngle + 0.5)},${ay - 5 * Math.sin(arrowAngle + 0.5)}" fill="#22C55E" />`;
+
+    // Row label
+    svg += `<text x="${MARGIN - 5}" y="${sY + 4}" text-anchor="end" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#94A3B8">${i + 1}</text>`;
+  });
+
+  return svg;
+}
+
+// ========== MODE 16: SCISSOR SKILLS ==========
+function renderScissorSkillsMode(config: WorksheetConfig, data: WorksheetData): string {
+  const scissors = data.scissorSkillsData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const lineCount = scissors.lines.length;
+  const lineSpacing = availH / lineCount;
+  const scaleX = availW / 460;
+
+  let svg = '';
+
+  scissors.lines.forEach((line, i) => {
+    const y = startY + i * lineSpacing + lineSpacing / 2;
+
+    // Transform path
+    const transformedPath = line.pathD.replace(/([ML])\s*([\d.]+)\s+([\d.-]+)/g, (_, cmd, x, yVal) => {
+      return `${cmd} ${MARGIN + parseFloat(x) * scaleX} ${y + parseFloat(yVal)}`;
+    }).replace(/([C])\s*([\d.]+)\s+([\d.-]+)\s+([\d.]+)\s+([\d.-]+)\s+([\d.]+)\s+([\d.-]+)/g, (_, cmd, x1, y1, x2, y2, x3, y3) => {
+      return `${cmd} ${MARGIN + parseFloat(x1) * scaleX} ${y + parseFloat(y1)} ${MARGIN + parseFloat(x2) * scaleX} ${y + parseFloat(y2)} ${MARGIN + parseFloat(x3) * scaleX} ${y + parseFloat(y3)}`;
+    });
+
+    // Dashed cutting line
+    svg += `<path d="${transformedPath}" fill="none" stroke="#1E293B" stroke-width="2.5" stroke-dasharray="8 4" stroke-linecap="round" />`;
+
+    // Scissors icon at start
+    const scissorX = MARGIN + line.startX * scaleX - 18;
+    const scissorY = y;
+    svg += `<text x="${scissorX}" y="${scissorY + 5}" font-family="sans-serif" font-size="16" fill="#64748B">✂</text>`;
+
+    // Small arrow showing cut direction
+    const arrowX = MARGIN + line.startX * scaleX + 5;
+    svg += `<polygon points="${arrowX},${y - 3} ${arrowX + 8},${y} ${arrowX},${y + 3}" fill="#94A3B8" />`;
+  });
+
+  return svg;
+}
+
+// ========== MODE 17: COLOR BY NUMBER ==========
+function renderColorByNumberMode(config: WorksheetConfig, data: WorksheetData): string {
+  const cbn = data.colorByNumberData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+
+  let svg = '';
+
+  // Color key at top
+  const keyH = 40;
+  const keyItemW = availW / cbn.colorKey.length;
+  cbn.colorKey.forEach((ck, i) => {
+    const kx = MARGIN + i * keyItemW + keyItemW / 2;
+    const ky = startY + keyH / 2;
+    // Color swatch
+    const swatchFill = config.colorByNumberBW ? 'none' : ck.color;
+    const swatchStroke = config.colorByNumberBW ? '#1E293B' : ck.color;
+    svg += `<rect x="${kx - 28}" y="${ky - 10}" width="20" height="20" rx="3" fill="${swatchFill}" stroke="${swatchStroke}" stroke-width="1.5" />`;
+    svg += `<text x="${kx - 18}" y="${ky + 5}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="${config.colorByNumberBW ? '#1E293B' : 'white'}">${ck.index}</text>`;
+    svg += `<text x="${kx + 5}" y="${ky + 4}" font-family="Inter, sans-serif" font-size="9" fill="#64748B">${ck.name}</text>`;
+  });
+
+  // Draw regions
+  const drawTop = startY + keyH + 15;
+  const drawH = availH - keyH - 15;
+  const scaleX = availW / 460;
+  const scaleY = drawH / 420;
+
+  cbn.regions.forEach(region => {
+    // Transform path
+    const transformedPath = region.pathD.replace(/([\d.]+)\s+([\d.]+)/g, (_, x, y) => {
+      return `${MARGIN + parseFloat(x) * scaleX} ${drawTop + parseFloat(y) * scaleY}`;
+    });
+
+    const fill = config.colorByNumberBW ? 'none' : 'none'; // Always outline for coloring
+    svg += `<path d="${transformedPath}" fill="${fill}" stroke="#1E293B" stroke-width="1.5" />`;
+
+    // Number label
+    const lx = MARGIN + region.labelX * scaleX;
+    const ly = drawTop + region.labelY * scaleY;
+    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="700" fill="#64748B">${region.colorIndex}</text>`;
+  });
+
+  return svg;
+}
+
+// ========== MODE 18: GRID DESIGNS ==========
+function renderGridDesignsMode(config: WorksheetConfig, data: WorksheetData): string {
+  const gd = data.gridDesignData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const gridSize = gd.gridSize;
+
+  // Two grids side by side
+  const gap = 30;
+  const maxGridW = (availW - gap) / 2;
+  const maxGridH = availH - 30;
+  const cellSize = Math.min(maxGridW / gridSize, maxGridH / gridSize);
+  const gridW = cellSize * gridSize;
+  const gridH = cellSize * gridSize;
+  const leftX = (W / 2 - gap / 2) - gridW;
+  const rightX = W / 2 + gap / 2;
+  const gridY = startY + (availH - gridH) / 2;
+
+  let svg = '';
+
+  // Labels
+  svg += `<text x="${leftX + gridW / 2}" y="${gridY - 10}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Copy this pattern →</text>`;
+  svg += `<text x="${rightX + gridW / 2}" y="${gridY - 10}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#94A3B8">Your turn</text>`;
+
+  // Draw both grids
+  [leftX, rightX].forEach((gx, gridIdx) => {
+    // Thick outer border
+    svg += `<rect x="${gx}" y="${gridY}" width="${gridW}" height="${gridH}" fill="none" stroke="#1E293B" stroke-width="2.5" rx="2" />`;
+
+    // Thin inner grid lines
+    for (let i = 1; i < gridSize; i++) {
+      svg += `<line x1="${gx + i * cellSize}" y1="${gridY}" x2="${gx + i * cellSize}" y2="${gridY + gridH}" stroke="#CBD5E1" stroke-width="1" />`;
+      svg += `<line x1="${gx}" y1="${gridY + i * cellSize}" x2="${gx + gridW}" y2="${gridY + i * cellSize}" stroke="#CBD5E1" stroke-width="1" />`;
+    }
+
+    // Fill left grid only
+    if (gridIdx === 0) {
+      gd.grid.forEach((row, r) => {
+        row.forEach((cell, c) => {
+          const cx = gx + c * cellSize + cellSize / 2;
+          const cy = gridY + r * cellSize + cellSize / 2;
+          const sz = cellSize * 0.5;
+
+          if (cell.type === 'shape') {
+            switch (cell.value) {
+              case 'circle':
+                svg += `<circle cx="${cx}" cy="${cy}" r="${sz * 0.4}" fill="#3B82F6" stroke="#1E293B" stroke-width="1" />`;
+                break;
+              case 'square':
+                svg += `<rect x="${cx - sz * 0.35}" y="${cy - sz * 0.35}" width="${sz * 0.7}" height="${sz * 0.7}" fill="#EF4444" stroke="#1E293B" stroke-width="1" />`;
+                break;
+              case 'triangle': {
+                const h = sz * 0.4;
+                svg += `<polygon points="${cx},${cy - h} ${cx - h},${cy + h * 0.7} ${cx + h},${cy + h * 0.7}" fill="#22C55E" stroke="#1E293B" stroke-width="1" />`;
+                break;
+              }
+              case 'cross':
+                svg += `<line x1="${cx - sz * 0.3}" y1="${cy - sz * 0.3}" x2="${cx + sz * 0.3}" y2="${cy + sz * 0.3}" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />`;
+                svg += `<line x1="${cx + sz * 0.3}" y1="${cy - sz * 0.3}" x2="${cx - sz * 0.3}" y2="${cy + sz * 0.3}" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />`;
+                break;
+              case 'dot':
+                svg += `<circle cx="${cx}" cy="${cy}" r="${sz * 0.15}" fill="#1E293B" />`;
+                break;
+            }
+          } else if (cell.type === 'color') {
+            svg += `<rect x="${gx + c * cellSize + 1}" y="${gridY + r * cellSize + 1}" width="${cellSize - 2}" height="${cellSize - 2}" fill="${cell.color}" />`;
+          } else if (cell.type === 'line') {
+            switch (cell.value) {
+              case 'diagonal-lr':
+                svg += `<line x1="${cx - sz * 0.35}" y1="${cy - sz * 0.35}" x2="${cx + sz * 0.35}" y2="${cy + sz * 0.35}" stroke="#1E293B" stroke-width="2" stroke-linecap="round" />`;
+                break;
+              case 'diagonal-rl':
+                svg += `<line x1="${cx + sz * 0.35}" y1="${cy - sz * 0.35}" x2="${cx - sz * 0.35}" y2="${cy + sz * 0.35}" stroke="#1E293B" stroke-width="2" stroke-linecap="round" />`;
+                break;
+              case 'cross':
+                svg += `<line x1="${cx - sz * 0.3}" y1="${cy}" x2="${cx + sz * 0.3}" y2="${cy}" stroke="#1E293B" stroke-width="2" stroke-linecap="round" />`;
+                svg += `<line x1="${cx}" y1="${cy - sz * 0.3}" x2="${cx}" y2="${cy + sz * 0.3}" stroke="#1E293B" stroke-width="2" stroke-linecap="round" />`;
+                break;
+              case 'dot':
+                svg += `<circle cx="${cx}" cy="${cy}" r="${sz * 0.12}" fill="#1E293B" />`;
+                break;
+            }
+          }
+        });
+      });
+    }
+  });
+
+  // Arrow between grids
+  const arrowY = gridY + gridH / 2;
+  const arrowX1 = leftX + gridW + 5;
+  const arrowX2 = rightX - 5;
+  svg += `<line x1="${arrowX1}" y1="${arrowY}" x2="${arrowX2}" y2="${arrowY}" stroke="#94A3B8" stroke-width="1.5" />`;
+  svg += `<polygon points="${arrowX2},${arrowY - 4} ${arrowX2 + 6},${arrowY} ${arrowX2},${arrowY + 4}" fill="#94A3B8" />`;
 
   return svg;
 }

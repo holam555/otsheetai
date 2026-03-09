@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingHighlightColor, MazeSize, MazeShape, ConnectDotsShape } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingHighlightColor, MazeSize, MazeShape, ConnectDotsShape, TracingStrokeType, TracingThickness, ScissorLineType, ColorByNumberTheme, GridDesignSize, GridDesignPattern } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +35,10 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'closure', label: 'Visual Closure', icon: '👁️' },
   { value: 'maze', label: 'Maze', icon: '🏁' },
   { value: 'connectDots', label: 'Connect the Dots', icon: '🔗' },
+  { value: 'tracingPaths', label: 'Tracing Paths', icon: '✏️' },
+  { value: 'scissorSkills', label: 'Scissor Skills', icon: '✂️' },
+  { value: 'colorByNumber', label: 'Color by Number', icon: '🎨' },
+  { value: 'gridDesigns', label: 'Grid Designs', icon: '📐' },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
@@ -274,6 +278,195 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
+        {/* Tracing Paths Controls */}
+        {config.mode === 'tracingPaths' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Stroke Type</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  { value: 'mixed' as TracingStrokeType, label: 'Mixed' },
+                  { value: 'vertical' as TracingStrokeType, label: 'Vertical' },
+                  { value: 'horizontal' as TracingStrokeType, label: 'Horizontal' },
+                  { value: 'diagonal' as TracingStrokeType, label: 'Diagonal' },
+                  { value: 'curved' as TracingStrokeType, label: 'Curved' },
+                  { value: 'waves' as TracingStrokeType, label: 'Waves' },
+                  { value: 'zigzag' as TracingStrokeType, label: 'Zigzag' },
+                  { value: 'spiral' as TracingStrokeType, label: 'Spiral' },
+                  { value: 'loops' as TracingStrokeType, label: 'Loops' },
+                ]).map(s => (
+                  <Button
+                    key={s.value}
+                    variant={config.tracingStrokeType === s.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ tracingStrokeType: s.value })}
+                    className="font-display text-xs"
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Rows</Label>
+                <span className="text-xs font-bold text-primary">{config.tracingRows}</span>
+              </div>
+              <Slider
+                value={[config.tracingRows]}
+                min={2}
+                max={6}
+                step={1}
+                onValueChange={([v]) => update({ tracingRows: v })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Line Thickness</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'thick' as TracingThickness, label: 'Thick' },
+                  { value: 'medium' as TracingThickness, label: 'Medium' },
+                  { value: 'thin' as TracingThickness, label: 'Thin' },
+                ]).map(t => (
+                  <Button
+                    key={t.value}
+                    variant={config.tracingThickness === t.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ tracingThickness: t.value })}
+                    className="font-display text-xs"
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scissor Skills Controls */}
+        {config.mode === 'scissorSkills' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Line Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: 'straight' as ScissorLineType, label: 'Straight' },
+                  { value: 'wavy' as ScissorLineType, label: 'Wavy' },
+                  { value: 'zigzag' as ScissorLineType, label: 'Zigzag' },
+                  { value: 'mixed' as ScissorLineType, label: 'Mixed' },
+                ]).map(t => (
+                  <Button
+                    key={t.value}
+                    variant={config.scissorLineType === t.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ scissorLineType: t.value })}
+                    className="font-display text-xs"
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Number of Lines</Label>
+                <span className="text-xs font-bold text-primary">{config.scissorLineCount}</span>
+              </div>
+              <Slider
+                value={[config.scissorLineCount]}
+                min={3}
+                max={10}
+                step={1}
+                onValueChange={([v]) => update({ scissorLineCount: v })}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Color by Number Controls */}
+        {config.mode === 'colorByNumber' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Theme</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'shapes' as ColorByNumberTheme, label: '🏠 Shapes' },
+                  { value: 'animal' as ColorByNumberTheme, label: '🐱 Animal' },
+                  { value: 'pattern' as ColorByNumberTheme, label: '🔷 Pattern' },
+                ]).map(t => (
+                  <Button
+                    key={t.value}
+                    variant={config.colorByNumberTheme === t.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ colorByNumberTheme: t.value })}
+                    className="font-display text-xs"
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Number of Colors</Label>
+                <span className="text-xs font-bold text-primary">{config.colorByNumberColors}</span>
+              </div>
+              <Slider
+                value={[config.colorByNumberColors]}
+                min={3}
+                max={6}
+                step={1}
+                onValueChange={([v]) => update({ colorByNumberColors: v })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">B&W Mode (print-friendly)</Label>
+              <Switch checked={config.colorByNumberBW} onCheckedChange={(v) => update({ colorByNumberBW: v })} />
+            </div>
+          </div>
+        )}
+
+        {/* Grid Designs Controls */}
+        {config.mode === 'gridDesigns' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Grid Size</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([3, 4, 5] as GridDesignSize[]).map(s => (
+                  <Button
+                    key={s}
+                    variant={config.gridDesignSize === s ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ gridDesignSize: s })}
+                    className="font-display text-xs"
+                  >
+                    {s}×{s}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Pattern Type</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'shapes' as GridDesignPattern, label: 'Shapes' },
+                  { value: 'colors' as GridDesignPattern, label: 'Colors' },
+                  { value: 'lines' as GridDesignPattern, label: 'Lines' },
+                ]).map(p => (
+                  <Button
+                    key={p.value}
+                    variant={config.gridDesignPattern === p.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ gridDesignPattern: p.value })}
+                    className="font-display text-xs"
+                  >
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         {/* Odd One Out Type */}
         {config.mode === 'oddOneOut' && (
           <div className="space-y-2">
