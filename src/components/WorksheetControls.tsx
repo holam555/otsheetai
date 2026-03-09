@@ -17,20 +17,25 @@ interface Props {
   onPrint: () => void;
 }
 
-const MODES: { value: WorksheetMode; label: string }[] = [
-  { value: 'find', label: 'Find the Shape' },
-  { value: 'missing', label: 'Missing Shape' },
-  { value: 'pattern', label: 'Match Pattern' },
-  { value: 'count', label: 'Find and Count' },
-  { value: 'copy', label: 'Copy the Pattern' },
-  { value: 'sequence', label: 'What Comes Next' },
-  { value: 'oddOneOut', label: 'Odd One Out' },
-  { value: 'mirror', label: 'Mirror Image' },
-  { value: 'figureGround', label: 'Figure Ground' },
-  { value: 'closure', label: 'Visual Closure' },
-  { value: 'traceName', label: 'Trace Your Name' },
-  { value: 'handwriting', label: 'Handwriting Practice' },
+const HANDWRITING_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
+  { value: 'handwriting', label: 'Practice', icon: '📝' },
+  { value: 'traceName', label: 'Trace Name', icon: '✍️' },
 ];
+
+const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
+  { value: 'find', label: 'Find the Shape', icon: '🔍' },
+  { value: 'missing', label: 'Missing Shape', icon: '❓' },
+  { value: 'pattern', label: 'Match Pattern', icon: '🔲' },
+  { value: 'oddOneOut', label: 'Odd One Out', icon: '⭕' },
+  { value: 'count', label: 'Find and Count', icon: '🔢' },
+  { value: 'copy', label: 'Copy the Pattern', icon: '📋' },
+  { value: 'sequence', label: 'What Comes Next', icon: '➡️' },
+  { value: 'mirror', label: 'Mirror Image', icon: '🪞' },
+  { value: 'figureGround', label: 'Figure Ground', icon: '🌫️' },
+  { value: 'closure', label: 'Visual Closure', icon: '👁️' },
+];
+
+const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
 
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
   { value: 'shapes', label: 'Shapes' },
