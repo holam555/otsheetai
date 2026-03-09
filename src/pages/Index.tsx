@@ -57,6 +57,8 @@ const defaultConfig: WorksheetConfig = {
   pixelArtTheme: 'heart',
   pixelArtGridSize: 'simple',
   pixelArtBW: false,
+  useEmoji: false,
+  emojiTheme: 'animals',
 };
 
 export default function Index() {
