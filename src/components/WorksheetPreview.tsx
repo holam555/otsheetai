@@ -6,6 +6,18 @@ interface Props {
   data: WorksheetData;
 }
 
+// Trace overlay data: collected during SVG generation, rendered as HTML divs
+interface TraceOverlay {
+  text: string;
+  // Positions as percentage of SVG viewBox (0-100)
+  xPct: number;
+  yPct: number;
+  fontPx: number;
+  widthPct: number;
+}
+
+let _traceOverlays: TraceOverlay[] = [];
+
 const W = 595;
 const H = 842;
 const MARGIN = 40;
