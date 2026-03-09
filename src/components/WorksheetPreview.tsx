@@ -15,6 +15,8 @@ interface TraceOverlay {
   fontPx: number;
   width: number;
   opacity: number;
+  color: string;
+  isTrace: boolean;
 }
 
 let _traceOverlays: TraceOverlay[] = [];
@@ -175,23 +177,44 @@ export default function WorksheetPreview({ config, data }: Props) {
         }}
       >
         {overlays.map((o, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: o.x,
-              top: o.y,
-              width: o.width,
-              fontFamily: "'Edu AU VIC WA NT Dots', cursive",
-              fontSize: o.fontPx,
-              color: '#aaaaaa',
-              opacity: o.opacity,
-              lineHeight: 1,
-              letterSpacing: '0.05em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {o.text}
+          <div key={i} style={{ position: 'absolute', left: o.x, top: o.y, width: o.width }}>
+            {/* Ghost layer for trace text */}
+            {o.isTrace && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  fontFamily: "'Edu AU VIC WA NT Dots', cursive",
+                  fontSize: o.fontPx,
+                  color: '#cccccc',
+                  opacity: 0.15,
+                  lineHeight: 1,
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  WebkitTextStroke: '1px #cccccc',
+                }}
+              >
+                {o.text}
+              </div>
+            )}
+            <div
+              style={{
+                position: 'relative',
+                fontFamily: o.isTrace ? "'Edu AU VIC WA NT Dots', cursive" : "'Patrick Hand', cursive",
+                fontSize: o.fontPx,
+                color: o.color,
+                opacity: o.opacity,
+                lineHeight: 1,
+                letterSpacing: '0.05em',
+                whiteSpace: 'nowrap',
+                ...(o.isTrace ? {
+                  WebkitTextStroke: `2.5px ${o.color}`,
+                  paintOrder: 'stroke fill',
+                } : {}),
+              }}
+            >
+              {o.text}
+            </div>
           </div>
         ))}
       </div>
@@ -1032,7 +1055,7 @@ function renderFourLineSet(
 }
 
 // Add a trace overlay (rendered as HTML div, not SVG)
-function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1) {
+function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1, color: string = '#aaaaaa', isTrace: boolean = false) {
   const topY = baselineY - fontPx * 0.85;
   _traceOverlays.push({
     text,
@@ -1041,6 +1064,8 @@ function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: num
     fontPx,
     width: contentW,
     opacity,
+    color,
+    isTrace,
   });
 }
 
@@ -1055,7 +1080,7 @@ function renderTextOnTriline(
 
   if (isDottedTrace) {
     // Use dotted font rendered as HTML overlay
-    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.25);
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.6, '#999999', true);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
@@ -1103,9 +1128,9 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using KG Primary Dots font overlay
-    const refBaselineY = groupY + refTextH * 0.85;
-    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW);
+    // Row 1: Reference text — solid dark, baseline aligned to bottom of ref zone
+    const refBaselineY = groupY + refTextH;
+    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW, 1, '#333333', false);
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
@@ -1148,7 +1173,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.25);
+          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.6, '#999999', true);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
@@ -1206,7 +1231,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.25);
+    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.6, '#999999', true);
 
     let nextY = blockY + labelH;
 
