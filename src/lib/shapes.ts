@@ -237,11 +237,7 @@ export interface WorksheetData {
   connectDotsData?: ConnectDotsData;
   tracingPathsData?: TracingPathsData;
   scissorSkillsData?: ScissorSkillsData;
-  colorByNumberData?: ColorByNumberData;
   gridDesignData?: GridDesignData;
-  dotArtData?: DotArtData;
-  shapeTracingData?: ShapeTracingData;
-  spotDiffData?: SpotDiffData;
   visualScanData?: VisualScanData;
   pixelArtData?: PixelArtData;
 }
