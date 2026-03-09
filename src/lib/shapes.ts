@@ -124,6 +124,7 @@ export interface CellData {
   isTarget?: boolean;
   isBlank?: boolean;
   rotation?: number;
+  emoji?: string;
 }
 
 export interface MissingPuzzle {
