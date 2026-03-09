@@ -996,14 +996,13 @@ function renderFourLineSet(
 
 // Add a trace overlay (rendered as HTML div, not SVG)
 function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number) {
-  // Convert SVG viewBox coordinates to percentages
   const topY = baselineY - fontPx * 0.85; // approximate ascender offset
   _traceOverlays.push({
     text,
-    xPct: (x / W) * 100,
-    yPct: (topY / H) * 100,
+    x,
+    y: topY,
     fontPx,
-    widthPct: (contentW / W) * 100,
+    width: contentW,
   });
 }
 
