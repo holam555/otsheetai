@@ -78,8 +78,7 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderFigureGroundMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'closure') {
     bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
-  } else if (data.mode === 'handwriting') {
-  } else if (data.mode === 'handwriting') {
+  } else if (data.mode === 'handwriting' || data.mode === 'traceName') {
     bodySVG = renderHandwritingMode(config, data);
   } else if (data.mode === 'maze') {
     bodySVG = renderMazeMode(config, data);
