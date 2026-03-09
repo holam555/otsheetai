@@ -901,50 +901,55 @@ function getLetterType(ch: string): 'tall' | 'medium' | 'descender' {
 
 // Line color hex mapping
 const LINE_COLOR_MAP: Record<string, string> = {
-  red: '#DC2626', blue: '#2563EB', green: '#16A34A', purple: '#9333EA', black: '#1E293B',
-};
-const LINE_MID_MAP: Record<string, string> = {
-  red: '#F9A8D4', blue: '#93C5FD', green: '#86EFAC', purple: '#C4B5FD', black: '#94A3B8',
-};
-const HIGHLIGHT_SKY_MAP: Record<string, string> = {
-  blue: '#DBEAFE', yellow: '#FEF9C3', green: '#DCFCE7', pink: '#FCE7F3', none: '',
-};
-const HIGHLIGHT_GRASS_MAP: Record<string, string> = {
-  blue: '#DCFCE7', yellow: '#FEF3C7', green: '#D1FAE5', pink: '#FDF2F8', none: '',
+  red: '#DC2626', blue: '#2563EB', green: '#16A34A', black: '#1E293B',
 };
 
-// Colored tri-line set (HWT-style) anchored to text baseline
-// zoneH (top-to-bottom line distance) = fontPx * 0.7
-// Middle dotted line is at exact midpoint between top and bottom lines
+// Renders a 3-line set: colored top & bottom, grey/black dashed middle
 function renderColoredTrilineSet(
   x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
 ): string {
+  const lineMode = config.handwritingLineMode || '3-line';
+
+  if (lineMode === '4-line') {
+    return renderFourLineSet(x, baselineY, fontPx, width, config);
+  }
+
   const zoneH = fontPx * 0.7;
   const topY = baselineY - zoneH;
   const midY = baselineY - zoneH / 2; // exact midpoint
   const botY = baselineY;
-  const skyH = zoneH * 0.2;
-  const grassH = zoneH * 0.15;
 
   const useColor = config.handwritingShowColoredLines;
   const lineColor = useColor ? (LINE_COLOR_MAP[config.handwritingLineColor] || '#DC2626') : '#94A3B8';
-  const midColor = useColor ? (LINE_MID_MAP[config.handwritingLineColor] || '#F9A8D4') : '#CBD5E1';
-  const showHighlight = config.handwritingShowHighlight;
-  const hlColor = config.handwritingHighlightColor || 'blue';
 
   let svg = '';
-
-  if (showHighlight && hlColor !== 'none') {
-    const skyFill = HIGHLIGHT_SKY_MAP[hlColor] || '#DBEAFE';
-    const grassFill = HIGHLIGHT_GRASS_MAP[hlColor] || '#DCFCE7';
-    svg += `<rect x="${x}" y="${topY - skyH}" width="${width}" height="${skyH}" fill="${skyFill}" opacity="0.6" />`;
-    svg += `<rect x="${x}" y="${botY}" width="${width}" height="${grassH}" fill="${grassFill}" opacity="0.5" />`;
-  }
-
+  // Top line (colored)
   svg += `<line x1="${x}" y1="${topY}" x2="${x + width}" y2="${topY}" stroke="${lineColor}" stroke-width="1.2" />`;
-  svg += `<line x1="${x}" y1="${midY}" x2="${x + width}" y2="${midY}" stroke="${midColor}" stroke-width="0.8" stroke-dasharray="4 3" />`;
+  // Middle dotted line (always grey)
+  svg += `<line x1="${x}" y1="${midY}" x2="${x + width}" y2="${midY}" stroke="#94A3B8" stroke-width="0.8" stroke-dasharray="4 3" />`;
+  // Bottom line (colored)
   svg += `<line x1="${x}" y1="${botY}" x2="${x + width}" y2="${botY}" stroke="${lineColor}" stroke-width="1.2" />`;
 
+  return svg;
+}
+
+// 4-line HK copybook format: 4 evenly spaced solid lines (bottom, baseline, midline, top)
+function renderFourLineSet(
+  x: number, baselineY: number, fontPx: number, width: number, config: WorksheetConfig
+): string {
+  const zoneH = fontPx * 0.7;
+  const topY = baselineY - zoneH;
+  const botY = baselineY;
+  const spacing = zoneH / 3; // 4 lines = 3 equal gaps
+
+  const useColor = config.handwritingShowColoredLines;
+  const lineColor = useColor ? (LINE_COLOR_MAP[config.handwritingLineColor] || '#DC2626') : '#94A3B8';
+
+  let svg = '';
+  for (let i = 0; i < 4; i++) {
+    const ly = topY + i * spacing;
+    svg += `<line x1="${x}" y1="${ly}" x2="${x + width}" y2="${ly}" stroke="${lineColor}" stroke-width="1.2" />`;
+  }
   return svg;
 }
 
