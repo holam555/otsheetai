@@ -65,6 +65,10 @@ export interface WorksheetConfig {
   handwritingShowColoredLines: boolean;
   handwritingLineColor: HandwritingLineColor;
   handwritingHighlightColor: HandwritingHighlightColor;
+  mazeSize: MazeSize;
+  mazeShape: MazeShape;
+  mazeShowSolution: boolean;
+  connectDotsShape: ConnectDotsShape;
 }
 
 export interface CellData {
