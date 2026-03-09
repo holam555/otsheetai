@@ -755,16 +755,38 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
             )}
 
             {config.handwritingSubMode === 'wordBoxes' && (
-              <div className="space-y-2">
-                <Label className="font-display font-semibold text-sm">Words (one per line, max 8)</Label>
-                <Textarea
-                  value={config.handwritingWords}
-                  onChange={(e) => update({ handwritingWords: e.target.value })}
-                  placeholder={"cat\ndog\nbird\nfish"}
-                  rows={4}
-                  className="text-sm font-mono"
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label className="font-display font-semibold text-sm">Words (one per line, max 8)</Label>
+                  <Textarea
+                    value={config.handwritingWords}
+                    onChange={(e) => update({ handwritingWords: e.target.value })}
+                    placeholder={"cat\ndog\nbird\nfish"}
+                    rows={4}
+                    className="text-sm font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-display font-semibold text-sm">Display Mode</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: 'boxOnly' as WordBoxDisplayMode, label: 'Box Only' },
+                      { value: 'trilineOnly' as WordBoxDisplayMode, label: 'Tri-line' },
+                      { value: 'both' as WordBoxDisplayMode, label: 'Both' },
+                    ]).map(m => (
+                      <Button
+                        key={m.value}
+                        variant={config.wordBoxDisplayMode === m.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => update({ wordBoxDisplayMode: m.value })}
+                        className="font-display text-xs"
+                      >
+                        {m.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             {config.handwritingSubMode === 'sentence' && (
@@ -828,49 +850,38 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
               </div>
             </div>
 
-            {/* Font Selector */}
+            {/* Font Selector — Print and Cursive only */}
             <div className="space-y-2">
               <Label className="font-display font-semibold text-sm">Font</Label>
-              <Select value={config.handwritingFont} onValueChange={(v) => update({ handwritingFont: v as HandwritingFont })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {([
-                    { value: 'print' as const, label: 'Print', family: "'Arial', 'Helvetica', sans-serif", weight: '400', style: 'normal', extra: '' },
-                    { value: 'cursive' as const, label: 'Cursive', family: "'Segoe Script', 'Comic Sans MS', cursive", weight: '400', style: 'normal', extra: '' },
-                    { value: 'manuscript' as const, label: 'Manuscript', family: "'Courier New', 'Courier', monospace", weight: '400', style: 'normal', extra: '' },
-                    { value: 'dotted' as const, label: 'Dotted', family: "'Arial', sans-serif", weight: '400', style: 'normal', extra: 'opacity: 0.4; paint-order: stroke; -webkit-text-stroke: 1px #64748B; color: transparent;' },
-                  ]).map(f => (
-                    <SelectItem key={f.value} value={f.value}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm">{f.label}</span>
-                        <span
-                          className="text-muted-foreground"
-                          style={{
-                            fontFamily: f.family,
-                            fontWeight: f.weight,
-                            fontStyle: f.style,
-                            fontSize: '14px',
-                            ...(f.value === 'dotted' ? {
-                              opacity: 0.5,
-                              WebkitTextStroke: '0.8px currentColor',
-                              color: 'transparent',
-                            } : {}),
-                          }}
-                        >
-                          Hello
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: 'print' as HandwritingFont, label: 'Print', family: "'Arial', sans-serif" },
+                  { value: 'cursive' as HandwritingFont, label: 'Cursive', family: "'Segoe Script', cursive" },
+                ]).map(f => (
+                  <Button
+                    key={f.value}
+                    variant={config.handwritingFont === f.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ handwritingFont: f.value })}
+                    className="font-display text-xs"
+                  >
+                    <span>{f.label}</span>
+                    <span className="text-muted-foreground ml-1" style={{ fontFamily: f.family, fontSize: '12px' }}>Aa</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Show Start/End Points toggle */}
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">Show start/end points</Label>
+              <Switch checked={config.handwritingShowStartEnd} onCheckedChange={(v) => update({ handwritingShowStartEnd: v })} />
             </div>
 
             {/* Line Style Controls */}
             <div className="space-y-3 border-t border-border pt-3">
               <Label className="font-display font-semibold text-sm">Line Style</Label>
 
-              {/* 3-line / 4-line toggle */}
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Line mode</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -921,72 +932,78 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Grid Size</Label>
-          <div className="grid grid-cols-4 gap-2">
-            {GRID_SIZES.map(s => (
-              <Button
-                key={s}
-                variant={config.gridSize === s ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => update({ gridSize: s })}
-                className="font-display"
-              >
-                {s}×{s}
-              </Button>
-            ))}
+        {/* Grid Size — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Grid Size</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {GRID_SIZES.map(s => (
+                <Button
+                  key={s}
+                  variant={config.gridSize === s ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ gridSize: s })}
+                  className="font-display"
+                >
+                  {s}×{s}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Shape Picker */}
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Shapes ({config.selectedShapes.length} selected)</Label>
-          <div className="grid grid-cols-6 gap-1.5">
-            {ALL_SHAPES.map(shape => (
-              <ShapeIcon
-                key={shape}
-                shape={shape}
-                selected={config.selectedShapes.includes(shape)}
-                onClick={() => toggleShape(shape)}
-              />
-            ))}
-          </div>
-          {config.selectedShapes.length <= 2 && (
-            <p className="text-[10px] text-destructive">Minimum 2 shapes required</p>
-          )}
-        </div>
-
-        {/* Difficulty with age-based tooltip */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <Label className="font-display font-semibold text-sm">Difficulty</Label>
-            {config.childAge !== null && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">Auto-set for age {config.childAge}</p>
-                </TooltipContent>
-              </Tooltip>
+        {/* Shape Picker — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Shapes ({config.selectedShapes.length} selected)</Label>
+            <div className="grid grid-cols-6 gap-1.5">
+              {ALL_SHAPES.map(shape => (
+                <ShapeIcon
+                  key={shape}
+                  shape={shape}
+                  selected={config.selectedShapes.includes(shape)}
+                  onClick={() => toggleShape(shape)}
+                />
+              ))}
+            </div>
+            {config.selectedShapes.length <= 2 && (
+              <p className="text-[10px] text-destructive">Minimum 2 shapes required</p>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {DIFFICULTIES.map(d => (
-              <Button
-                key={d.value}
-                variant={config.difficulty === d.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => update({ difficulty: d.value })}
-                className="font-display"
-                disabled={!available[d.value]}
-              >
-                {d.label}
-              </Button>
-            ))}
+        )}
+
+        {/* Difficulty — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label className="font-display font-semibold text-sm">Difficulty</Label>
+              {config.childAge !== null && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Auto-set for age {config.childAge}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {DIFFICULTIES.map(d => (
+                <Button
+                  key={d.value}
+                  variant={config.difficulty === d.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ difficulty: d.value })}
+                  className="font-display"
+                  disabled={!available[d.value]}
+                >
+                  {d.label}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Child's Name & Age */}
         <div className="grid grid-cols-[1fr_80px] gap-2">
@@ -1009,7 +1026,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 const age = val !== null ? Math.min(12, Math.max(2, val)) : null;
                 const partial: Partial<WorksheetConfig> = { childAge: age };
-                // Auto-set difficulty
                 if (age !== null) {
                   if (age <= 3) partial.difficulty = 'easy';
                   else if (age <= 5 && config.difficulty === 'hard') partial.difficulty = 'medium';
@@ -1021,65 +1037,17 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         </div>
 
-        {/* Exercises per sheet */}
+        {/* Name/Date Header Font Size */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="font-display font-semibold text-sm">Exercises per sheet</Label>
-            <span className="text-xs font-bold text-primary">{config.exerciseCount}</span>
-          </div>
-          <Slider
-            value={[exerciseIndex >= 0 ? exerciseIndex : 1]}
-            min={0}
-            max={3}
-            step={1}
-            onValueChange={([v]) => update({ exerciseCount: EXERCISE_COUNTS[v] })}
-          />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            {EXERCISE_COUNTS.map(n => <span key={n}>{n}</span>)}
-          </div>
-        </div>
-
-        {/* Custom Instruction */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="font-display font-semibold text-sm">Custom instruction</Label>
-            <span className="text-[10px] text-muted-foreground">{config.customInstruction.length}/120</span>
-          </div>
-          <Input
-            value={config.customInstruction}
-            onChange={(e) => {
-              if (e.target.value.length <= 120) update({ customInstruction: e.target.value });
-            }}
-            placeholder="e.g. Circle all the shapes that match!"
-          />
-        </div>
-
-        {/* Border Style */}
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Border Style</Label>
-          <div className="flex gap-2">
-            {BORDER_STYLES.map(b => (
-              <BorderPreview
-                key={b.value}
-                style={b.value}
-                selected={config.borderStyle === b.value}
-                onClick={() => update({ borderStyle: b.value })}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Header Font Size & Bold */}
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Header Style</Label>
+          <Label className="font-display font-semibold text-sm">Name/Date Size</Label>
           <div className="flex items-center gap-2">
             <div className="grid grid-cols-3 gap-1 flex-1">
               {HEADER_SIZES.map(s => (
                 <Button
                   key={s.value}
-                  variant={config.headerFontSize === s.value ? 'default' : 'outline'}
+                  variant={config.nameDateFontSize === s.value ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => update({ headerFontSize: s.value })}
+                  onClick={() => update({ nameDateFontSize: s.value })}
                   className="font-display text-xs"
                 >
                   {s.label}
@@ -1098,21 +1066,104 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         </div>
 
-        {/* Toggles */}
-        <div className="flex items-center justify-between">
-          <Label className="font-display font-semibold text-sm">Grid Lines</Label>
-          <Switch checked={config.showGridLines} onCheckedChange={(v) => update({ showGridLines: v })} />
+        {/* Exercises per sheet — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">Exercises per sheet</Label>
+              <span className="text-xs font-bold text-primary">{config.exerciseCount}</span>
+            </div>
+            <Slider
+              value={[exerciseIndex >= 0 ? exerciseIndex : 1]}
+              min={0}
+              max={3}
+              step={1}
+              onValueChange={([v]) => update({ exerciseCount: EXERCISE_COUNTS[v] })}
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              {EXERCISE_COUNTS.map(n => <span key={n}>{n}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Instruction */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="font-display font-semibold text-sm">Custom instruction</Label>
+            <span className="text-[10px] text-muted-foreground">{config.customInstruction.length}/120</span>
+          </div>
+          <Input
+            value={config.customInstruction}
+            onChange={(e) => {
+              if (e.target.value.length <= 120) update({ customInstruction: e.target.value });
+            }}
+            placeholder="e.g. Circle all the shapes that match!"
+          />
+          <div className="flex items-center gap-2 mt-1">
+            <div className="grid grid-cols-3 gap-1 flex-1">
+              {(['small', 'medium', 'large'] as InstructionFontSize[]).map(s => (
+                <Button
+                  key={s}
+                  variant={config.instructionFontSize === s ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ instructionFontSize: s })}
+                  className="font-display text-xs capitalize"
+                >
+                  {s.charAt(0).toUpperCase()}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant={config.instructionBold ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => update({ instructionBold: !config.instructionBold })}
+              className="px-2.5"
+              title="Bold instruction"
+            >
+              <Bold className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <Label className="font-display font-semibold text-sm">Colour</Label>
-          <Switch checked={config.useColor} onCheckedChange={(v) => update({ useColor: v })} />
-        </div>
+        {/* Border Style — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Border Style</Label>
+            <div className="flex gap-2">
+              {BORDER_STYLES.map(b => (
+                <BorderPreview
+                  key={b.value}
+                  style={b.value}
+                  selected={config.borderStyle === b.value}
+                  onClick={() => update({ borderStyle: b.value })}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-        <div className="flex items-center justify-between">
-          <Label className="font-display font-semibold text-sm">Answer Key</Label>
-          <Switch checked={config.showAnswerKey} onCheckedChange={(v) => update({ showAnswerKey: v })} />
-        </div>
+        {/* Grid Lines — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="flex items-center justify-between">
+            <Label className="font-display font-semibold text-sm">Grid Lines</Label>
+            <Switch checked={config.showGridLines} onCheckedChange={(v) => update({ showGridLines: v })} />
+          </div>
+        )}
+
+        {/* Colour — VP modes only */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="flex items-center justify-between">
+            <Label className="font-display font-semibold text-sm">Colour</Label>
+            <Switch checked={config.useColor} onCheckedChange={(v) => update({ useColor: v })} />
+          </div>
+        )}
+
+        {!isHandwritingMode(config.mode) && (
+          <div className="flex items-center justify-between">
+            <Label className="font-display font-semibold text-sm">Answer Key</Label>
+            <Switch checked={config.showAnswerKey} onCheckedChange={(v) => update({ showAnswerKey: v })} />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Button onClick={onGenerate} className="font-display font-bold gap-2">
