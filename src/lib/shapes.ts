@@ -75,6 +75,16 @@ export interface WorksheetConfig {
   mazeShape: MazeShape;
   mazeShowSolution: boolean;
   connectDotsShape: ConnectDotsShape;
+  tracingStrokeType: TracingStrokeType;
+  tracingRows: number;
+  tracingThickness: TracingThickness;
+  scissorLineType: ScissorLineType;
+  scissorLineCount: number;
+  colorByNumberTheme: ColorByNumberTheme;
+  colorByNumberColors: number;
+  colorByNumberBW: boolean;
+  gridDesignSize: GridDesignSize;
+  gridDesignPattern: GridDesignPattern;
 }
 
 export interface CellData {
