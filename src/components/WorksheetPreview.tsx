@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
 import { LETTER_PATHS, StrokePoint } from '@/lib/letterPaths';
 
