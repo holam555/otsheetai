@@ -1066,11 +1066,9 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using Edu NSW ACT Foundation font via CSS
-    const refText = allChars.join('');
-    const refFoHeight = refFontPx * 1.3;
-    const refFoY = groupY + refTextH * 0.85 - refFontPx * 0.95;
-    svg += renderTraceForeignObject(refText, MARGIN + 4, refFoY, contentW, refFoHeight, refFontPx);
+    // Row 1: Reference text as dotted trace using KG Primary Dots font overlay
+    const refBaselineY = groupY + refTextH * 0.85;
+    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW);
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
