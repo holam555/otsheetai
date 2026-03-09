@@ -665,7 +665,7 @@ function renderOddOneOutMode(
         const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
         const cy = rowY + cellSz / 2;
         svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
-        svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+        svg += getCellSVG(cell, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
       });
     }
   });
