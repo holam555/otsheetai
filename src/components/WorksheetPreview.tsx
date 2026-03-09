@@ -1121,8 +1121,8 @@ function renderSentenceTrilineMode(
   const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
-  // Auto-calculate trace font size so ascenders fill the zone
-  const traceFontPx = zoneH / 0.72;
+  // Trace font size: cap-height must equal zoneH. CSS cap-height ≈ 0.7 * fontSize for most fonts.
+  const traceFontPx = zoneH / 0.7;
   let svg = '';
 
   for (let g = 0; g < maxGroups; g++) {
