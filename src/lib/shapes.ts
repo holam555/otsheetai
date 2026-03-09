@@ -1628,6 +1628,591 @@ function generateGridDesignsMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 19: DOT ART ==========
+function generateDotArtMode(config: WorksheetConfig): WorksheetData {
+  const theme = config.dotArtTheme;
+  const dotSizeMm = config.dotArtDotSize === 'large' ? 25 : config.dotArtDotSize === 'medium' ? 18 : 12;
+  const spacingFactor = config.dotArtSpacing === 'loose' ? 1.4 : config.dotArtSpacing === 'tight' ? 0.8 : 1.0;
+  const dotR = dotSizeMm * 2.833 / 2;
+  const spacing = dotR * 2.2 * spacingFactor;
+
+  // Shape outlines as parametric paths (normalized 0-1)
+  const SHAPE_PATHS: Record<DotArtTheme, [number, number][]> = {
+    heart: (() => {
+      const pts: [number, number][] = [];
+      for (let t = 0; t < Math.PI * 2; t += 0.15) {
+        pts.push([0.5 + 0.4 * 16 * Math.pow(Math.sin(t), 3) / 16, 0.5 - 0.35 * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 16]);
+      }
+      return pts;
+    })(),
+    star: (() => {
+      const pts: [number, number][] = [];
+      for (let i = 0; i < 10; i++) {
+        const angle = (Math.PI / 2) + (2 * Math.PI * i) / 10;
+        const r = i % 2 === 0 ? 0.45 : 0.2;
+        pts.push([0.5 + r * Math.cos(angle), 0.5 - r * Math.sin(angle)]);
+      }
+      return pts;
+    })(),
+    sun: (() => {
+      const pts: [number, number][] = [];
+      for (let i = 0; i < 24; i++) {
+        const angle = (2 * Math.PI * i) / 24;
+        const r = i % 2 === 0 ? 0.45 : 0.3;
+        pts.push([0.5 + r * Math.cos(angle), 0.5 + r * Math.sin(angle)]);
+      }
+      return pts;
+    })(),
+    catFace: [[0.2,0.3],[0.15,0.15],[0.25,0.05],[0.35,0.15],[0.5,0.2],[0.65,0.15],[0.75,0.05],[0.85,0.15],[0.8,0.3],[0.85,0.5],[0.8,0.7],[0.7,0.85],[0.5,0.9],[0.3,0.85],[0.2,0.7],[0.15,0.5]],
+    fish: [[0.1,0.5],[0.2,0.35],[0.35,0.25],[0.5,0.2],[0.65,0.25],[0.75,0.3],[0.85,0.2],[0.95,0.1],[0.9,0.5],[0.95,0.9],[0.85,0.8],[0.75,0.7],[0.65,0.75],[0.5,0.8],[0.35,0.75],[0.2,0.65]],
+    butterfly: [[0.5,0.1],[0.35,0.15],[0.2,0.2],[0.1,0.3],[0.1,0.45],[0.2,0.5],[0.35,0.48],[0.45,0.5],[0.5,0.55],[0.55,0.5],[0.65,0.48],[0.8,0.5],[0.9,0.45],[0.9,0.3],[0.8,0.2],[0.65,0.15],[0.5,0.1],[0.45,0.55],[0.5,0.65],[0.45,0.75],[0.35,0.8],[0.2,0.85],[0.15,0.9],[0.3,0.88],[0.45,0.8],[0.5,0.75],[0.55,0.8],[0.7,0.88],[0.85,0.9],[0.8,0.85],[0.65,0.8],[0.55,0.75],[0.5,0.65]],
+    apple: [[0.5,0.15],[0.45,0.1],[0.5,0.05],[0.55,0.1],[0.5,0.15],[0.35,0.2],[0.2,0.3],[0.12,0.45],[0.12,0.6],[0.18,0.75],[0.3,0.85],[0.45,0.9],[0.5,0.88],[0.55,0.9],[0.7,0.85],[0.82,0.75],[0.88,0.6],[0.88,0.45],[0.8,0.3],[0.65,0.2]],
+    tree: [[0.5,0.05],[0.3,0.25],[0.35,0.25],[0.2,0.45],[0.25,0.45],[0.1,0.65],[0.4,0.65],[0.4,0.95],[0.6,0.95],[0.6,0.65],[0.9,0.65],[0.75,0.45],[0.8,0.45],[0.65,0.25],[0.7,0.25]],
+    house: [[0.15,0.5],[0.5,0.1],[0.85,0.5],[0.85,0.95],[0.15,0.95],[0.15,0.5],[0.4,0.65],[0.4,0.95],[0.6,0.95],[0.6,0.65],[0.4,0.65]],
+    flower: (() => {
+      const pts: [number, number][] = [];
+      // Petals
+      for (let p = 0; p < 6; p++) {
+        const angle = (2 * Math.PI * p) / 6;
+        for (let t = 0; t <= 1; t += 0.2) {
+          const pr = 0.15 + 0.15 * Math.sin(t * Math.PI);
+          const px = 0.5 + (0.25 + pr) * Math.cos(angle + (t - 0.5) * 0.5);
+          const py = 0.45 + (0.25 + pr) * Math.sin(angle + (t - 0.5) * 0.5);
+          pts.push([px, py]);
+        }
+      }
+      // Stem
+      pts.push([0.5, 0.65], [0.5, 0.95]);
+      return pts;
+    })(),
+  };
+
+  const shapePts = SHAPE_PATHS[theme] || SHAPE_PATHS.heart;
+
+  // Resample path into evenly spaced dots
+  const dotCount = config.difficulty === 'easy' ? 25 : config.difficulty === 'medium' ? 45 : 70;
+  const areaW = 400;
+  const areaH = 500;
+
+  // Place dots along the outline
+  const dots: DotArtData['dots'] = [];
+  const totalPts = shapePts.length;
+  for (let i = 0; i < dotCount; i++) {
+    const t = i / dotCount;
+    const idx = t * totalPts;
+    const i0 = Math.floor(idx) % totalPts;
+    const i1 = (i0 + 1) % totalPts;
+    const frac = idx - Math.floor(idx);
+    const x = shapePts[i0][0] * (1 - frac) + shapePts[i1][0] * frac;
+    const y = shapePts[i0][1] * (1 - frac) + shapePts[i1][1] * frac;
+    dots.push({ x: x * areaW, y: y * areaH, region: i % 4 });
+  }
+
+  const regionColors = ['#EF4444', '#3B82F6', '#22C55E', '#F59E0B'];
+
+  return {
+    mode: 'dotArt',
+    instructions: `Stamp or dab inside each circle to create a ${theme.replace(/([A-Z])/g, ' $1').toLowerCase()}!`,
+    skillLabel: 'Fine Motor · Visual Perception · Dot Art',
+    dotArtData: { dots, theme, regionColors },
+  };
+}
+
+// ========== MODE 20: SHAPE TRACING ==========
+function generateShapeTracingMode(config: WorksheetConfig): WorksheetData {
+  const shape = config.shapeTracingShape;
+  const shapes: ShapeTracingShape[] = shape === 'all'
+    ? ['circle', 'square', 'triangle', 'diamond', 'rectangle', 'oval', 'star', 'cross', 'heart']
+    : [shape];
+
+  const rows = shape === 'all' ? shapes.length : config.shapeTracingRows;
+  const sizeMultiplier = config.shapeTracingSize === 'large' ? 1.2 : config.shapeTracingSize === 'small' ? 0.7 : 1.0;
+
+  const shapePathData: ShapeTracingData['shapes'] = [];
+
+  for (let i = 0; i < rows; i++) {
+    const currentShape = shapes[i % shapes.length];
+    const cx = 250;
+    const cy = 0; // offset in renderer
+    const r = 60 * sizeMultiplier;
+
+    let pathD = '';
+    let startX = cx;
+    let startY = cy - r;
+    let arrowAngle = 0;
+
+    switch (currentShape) {
+      case 'circle':
+        pathD = `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r}`;
+        arrowAngle = Math.PI / 2; // clockwise
+        break;
+      case 'oval':
+        pathD = `M ${cx} ${cy - r * 0.7} A ${r} ${r * 0.7} 0 1 1 ${cx - 0.01} ${cy - r * 0.7}`;
+        startY = cy - r * 0.7;
+        arrowAngle = Math.PI / 2;
+        break;
+      case 'square':
+        startX = cx - r; startY = cy - r;
+        pathD = `M ${startX} ${startY} L ${cx + r} ${cy - r} L ${cx + r} ${cy + r} L ${cx - r} ${cy + r} Z`;
+        arrowAngle = 0;
+        break;
+      case 'rectangle':
+        startX = cx - r * 1.2; startY = cy - r * 0.7;
+        pathD = `M ${startX} ${startY} L ${cx + r * 1.2} ${cy - r * 0.7} L ${cx + r * 1.2} ${cy + r * 0.7} L ${cx - r * 1.2} ${cy + r * 0.7} Z`;
+        arrowAngle = 0;
+        break;
+      case 'triangle':
+        startX = cx; startY = cy - r;
+        pathD = `M ${startX} ${startY} L ${cx + r} ${cy + r * 0.7} L ${cx - r} ${cy + r * 0.7} Z`;
+        arrowAngle = Math.PI / 4;
+        break;
+      case 'diamond':
+        startX = cx; startY = cy - r;
+        pathD = `M ${startX} ${startY} L ${cx + r} ${cy} L ${cx} ${cy + r} L ${cx - r} ${cy} Z`;
+        arrowAngle = Math.PI / 4;
+        break;
+      case 'star': {
+        const outer = r;
+        const inner = r * 0.42;
+        const pts: string[] = [];
+        for (let j = 0; j < 5; j++) {
+          const aO = -Math.PI / 2 + (2 * Math.PI * j) / 5;
+          const aI = aO + Math.PI / 5;
+          pts.push(`${cx + outer * Math.cos(aO)},${cy + outer * Math.sin(aO)}`);
+          pts.push(`${cx + inner * Math.cos(aI)},${cy + inner * Math.sin(aI)}`);
+        }
+        startX = cx; startY = cy - r;
+        pathD = `M ${pts[0].replace(',', ' ')} L ${pts.slice(1).map(p => p.replace(',', ' ')).join(' L ')} Z`;
+        arrowAngle = Math.PI / 3;
+        break;
+      }
+      case 'cross': {
+        const w = r * 0.35;
+        startX = cx - w; startY = cy - r;
+        pathD = `M ${cx - w} ${cy - r} L ${cx + w} ${cy - r} L ${cx + w} ${cy - w} L ${cx + r} ${cy - w} L ${cx + r} ${cy + w} L ${cx + w} ${cy + w} L ${cx + w} ${cy + r} L ${cx - w} ${cy + r} L ${cx - w} ${cy + w} L ${cx - r} ${cy + w} L ${cx - r} ${cy - w} L ${cx - w} ${cy - w} Z`;
+        arrowAngle = 0;
+        break;
+      }
+      case 'heart': {
+        const s = r * 0.9;
+        startX = cx; startY = cy - s * 0.5;
+        pathD = `M ${cx} ${cy + s * 0.8} Q ${cx - s * 0.3} ${cy + s * 0.5} ${cx - s} ${cy - s * 0.05} A ${s * 0.55} ${s * 0.55} 0 0 1 ${cx} ${cy - s * 0.6} A ${s * 0.55} ${s * 0.55} 0 0 1 ${cx + s} ${cy - s * 0.05} Q ${cx + s * 0.3} ${cy + s * 0.5} ${cx} ${cy + s * 0.8} Z`;
+        arrowAngle = -Math.PI / 4;
+        break;
+      }
+    }
+
+    shapePathData.push({ pathD, startX, startY, arrowAngle, shapeName: currentShape });
+  }
+
+  return {
+    mode: 'shapeTracing',
+    instructions: shape === 'all' ? 'Trace each shape along the dotted lines!' : `Trace the ${shape} along the dotted lines!`,
+    skillLabel: 'Pre-Writing Skills · Form Constancy · Fine Motor',
+    shapeTracingData: { shapes: shapePathData },
+  };
+}
+
+// ========== MODE 21: SPOT THE DIFFERENCE ==========
+function generateSpotDifferenceMode(config: WorksheetConfig): WorksheetData {
+  const theme = config.spotDiffTheme;
+  const diffCount = config.spotDiffCount;
+
+  // Build scene with simple SVG shapes
+  type SceneObj = SpotDiffSceneObject;
+  const SCENE_TEMPLATES: Record<SpotDiffTheme, SceneObj[]> = {
+    playground: [
+      { type: 'rect', x: 0, y: 280, w: 400, h: 120, fill: '#22C55E', extra: { label: 'ground' } },
+      { type: 'rect', x: 0, y: 0, w: 400, h: 280, fill: '#87CEEB', extra: { label: 'sky' } },
+      { type: 'circle', x: 340, y: 50, w: 40, h: 40, fill: '#FBBF24', extra: { label: 'sun' } },
+      { type: 'rect', x: 50, y: 180, w: 15, h: 120, fill: '#92400E', extra: { label: 'pole1' } },
+      { type: 'rect', x: 250, y: 180, w: 15, h: 120, fill: '#92400E', extra: { label: 'pole2' } },
+      { type: 'rect', x: 50, y: 180, w: 215, h: 8, fill: '#DC2626', extra: { label: 'bar' } },
+      { type: 'circle', x: 100, y: 240, w: 30, h: 30, fill: '#3B82F6', extra: { label: 'ball' } },
+      { type: 'triangle', x: 320, y: 200, w: 60, h: 80, fill: '#F97316', extra: { label: 'slide' } },
+      { type: 'rect', x: 170, y: 140, w: 20, h: 50, fill: '#92400E', extra: { label: 'flagpole' } },
+      { type: 'triangle', x: 175, y: 120, w: 30, h: 25, fill: '#EF4444', extra: { label: 'flag' } },
+      { type: 'ellipse', x: 60, y: 50, w: 50, h: 25, fill: '#F1F5F9', extra: { label: 'cloud1' } },
+      { type: 'ellipse', x: 180, y: 35, w: 60, h: 28, fill: '#F1F5F9', extra: { label: 'cloud2' } },
+    ],
+    kitchen: [
+      { type: 'rect', x: 0, y: 0, w: 400, h: 400, fill: '#FEF3C7', extra: { label: 'wall' } },
+      { type: 'rect', x: 0, y: 280, w: 400, h: 120, fill: '#D4D4D8', extra: { label: 'floor' } },
+      { type: 'rect', x: 30, y: 100, w: 150, h: 200, fill: '#F5F5F4', extra: { label: 'fridge' } },
+      { type: 'rect', x: 50, y: 120, w: 50, h: 80, fill: '#E7E5E4', extra: { label: 'fridge_top' } },
+      { type: 'rect', x: 50, y: 210, w: 50, h: 80, fill: '#E7E5E4', extra: { label: 'fridge_bot' } },
+      { type: 'rect', x: 220, y: 180, w: 160, h: 120, fill: '#78716C', extra: { label: 'stove' } },
+      { type: 'circle', x: 260, y: 220, w: 25, h: 25, fill: '#1E293B', extra: { label: 'burner1' } },
+      { type: 'circle', x: 340, y: 220, w: 25, h: 25, fill: '#1E293B', extra: { label: 'burner2' } },
+      { type: 'rect', x: 250, y: 160, w: 80, h: 15, fill: '#A1A1AA', extra: { label: 'pot' } },
+      { type: 'circle', x: 80, y: 60, w: 20, h: 20, fill: '#FBBF24', extra: { label: 'clock' } },
+      { type: 'rect', x: 300, y: 50, w: 60, h: 80, fill: '#93C5FD', extra: { label: 'window' } },
+      { type: 'rect', x: 150, y: 160, w: 40, h: 50, fill: '#F59E0B', extra: { label: 'cup' } },
+    ],
+    bedroom: [
+      { type: 'rect', x: 0, y: 0, w: 400, h: 400, fill: '#DBEAFE', extra: { label: 'wall' } },
+      { type: 'rect', x: 0, y: 300, w: 400, h: 100, fill: '#D4C5A9', extra: { label: 'floor' } },
+      { type: 'rect', x: 30, y: 180, w: 200, h: 130, fill: '#FCA5A5', extra: { label: 'bed' } },
+      { type: 'rect', x: 30, y: 160, w: 40, h: 150, fill: '#92400E', extra: { label: 'headboard' } },
+      { type: 'rect', x: 50, y: 190, w: 60, h: 40, fill: '#F1F5F9', extra: { label: 'pillow' } },
+      { type: 'rect', x: 270, y: 200, w: 80, h: 110, fill: '#92400E', extra: { label: 'dresser' } },
+      { type: 'rect', x: 290, y: 170, w: 40, h: 30, fill: '#FBBF24', extra: { label: 'lamp' } },
+      { type: 'rect', x: 150, y: 40, w: 100, h: 80, fill: '#93C5FD', extra: { label: 'window' } },
+      { type: 'circle', x: 330, y: 50, w: 30, h: 30, fill: '#FBBF24', extra: { label: 'moon' } },
+      { type: 'rect', x: 260, y: 250, w: 20, h: 10, fill: '#78716C', extra: { label: 'handle' } },
+      { type: 'circle', x: 100, y: 280, w: 20, h: 20, fill: '#8B5CF6', extra: { label: 'toy' } },
+      { type: 'rect', x: 360, y: 230, w: 25, h: 40, fill: '#60A5FA', extra: { label: 'book' } },
+    ],
+    farm: [
+      { type: 'rect', x: 0, y: 250, w: 400, h: 150, fill: '#22C55E', extra: { label: 'grass' } },
+      { type: 'rect', x: 0, y: 0, w: 400, h: 250, fill: '#87CEEB', extra: { label: 'sky' } },
+      { type: 'rect', x: 50, y: 130, w: 120, h: 130, fill: '#DC2626', extra: { label: 'barn' } },
+      { type: 'triangle', x: 50, y: 80, w: 120, h: 55, fill: '#92400E', extra: { label: 'roof' } },
+      { type: 'rect', x: 90, y: 200, w: 40, h: 60, fill: '#F5F5F4', extra: { label: 'door' } },
+      { type: 'circle', x: 340, y: 50, w: 35, h: 35, fill: '#FBBF24', extra: { label: 'sun' } },
+      { type: 'ellipse', x: 100, y: 30, w: 50, h: 20, fill: '#F1F5F9', extra: { label: 'cloud' } },
+      { type: 'rect', x: 250, y: 220, w: 8, h: 40, fill: '#92400E', extra: { label: 'fencepost1' } },
+      { type: 'rect', x: 290, y: 220, w: 8, h: 40, fill: '#92400E', extra: { label: 'fencepost2' } },
+      { type: 'rect', x: 248, y: 230, w: 52, h: 5, fill: '#92400E', extra: { label: 'fencerail' } },
+      { type: 'circle', x: 300, y: 300, w: 25, h: 25, fill: '#F5F5F4', extra: { label: 'chicken' } },
+      { type: 'rect', x: 200, y: 200, w: 5, h: 80, fill: '#22C55E', extra: { label: 'tree_trunk' } },
+    ],
+    ocean: [
+      { type: 'rect', x: 0, y: 0, w: 400, h: 150, fill: '#87CEEB', extra: { label: 'sky' } },
+      { type: 'rect', x: 0, y: 150, w: 400, h: 250, fill: '#3B82F6', extra: { label: 'water' } },
+      { type: 'circle', x: 330, y: 50, w: 35, h: 35, fill: '#FBBF24', extra: { label: 'sun' } },
+      { type: 'triangle', x: 100, y: 100, w: 80, h: 80, fill: '#F1F5F9', extra: { label: 'sail' } },
+      { type: 'rect', x: 80, y: 150, w: 120, h: 25, fill: '#92400E', extra: { label: 'boat' } },
+      { type: 'circle', x: 250, y: 250, w: 30, h: 30, fill: '#F97316', extra: { label: 'fish1' } },
+      { type: 'circle', x: 150, y: 300, w: 20, h: 20, fill: '#22C55E', extra: { label: 'fish2' } },
+      { type: 'ellipse', x: 80, y: 350, w: 40, h: 15, fill: '#FCD34D', extra: { label: 'starfish' } },
+      { type: 'ellipse', x: 60, y: 30, w: 50, h: 22, fill: '#F1F5F9', extra: { label: 'cloud1' } },
+      { type: 'ellipse', x: 200, y: 20, w: 55, h: 20, fill: '#F1F5F9', extra: { label: 'cloud2' } },
+      { type: 'circle', x: 300, y: 350, w: 15, h: 15, fill: '#EC4899', extra: { label: 'shell' } },
+      { type: 'rect', x: 135, y: 100, w: 5, h: 75, fill: '#92400E', extra: { label: 'mast' } },
+    ],
+    space: [
+      { type: 'rect', x: 0, y: 0, w: 400, h: 400, fill: '#0F172A', extra: { label: 'space' } },
+      { type: 'circle', x: 300, y: 80, w: 50, h: 50, fill: '#E2E8F0', extra: { label: 'moon' } },
+      { type: 'circle', x: 50, y: 50, w: 5, h: 5, fill: '#FBBF24', extra: { label: 'star1' } },
+      { type: 'circle', x: 150, y: 30, w: 4, h: 4, fill: '#FBBF24', extra: { label: 'star2' } },
+      { type: 'circle', x: 250, y: 150, w: 6, h: 6, fill: '#FBBF24', extra: { label: 'star3' } },
+      { type: 'circle', x: 100, y: 120, w: 4, h: 4, fill: '#FBBF24', extra: { label: 'star4' } },
+      { type: 'triangle', x: 170, y: 200, w: 50, h: 100, fill: '#64748B', extra: { label: 'rocket_body' } },
+      { type: 'triangle', x: 170, y: 170, w: 50, h: 40, fill: '#EF4444', extra: { label: 'rocket_nose' } },
+      { type: 'circle', x: 195, y: 240, w: 12, h: 12, fill: '#60A5FA', extra: { label: 'window' } },
+      { type: 'circle', x: 80, y: 300, w: 30, h: 30, fill: '#F97316', extra: { label: 'planet1' } },
+      { type: 'circle', x: 330, y: 250, w: 25, h: 25, fill: '#A855F7', extra: { label: 'planet2' } },
+      { type: 'circle', x: 350, y: 350, w: 3, h: 3, fill: '#FBBF24', extra: { label: 'star5' } },
+    ],
+    garden: [
+      { type: 'rect', x: 0, y: 250, w: 400, h: 150, fill: '#22C55E', extra: { label: 'grass' } },
+      { type: 'rect', x: 0, y: 0, w: 400, h: 250, fill: '#87CEEB', extra: { label: 'sky' } },
+      { type: 'circle', x: 330, y: 50, w: 35, h: 35, fill: '#FBBF24', extra: { label: 'sun' } },
+      { type: 'rect', x: 100, y: 200, w: 8, h: 80, fill: '#22C55E', extra: { label: 'stem1' } },
+      { type: 'circle', x: 104, y: 185, w: 20, h: 20, fill: '#EF4444', extra: { label: 'flower1' } },
+      { type: 'rect', x: 200, y: 180, w: 8, h: 100, fill: '#22C55E', extra: { label: 'stem2' } },
+      { type: 'circle', x: 204, y: 165, w: 22, h: 22, fill: '#FBBF24', extra: { label: 'flower2' } },
+      { type: 'rect', x: 300, y: 210, w: 8, h: 70, fill: '#22C55E', extra: { label: 'stem3' } },
+      { type: 'circle', x: 304, y: 195, w: 18, h: 18, fill: '#EC4899', extra: { label: 'flower3' } },
+      { type: 'ellipse', x: 60, y: 320, w: 30, h: 12, fill: '#92400E', extra: { label: 'rock' } },
+      { type: 'circle', x: 250, y: 330, w: 10, h: 10, fill: '#F97316', extra: { label: 'butterfly' } },
+      { type: 'rect', x: 350, y: 260, w: 40, h: 30, fill: '#92400E', extra: { label: 'pot' } },
+    ],
+    classroom: [
+      { type: 'rect', x: 0, y: 0, w: 400, h: 400, fill: '#FEF3C7', extra: { label: 'wall' } },
+      { type: 'rect', x: 0, y: 320, w: 400, h: 80, fill: '#D4C5A9', extra: { label: 'floor' } },
+      { type: 'rect', x: 100, y: 50, w: 200, h: 120, fill: '#1E293B', extra: { label: 'board' } },
+      { type: 'rect', x: 50, y: 220, w: 120, h: 60, fill: '#92400E', extra: { label: 'desk1' } },
+      { type: 'rect', x: 230, y: 220, w: 120, h: 60, fill: '#92400E', extra: { label: 'desk2' } },
+      { type: 'rect', x: 90, y: 280, w: 30, h: 50, fill: '#78716C', extra: { label: 'chair1' } },
+      { type: 'rect', x: 270, y: 280, w: 30, h: 50, fill: '#78716C', extra: { label: 'chair2' } },
+      { type: 'circle', x: 340, y: 40, w: 20, h: 20, fill: '#FBBF24', extra: { label: 'clock' } },
+      { type: 'rect', x: 70, y: 210, w: 25, h: 15, fill: '#60A5FA', extra: { label: 'book1' } },
+      { type: 'rect', x: 250, y: 210, w: 20, h: 20, fill: '#EF4444', extra: { label: 'apple' } },
+      { type: 'rect', x: 20, y: 100, w: 30, h: 50, fill: '#A3E635', extra: { label: 'poster' } },
+      { type: 'circle', x: 200, y: 110, w: 5, h: 5, fill: '#F1F5F9', extra: { label: 'chalk' } },
+    ],
+  };
+
+  const scene = [...SCENE_TEMPLATES[theme]];
+  const modifiedScene = scene.map(obj => ({ ...obj, extra: { ...obj.extra } }));
+
+  // Generate differences
+  const diffTypes = ['color', 'missing', 'size', 'position', 'added'];
+  const differences: SpotDiffData['differences'] = [];
+  const usedIndices = new Set<number>();
+
+  for (let d = 0; d < diffCount; d++) {
+    const diffType = diffTypes[d % diffTypes.length];
+    // Pick an object to modify (skip background elements)
+    const candidates = modifiedScene.filter((_, i) => !usedIndices.has(i) && i >= 2);
+    if (candidates.length === 0) break;
+    const targetIdx = modifiedScene.indexOf(candidates[Math.floor(Math.random() * candidates.length)]);
+    usedIndices.add(targetIdx);
+    const obj = modifiedScene[targetIdx];
+
+    switch (diffType) {
+      case 'color': {
+        const colors = ['#EF4444', '#3B82F6', '#22C55E', '#F59E0B', '#EC4899', '#8B5CF6'];
+        const newColor = colors.find(c => c !== obj.fill) || '#F97316';
+        modifiedScene[targetIdx] = { ...obj, fill: newColor };
+        differences.push({ x: obj.x, y: obj.y, r: Math.max(obj.w, obj.h) * 0.7, description: 'Color changed' });
+        break;
+      }
+      case 'missing':
+        modifiedScene[targetIdx] = { ...obj, fill: 'transparent', extra: { ...obj.extra, hidden: true } };
+        differences.push({ x: obj.x, y: obj.y, r: Math.max(obj.w, obj.h) * 0.7, description: 'Object missing' });
+        break;
+      case 'size':
+        modifiedScene[targetIdx] = { ...obj, w: obj.w * 0.6, h: obj.h * 0.6 };
+        differences.push({ x: obj.x, y: obj.y, r: Math.max(obj.w, obj.h) * 0.7, description: 'Size changed' });
+        break;
+      case 'position':
+        modifiedScene[targetIdx] = { ...obj, x: obj.x + 20, y: obj.y - 15 };
+        differences.push({ x: obj.x, y: obj.y, r: Math.max(obj.w, obj.h) * 0.7, description: 'Position changed' });
+        break;
+      case 'added':
+        modifiedScene.push({ type: 'circle', x: 50 + Math.random() * 300, y: 50 + Math.random() * 300, w: 15, h: 15, fill: '#EC4899', extra: { label: 'extra' } });
+        differences.push({ x: modifiedScene[modifiedScene.length - 1].x, y: modifiedScene[modifiedScene.length - 1].y, r: 20, description: 'Object added' });
+        break;
+    }
+  }
+
+  return {
+    mode: 'spotDifference',
+    instructions: `Can you find ${diffCount} differences?`,
+    skillLabel: 'Visual Discrimination · Figure Ground · Visual Scanning',
+    spotDiffData: { leftScene: scene, rightScene: modifiedScene, differences, theme },
+  };
+}
+
+// ========== MODE 22: VISUAL SCANNING ==========
+function generateVisualScanningMode(config: WorksheetConfig): WorksheetData {
+  const target = config.visualScanTarget || 'b';
+  const density = config.visualScanDensity;
+  const cols = density === 'small' ? 8 : density === 'medium' ? 10 : 12;
+  const rows = density === 'small' ? 6 : density === 'medium' ? 8 : 10;
+  const targetPercent = config.visualScanTargetCount === 'many' ? 0.3 : 0.2;
+
+  // Auto-select distractors
+  const DISTRACTOR_MAP: Record<string, string[]> = {
+    'b': ['d', 'p', 'q', 'g'],
+    'd': ['b', 'p', 'q', 'g'],
+    'p': ['b', 'd', 'q', 'g'],
+    'q': ['b', 'd', 'p', 'g'],
+    '3': ['8', 'E', '5', '6'],
+    '6': ['9', '8', '0', '5'],
+    '9': ['6', '8', '0', 'g'],
+    'n': ['u', 'm', 'h', 'r'],
+    'u': ['n', 'v', 'w', 'c'],
+    'm': ['n', 'w', 'u', 'h'],
+    'w': ['m', 'v', 'u', 'n'],
+  };
+
+  const distractors = DISTRACTOR_MAP[target.toLowerCase()] || (() => {
+    const alpha = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c => c !== target.toLowerCase());
+    return shuffle(alpha).slice(0, 4);
+  })();
+
+  const totalCells = rows * cols;
+  const targetCount = Math.round(totalCells * targetPercent);
+
+  const grid: string[][] = [];
+  const targetPositions: [number, number][] = [];
+
+  // Build flat array then reshape
+  const cells: string[] = [];
+  for (let i = 0; i < targetCount; i++) cells.push(target);
+  for (let i = targetCount; i < totalCells; i++) cells.push(distractors[Math.floor(Math.random() * distractors.length)]);
+  const shuffled = shuffle(cells);
+
+  for (let r = 0; r < rows; r++) {
+    const row: string[] = [];
+    for (let c = 0; c < cols; c++) {
+      const ch = shuffled[r * cols + c];
+      row.push(ch);
+      if (ch === target) targetPositions.push([r, c]);
+    }
+    grid.push(row);
+  }
+
+  return {
+    mode: 'visualScanning',
+    instructions: `Circle every '${target}' you see!`,
+    skillLabel: 'Visual Scanning · Visual Discrimination · Reversal Recognition',
+    visualScanData: { grid, target, targetPositions, rows, cols },
+  };
+}
+
+// ========== MODE 23: PIXEL ART ==========
+const PIXEL_ART_PATTERNS: Record<PixelArtTheme, { grid: number[][]; colors: { color: string; name: string }[] }> = {
+  heart: {
+    grid: [
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,0,0,1,1,0,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#EF4444', name: 'Red' }],
+  },
+  smiley: {
+    grid: [
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,2,1,1,2,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,2,1,1,1,1,2,1,0],
+      [0,1,1,2,2,2,2,1,1,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#FBBF24', name: 'Yellow' }, { color: '#1E293B', name: 'Black' }],
+  },
+  star: {
+    grid: [
+      [0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,0,0,0,0,1,1,0],
+      [1,1,0,0,0,0,0,0,1,1],
+      [1,0,0,0,0,0,0,0,0,1],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#FBBF24', name: 'Yellow' }],
+  },
+  catFace: {
+    grid: [
+      [0,1,0,0,0,0,0,0,1,0],
+      [0,1,1,0,0,0,0,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,2,1,1,2,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,1,3,3,1,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#F97316', name: 'Orange' }, { color: '#22C55E', name: 'Green' }, { color: '#EC4899', name: 'Pink' }],
+  },
+  fish: {
+    grid: [
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0],
+      [0,0,0,1,1,1,1,1,0,0],
+      [2,2,0,1,1,3,1,1,1,0],
+      [2,2,2,1,1,1,1,1,1,0],
+      [2,2,0,1,1,1,1,1,1,0],
+      [0,0,0,1,1,1,1,1,0,0],
+      [0,0,0,0,1,1,1,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#DBEAFE', name: 'Light Blue' }, { color: '#3B82F6', name: 'Blue' }, { color: '#F97316', name: 'Orange' }, { color: '#1E293B', name: 'Black' }],
+  },
+  house: {
+    grid: [
+      [0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,2,2,2,2,2,2,2,2,0],
+      [0,2,3,3,2,2,3,3,2,0],
+      [0,2,3,3,2,2,3,3,2,0],
+      [0,2,2,2,4,4,2,2,2,0],
+      [0,2,2,2,4,4,2,2,2,0],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#EF4444', name: 'Red' }, { color: '#F97316', name: 'Orange' }, { color: '#93C5FD', name: 'Blue' }, { color: '#92400E', name: 'Brown' }],
+  },
+  sun: {
+    grid: [
+      [0,0,0,1,0,0,1,0,0,0],
+      [0,0,0,0,1,1,0,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [1,0,1,1,1,1,1,1,0,1],
+      [0,1,1,1,1,1,1,1,1,0],
+      [0,1,1,1,1,1,1,1,1,0],
+      [1,0,1,1,1,1,1,1,0,1],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,1,0,0,1,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#FBBF24', name: 'Yellow' }],
+  },
+  flower: {
+    grid: [
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,1,1,2,2,1,1,0,0],
+      [0,1,1,2,3,3,2,1,1,0],
+      [0,1,2,3,3,3,3,2,1,0],
+      [0,1,1,2,3,3,2,1,1,0],
+      [0,0,1,1,2,2,1,1,0,0],
+      [0,0,0,0,4,4,0,0,0,0],
+      [0,0,0,0,4,4,0,0,0,0],
+      [0,0,0,0,4,4,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#EC4899', name: 'Pink' }, { color: '#FBBF24', name: 'Yellow' }, { color: '#F97316', name: 'Orange' }, { color: '#22C55E', name: 'Green' }],
+  },
+  rainbow: {
+    grid: [
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0],
+      [0,1,1,2,2,2,2,1,1,0],
+      [1,1,2,3,3,3,3,2,1,1],
+      [1,2,3,4,4,4,4,3,2,1],
+      [1,2,3,4,0,0,4,3,2,1],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#EF4444', name: 'Red' }, { color: '#F97316', name: 'Orange' }, { color: '#FBBF24', name: 'Yellow' }, { color: '#22C55E', name: 'Green' }],
+  },
+  rocket: {
+    grid: [
+      [0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,0,1,2,2,1,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0],
+      [0,0,3,1,1,1,1,3,0,0],
+      [0,3,3,1,1,1,1,3,3,0],
+      [0,0,0,4,0,0,4,0,0,0],
+      [0,0,0,4,0,0,4,0,0,0],
+    ],
+    colors: [{ color: '#F1F5F9', name: 'White' }, { color: '#64748B', name: 'Grey' }, { color: '#60A5FA', name: 'Blue' }, { color: '#EF4444', name: 'Red' }, { color: '#F97316', name: 'Orange' }],
+  },
+};
+
+function generatePixelArtMode(config: WorksheetConfig): WorksheetData {
+  const theme = config.pixelArtTheme;
+  const pattern = PIXEL_ART_PATTERNS[theme];
+
+  const colorKey = pattern.colors.map((c, i) => ({ index: i, color: c.color, name: c.name }));
+
+  return {
+    mode: 'pixelArt',
+    instructions: `Colour each square using the number key to reveal the picture!`,
+    skillLabel: 'Fine Motor · Visual Scanning · Colour Matching',
+    pixelArtData: { grid: pattern.grid, colorKey, gridSize: pattern.grid.length },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -1649,6 +2234,11 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'scissorSkills': result = generateScissorSkillsMode(config); break;
     case 'colorByNumber': result = generateColorByNumberMode(config); break;
     case 'gridDesigns': result = generateGridDesignsMode(config); break;
+    case 'dotArt': result = generateDotArtMode(config); break;
+    case 'shapeTracing': result = generateShapeTracingMode(config); break;
+    case 'spotDifference': result = generateSpotDifferenceMode(config); break;
+    case 'visualScanning': result = generateVisualScanningMode(config); break;
+    case 'pixelArt': result = generatePixelArtMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {
