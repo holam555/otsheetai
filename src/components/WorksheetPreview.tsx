@@ -848,18 +848,30 @@ function renderClosureMode(
 
     svg += `<text x="${cx}" y="${cy - shapeSz / 2 - 10}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${idx + 1}.</text>`;
 
-    const raw = getShapeRawSVG(puzzle.shape, cx, cy, shapeSz);
-    svg += raw.replace('/>', ` fill="none" stroke="${getStroke(puzzle.shape)}" stroke-width="3" stroke-dasharray="${puzzle.dashArray}" />`);
+    const puzzleEmoji = (puzzle as any).emoji;
+    if (puzzleEmoji) {
+      // Render emoji with gaps (CSS letter-spacing simulation via opacity)
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${shapeSz * 0.7}" opacity="0.35" style="font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${puzzleEmoji}</text>`;
+    } else {
+      const raw = getShapeRawSVG(puzzle.shape, cx, cy, shapeSz);
+      svg += raw.replace('/>', ` fill="none" stroke="${getStroke(puzzle.shape)}" stroke-width="3" stroke-dasharray="${puzzle.dashArray}" />`);
+    }
 
     const optY = cy + shapeSz / 2 + 20;
     const optSize = 24;
     const optSpacing = 42;
     const optStartX = cx - optSpacing;
 
+    const optionEmojis = (puzzle as any).optionEmojis;
     puzzle.options.forEach((opt, oIdx) => {
       const ox = optStartX + oIdx * optSpacing;
       svg += `<text x="${ox}" y="${optY - 6}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#94A3B8">${String.fromCharCode(65 + oIdx)}</text>`;
-      svg += getShapeSVG(opt, ox, optY + optSize / 2 + 2, optSize, getFill(opt), getStroke(opt), getStrokeW());
+      if (optionEmojis && optionEmojis[oIdx]) {
+        svg += getEmojiSVG(optionEmojis[oIdx], ox, optY + optSize / 2 + 2, optSize);
+      } else {
+        svg += getShapeSVG(opt, ox, optY + optSize / 2 + 2, optSize, getFill(opt), getStroke(opt), getStrokeW());
+      }
+    });
     });
   });
 
