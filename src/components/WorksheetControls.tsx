@@ -17,20 +17,25 @@ interface Props {
   onPrint: () => void;
 }
 
-const MODES: { value: WorksheetMode; label: string }[] = [
-  { value: 'find', label: 'Find the Shape' },
-  { value: 'missing', label: 'Missing Shape' },
-  { value: 'pattern', label: 'Match Pattern' },
-  { value: 'count', label: 'Find and Count' },
-  { value: 'copy', label: 'Copy the Pattern' },
-  { value: 'sequence', label: 'What Comes Next' },
-  { value: 'oddOneOut', label: 'Odd One Out' },
-  { value: 'mirror', label: 'Mirror Image' },
-  { value: 'figureGround', label: 'Figure Ground' },
-  { value: 'closure', label: 'Visual Closure' },
-  { value: 'traceName', label: 'Trace Your Name' },
-  { value: 'handwriting', label: 'Handwriting Practice' },
+const HANDWRITING_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
+  { value: 'handwriting', label: 'Practice', icon: '📝' },
+  { value: 'traceName', label: 'Trace Name', icon: '✍️' },
 ];
+
+const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
+  { value: 'find', label: 'Find the Shape', icon: '🔍' },
+  { value: 'missing', label: 'Missing Shape', icon: '❓' },
+  { value: 'pattern', label: 'Match Pattern', icon: '🔲' },
+  { value: 'oddOneOut', label: 'Odd One Out', icon: '⭕' },
+  { value: 'count', label: 'Find and Count', icon: '🔢' },
+  { value: 'copy', label: 'Copy the Pattern', icon: '📋' },
+  { value: 'sequence', label: 'What Comes Next', icon: '➡️' },
+  { value: 'mirror', label: 'Mirror Image', icon: '🪞' },
+  { value: 'figureGround', label: 'Figure Ground', icon: '🌫️' },
+  { value: 'closure', label: 'Visual Closure', icon: '👁️' },
+];
+
+const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
 
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
   { value: 'shapes', label: 'Shapes' },
@@ -124,16 +129,63 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-5">
-        {/* Mode */}
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Mode</Label>
-          <Select value={config.mode} onValueChange={(v) => update({ mode: v as WorksheetMode })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {MODES.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        {/* Top-level Mode Toggle */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={isHandwritingMode(config.mode) ? 'default' : 'outline'}
+            className="h-12 font-display font-bold text-sm gap-1.5"
+            onClick={() => { if (!isHandwritingMode(config.mode)) update({ mode: 'handwriting' }); }}
+          >
+            ✏️ Handwriting
+          </Button>
+          <Button
+            variant={!isHandwritingMode(config.mode) ? 'default' : 'outline'}
+            className="h-12 font-display font-bold text-sm gap-1.5"
+            onClick={() => { if (isHandwritingMode(config.mode)) update({ mode: 'find' }); }}
+          >
+            👁️ Visual Perception
+          </Button>
         </div>
+
+        {/* Handwriting sub-mode selector */}
+        {isHandwritingMode(config.mode) && (
+          <div className="grid grid-cols-2 gap-2">
+            {HANDWRITING_MODES.map(m => (
+              <Button
+                key={m.value}
+                variant={config.mode === m.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => update({ mode: m.value })}
+                className="font-display text-xs gap-1"
+              >
+                {m.icon} {m.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Visual Perception sub-mode grid */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Worksheet Type</Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {VP_MODES.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => update({ mode: m.value })}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                    config.mode === m.value
+                      ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                      : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                  }`}
+                >
+                  <span className="text-base leading-none">{m.icon}</span>
+                  <span className="font-display">{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Odd One Out Type */}
         {config.mode === 'oddOneOut' && (
