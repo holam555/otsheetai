@@ -133,31 +133,44 @@ export default function WorksheetPreview({ config, data }: Props) {
   return (
     <div
       id="worksheet-preview"
+      ref={containerRef}
       className="bg-card rounded-xl shadow-lg border border-border"
-      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden', containerType: 'size' } as React.CSSProperties}
+      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
     >
       <div dangerouslySetInnerHTML={{ __html: svgContent }} style={{ width: '100%', height: '100%' }} />
-      {overlays.map((o, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: `${o.xPct}%`,
-            top: `${o.yPct}%`,
-            width: `${o.widthPct}%`,
-            fontFamily: "Arial, sans-serif",
-            fontSize: `${(o.fontPx / H) * 100}cqh`,
-            color: '#000000',
-            lineHeight: 1,
-            letterSpacing: '0.05em',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
-            zIndex: 10,
-          } as React.CSSProperties}
-        >
-          {o.text}
-        </div>
-      ))}
+
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: W,
+          height: H,
+          transform: `scale(${overlayScale.x}, ${overlayScale.y})`,
+          transformOrigin: 'top left',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      >
+        {overlays.map((o, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: o.x,
+              top: o.y,
+              width: o.width,
+              fontFamily: 'Arial, sans-serif',
+              fontSize: o.fontPx,
+              color: '#000000',
+              lineHeight: 1,
+              letterSpacing: '0.05em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {o.text}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
