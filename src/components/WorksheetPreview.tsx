@@ -14,6 +14,7 @@ interface TraceOverlay {
   y: number;
   fontPx: number;
   width: number;
+  opacity: number;
 }
 
 let _traceOverlays: TraceOverlay[] = [];
@@ -184,6 +185,7 @@ export default function WorksheetPreview({ config, data }: Props) {
               fontFamily: "'Edu AU VIC WA NT Dots', cursive",
               fontSize: o.fontPx,
               color: '#aaaaaa',
+              opacity: o.opacity,
               lineHeight: 1,
               letterSpacing: '0.05em',
               whiteSpace: 'nowrap',
@@ -1030,14 +1032,15 @@ function renderFourLineSet(
 }
 
 // Add a trace overlay (rendered as HTML div, not SVG)
-function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number) {
-  const topY = baselineY - fontPx * 0.85; // approximate ascender offset
+function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1) {
+  const topY = baselineY - fontPx * 0.85;
   _traceOverlays.push({
     text,
     x,
     y: topY,
     fontPx,
     width: contentW,
+    opacity,
   });
 }
 
@@ -1052,7 +1055,7 @@ function renderTextOnTriline(
 
   if (isDottedTrace) {
     // Use dotted font rendered as HTML overlay
-    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW);
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.25);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
@@ -1145,7 +1148,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7);
+          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.25);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
@@ -1203,7 +1206,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW);
+    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.25);
 
     let nextY = blockY + labelH;
 
