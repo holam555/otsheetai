@@ -146,7 +146,7 @@ export default function WorksheetPreview({ config, data }: Props) {
             top: `${o.yPct}%`,
             width: `${o.widthPct}%`,
             fontFamily: "'KG Primary Dots', 'Edu NSW ACT Foundation', sans-serif",
-            fontSize: `${o.fontPx / H * 100}vh`,
+            fontSize: `${(o.fontPx / H) * 100}%`,
             color: '#aaaaaa',
             lineHeight: 1,
             letterSpacing: '0.05em',
