@@ -32,6 +32,7 @@ const defaultConfig: WorksheetConfig = {
   handwritingShowColoredLines: true,
   handwritingLineColor: 'red',
   handwritingHighlightColor: 'blue',
+  handwritingLineMode: '3-line',
   mazeSize: 'medium',
   mazeShape: 'square',
   mazeShowSolution: false,
