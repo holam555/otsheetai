@@ -982,7 +982,6 @@ function renderTextOnTriline(
   }
   return svg;
 }
-}
 
 // Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
 // lineH here = the raw mm-based size used as fontPx for the trace text
