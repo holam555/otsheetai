@@ -1029,16 +1029,11 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using Patrick Hand font
-    const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
-    for (let c = 0; c < allChars.length; c++) {
-      const cx = MARGIN + 4 + c * charW + charW / 2;
-      if (cx > W - MARGIN) break;
-      // Ghost guide
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${TRACE_FONT}" font-size="${refFontPx}" font-weight="400" fill="none" stroke="#CBD5E1" stroke-width="1.5" opacity="0.25">${escapeXml(allChars[c])}</text>`;
-      // Dashed trace
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${TRACE_FONT}" font-size="${refFontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="3 4" stroke-linecap="round">${escapeXml(allChars[c])}</text>`;
-    }
+    // Row 1: Reference text as dotted trace using Edu NSW ACT Foundation font via CSS
+    const refText = allChars.join('');
+    const refFoHeight = refFontPx * 1.3;
+    const refFoY = groupY + refTextH * 0.85 - refFontPx * 0.95;
+    svg += renderTraceForeignObject(refText, MARGIN + 4, refFoY, contentW, refFoHeight, refFontPx);
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
