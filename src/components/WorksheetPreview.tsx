@@ -1133,9 +1133,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label as dotted trace
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${TRACE_FONT}" font-size="13" font-weight="400" fill="none" stroke="#CBD5E1" stroke-width="1.5" opacity="0.25">${escapeXml(word.trim())}</text>`;
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${TRACE_FONT}" font-size="13" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="3 4" stroke-linecap="round">${escapeXml(word.trim())}</text>`;
+    // 1. Word label as dotted trace using CSS approach
+    svg += renderTraceForeignObject(word.trim(), colX, blockY - 2, colW, 18, 13);
 
     let nextY = blockY + labelH;
 
