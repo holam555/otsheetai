@@ -1055,7 +1055,7 @@ function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: num
   // Position the div so CSS baseline aligns with baselineY.
   // For most fonts, the baseline sits at roughly 80% of the em-square from the top of the text box.
   // So div top = baselineY - fontPx * 0.80
-  const topY = baselineY - fontPx * 0.78;
+  const topY = baselineY - fontPx * 0.76;
   _traceOverlays.push({
     text,
     x,
@@ -1079,7 +1079,7 @@ function renderTextOnTriline(
 
   if (isDottedTrace) {
     // Use dotted font rendered as HTML overlay
-    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.6, '#aaaaaa', true);
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.85, '#aaaaaa', true);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
@@ -1121,7 +1121,7 @@ function renderSentenceTrilineMode(
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
   // Trace font size: cap-height must equal zoneH. CSS cap-height ≈ 0.7 * fontSize for most fonts.
-  const traceFontPx = zoneH / 0.7;
+  const traceFontPx = zoneH / 0.75;
   let svg = '';
 
   for (let g = 0; g < maxGroups; g++) {
@@ -1172,7 +1172,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.6, '#aaaaaa', true);
+          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.85, '#aaaaaa', true);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
@@ -1230,7 +1230,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.6, '#aaaaaa', true);
+    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.85, '#aaaaaa', true);
 
     let nextY = blockY + labelH;
 
