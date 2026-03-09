@@ -887,6 +887,27 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
             <div className="space-y-3 border-t border-border pt-3">
               <Label className="font-display font-semibold text-sm">Line Style</Label>
 
+              {/* 3-line / 4-line toggle */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Line mode</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: '3-line' as HandwritingLineMode, label: '3-Line' },
+                    { value: '4-line' as HandwritingLineMode, label: '4-Line (HK)' },
+                  ]).map(m => (
+                    <Button
+                      key={m.value}
+                      variant={config.handwritingLineMode === m.value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => update({ handwritingLineMode: m.value })}
+                      className="font-display text-xs"
+                    >
+                      {m.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-muted-foreground">Coloured lines</Label>
                 <Switch checked={config.handwritingShowColoredLines} onCheckedChange={(v) => update({ handwritingShowColoredLines: v })} />
@@ -900,7 +921,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                       { value: 'red' as HandwritingLineColor, color: '#DC2626', label: 'Red' },
                       { value: 'blue' as HandwritingLineColor, color: '#2563EB', label: 'Blue' },
                       { value: 'green' as HandwritingLineColor, color: '#16A34A', label: 'Green' },
-                      { value: 'purple' as HandwritingLineColor, color: '#9333EA', label: 'Purple' },
                       { value: 'black' as HandwritingLineColor, color: '#1E293B', label: 'Black' },
                     ]).map(c => (
                       <button
@@ -908,33 +928,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                         onClick={() => update({ handwritingLineColor: c.value })}
                         className={`w-7 h-7 rounded-full border-2 transition-all ${config.handwritingLineColor === c.value ? 'border-foreground scale-110 shadow-sm' : 'border-border hover:border-muted-foreground/50'}`}
                         style={{ backgroundColor: c.color }}
-                        title={c.label}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">Highlight bands</Label>
-                <Switch checked={config.handwritingShowHighlight} onCheckedChange={(v) => update({ handwritingShowHighlight: v })} />
-              </div>
-
-              {config.handwritingShowHighlight && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Highlight colour</Label>
-                  <div className="flex gap-1.5">
-                    {([
-                      { value: 'blue' as HandwritingHighlightColor, sky: '#DBEAFE', grass: '#DCFCE7', label: 'Blue' },
-                      { value: 'yellow' as HandwritingHighlightColor, sky: '#FEF9C3', grass: '#FEF3C7', label: 'Yellow' },
-                      { value: 'green' as HandwritingHighlightColor, sky: '#DCFCE7', grass: '#D1FAE5', label: 'Green' },
-                      { value: 'pink' as HandwritingHighlightColor, sky: '#FCE7F3', grass: '#FDF2F8', label: 'Pink' },
-                    ]).map(c => (
-                      <button
-                        key={c.value}
-                        onClick={() => update({ handwritingHighlightColor: c.value })}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${config.handwritingHighlightColor === c.value ? 'border-foreground scale-110 shadow-sm' : 'border-border hover:border-muted-foreground/50'}`}
-                        style={{ background: `linear-gradient(180deg, ${c.sky}, ${c.grass})` }}
                         title={c.label}
                       />
                     ))}
