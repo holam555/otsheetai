@@ -144,8 +144,6 @@ export default function WorksheetPreview({ config, data }: Props) {
     </svg>
   `;
 
-  const overlays = [..._traceOverlays];
-
   return (
     <div
       id="worksheet-preview"
@@ -154,41 +152,6 @@ export default function WorksheetPreview({ config, data }: Props) {
       style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
     >
       <div dangerouslySetInnerHTML={{ __html: svgContent }} style={{ width: '100%', height: '100%' }} />
-
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: W,
-          height: H,
-          transform: `scale(${overlayScale.x}, ${overlayScale.y})`,
-          transformOrigin: 'top left',
-          pointerEvents: 'none',
-          zIndex: 10,
-        }}
-      >
-        {overlays.map((o, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: o.x,
-              top: o.y,
-              width: o.width,
-              fontFamily: "'Edu AU VIC WA NT Dots', sans-serif",
-              fontStyle: 'normal',
-              fontSize: o.fontPx,
-              color: '#aaaaaa',
-              opacity: o.opacity,
-              lineHeight: 1,
-              letterSpacing: '0.05em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {o.text}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
