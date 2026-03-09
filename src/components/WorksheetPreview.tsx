@@ -25,6 +25,18 @@ const MARGIN = 40;
 const BW_FILL = 'none';
 const BW_STROKE = '#1E293B';
 
+// Render emoji as SVG text element
+function getEmojiSVG(emoji: string, cx: number, cy: number, size: number): string {
+  const fontSize = size * 0.7;
+  return `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" style="font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${emoji}</text>`;
+}
+
+// Render shape or emoji
+function getCellSVG(cell: { shape: ShapeName; emoji?: string; rotation?: number }, cx: number, cy: number, size: number, fill: string, stroke: string, strokeW: number): string {
+  if (cell.emoji) return getEmojiSVG(cell.emoji, cx, cy, size);
+  return getShapeSVG(cell.shape, cx, cy, size, fill, stroke, strokeW, cell.rotation);
+}
+
 // Border style helpers
 function getBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', width = 1.5): string {
   const dash = config.borderStyle === 'dotted' ? ` stroke-dasharray="4 4"` : '';
@@ -212,8 +224,13 @@ function renderFindMode(
 
   let svg = '';
   svg += `<rect x="${refBoxX}" y="${refBoxY}" width="${refBoxW}" height="${refBoxH}" rx="8" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="8,5" />`;
-  svg += `<text x="${refBoxX + 12}" y="${refBoxY + 16}" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Find this shape:</text>`;
-  svg += getShapeSVG(targetShape, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale, getFill(targetShape), getStroke(targetShape), getStrokeW());
+  svg += `<text x="${refBoxX + 12}" y="${refBoxY + 16}" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Find this:</text>`;
+  const targetEmoji = (data as any)._targetEmoji;
+  if (targetEmoji) {
+    svg += getEmojiSVG(targetEmoji, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale);
+  } else {
+    svg += getShapeSVG(targetShape, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale, getFill(targetShape), getStroke(targetShape), getStrokeW());
+  }
 
   const gridTop = refBoxY + refBoxH + 20;
   const gridAreaH = H - gridTop - MARGIN - 35;
@@ -236,7 +253,7 @@ function renderFindMode(
     row.forEach((cell, c) => {
       const cx = gridX + c * cellSize + cellSize / 2;
       const cy = gridTop + r * cellSize + cellSize / 2;
-      svg += getShapeSVG(cell.shape, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+      svg += getCellSVG(cell, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
     });
   });
 
@@ -272,11 +289,16 @@ function renderMissingMode(
   svg += `<rect x="${refX}" y="${refY}" width="${refW}" height="${refH}" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5" />`;
   svg += `<text x="${W / 2}" y="${refY - 6}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Reference Shapes:</text>`;
 
+  const refEmojis = (data as any)._refEmojis;
   refShapes.forEach((shape, i) => {
     const cx = refX + i * refCellW + refCellW / 2;
     const cy = refY + refH / 2;
-    svg += getShapeSVG(shape, cx, cy, 42, getFill(shape), getStroke(shape), getStrokeW());
-    svg += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${shape}</text>`;
+    if (refEmojis && refEmojis[i]) {
+      svg += getEmojiSVG(refEmojis[i], cx, cy, 42);
+    } else {
+      svg += getShapeSVG(shape, cx, cy, 42, getFill(shape), getStroke(shape), getStrokeW());
+    }
+    svg += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${refEmojis && refEmojis[i] ? '' : shape}</text>`;
   });
 
   const puzzleTop = refY + refH + 24;
@@ -314,7 +336,7 @@ function renderMissingMode(
           svg += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${cellSz * 0.4}" fill="#CBD5E1">?</text>`;
           svg += `<rect x="${cx - cellSz * 0.38}" y="${cy - cellSz * 0.38}" width="${cellSz * 0.76}" height="${cellSz * 0.76}" rx="4" fill="none" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4,3" />`;
         } else {
-          svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+          svg += getCellSVG(cell, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
         }
       });
     });
@@ -450,11 +472,16 @@ function renderCountMode(
   const refX = (W - totalRefW) / 2;
   const boxW = totalRefW / boxCount;
 
+  const countEmojiMap = (puzzle as any)._emojiMap;
   targetShapes.forEach((shape, i) => {
     const bx = refX + i * boxW + 4;
     const bw = boxW - 8;
     svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
-    svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
+    if (countEmojiMap && countEmojiMap[shape]) {
+      svg += getEmojiSVG(countEmojiMap[shape], bx + bw / 2, refY + 26, 36 * shapeScale);
+    } else {
+      svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
+    }
     svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
   });
 
@@ -483,7 +510,7 @@ function renderCountMode(
     row.forEach((cell, c) => {
       const cx = gridX + c * cellSize + cellSize / 2;
       const cy = gridTop + r * cellSize + cellSize / 2;
-      svg += getShapeSVG(cell.shape, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+      svg += getCellSVG(cell, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
     });
   });
 
@@ -582,7 +609,7 @@ function renderSequenceMode(
       const cx = seqStartX + i * (cellSz + 8) + cellSz / 2;
       const cy = seqY + cellSz / 2;
       svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
-      svg += getShapeSVG(puzzle.sequence[i].shape, cx, cy, cellSz * shapeScale, getFill(puzzle.sequence[i].shape), getStroke(puzzle.sequence[i].shape), getStrokeW(), puzzle.sequence[i].rotation);
+      svg += getCellSVG(puzzle.sequence[i], cx, cy, cellSz * shapeScale, getFill(puzzle.sequence[i].shape), getStroke(puzzle.sequence[i].shape), getStrokeW());
     }
 
     const qx = seqStartX + 4 * (cellSz + 8) + cellSz / 2;
@@ -597,7 +624,7 @@ function renderSequenceMode(
       const oy = seqY + cellSz / 2;
       svg += `<text x="${ox}" y="${oy - optSize / 2 - 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#94A3B8">${String.fromCharCode(65 + oIdx)}</text>`;
       svg += `<rect x="${ox - optSize / 2}" y="${oy - optSize / 2}" width="${optSize}" height="${optSize}" ${getCellBorderAttrs(config, '#94A3B8', 1)} />`;
-      svg += getShapeSVG(opt.shape, ox, oy, optSize * shapeScale, getFill(opt.shape), getStroke(opt.shape), getStrokeW());
+      svg += getCellSVG(opt, ox, oy, optSize * shapeScale, getFill(opt.shape), getStroke(opt.shape), getStrokeW());
     });
   });
 
@@ -648,7 +675,7 @@ function renderOddOneOutMode(
         const cx = rowStartX + i * (cellSz + 16) + cellSz / 2;
         const cy = rowY + cellSz / 2;
         svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
-        svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+        svg += getCellSVG(cell, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
       });
     }
   });
@@ -748,11 +775,16 @@ function renderFigureGroundMode(
   const refX = (W - totalRefW) / 2;
   const boxW = totalRefW / boxCount;
 
+  const fgEmojiMap = (puzzle as any)._emojiMap;
   targetShapes.forEach((shape, i) => {
     const bx = refX + i * boxW + 4;
     const bw = boxW - 8;
     svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
-    svg += getShapeSVG(shape, bx + bw / 2, refY + 24, 32, getFill(shape), getStroke(shape), getStrokeW());
+    if (fgEmojiMap && fgEmojiMap[shape]) {
+      svg += getEmojiSVG(fgEmojiMap[shape], bx + bw / 2, refY + 24, 32);
+    } else {
+      svg += getShapeSVG(shape, bx + bw / 2, refY + 24, 32, getFill(shape), getStroke(shape), getStrokeW());
+    }
     svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
   });
 
@@ -770,9 +802,14 @@ function renderFigureGroundMode(
     const cx = areaX + s.cx * scaleX;
     const cy = areaTop + s.cy * scaleY;
     const r = s.r * Math.min(scaleX, scaleY);
-    const raw = getShapeRawSVG(s.shape, cx, cy, r);
-    const transform = s.rotation ? ` transform="rotate(${s.rotation}, ${cx}, ${cy})"` : '';
-    svg += raw.replace('/>', ` fill="none" stroke="${getStroke(s.shape)}" stroke-width="2.5"${transform} />`);
+    if ((s as any).emoji) {
+      // Render emoji with reduced opacity for overlapping effect
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${r * 0.7}" opacity="0.6" style="font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${(s as any).emoji}</text>`;
+    } else {
+      const raw = getShapeRawSVG(s.shape, cx, cy, r);
+      const transform = s.rotation ? ` transform="rotate(${s.rotation}, ${cx}, ${cy})"` : '';
+      svg += raw.replace('/>', ` fill="none" stroke="${getStroke(s.shape)}" stroke-width="2.5"${transform} />`);
+    }
   });
 
   if (config.showAnswerKey) {
@@ -811,18 +848,29 @@ function renderClosureMode(
 
     svg += `<text x="${cx}" y="${cy - shapeSz / 2 - 10}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${idx + 1}.</text>`;
 
-    const raw = getShapeRawSVG(puzzle.shape, cx, cy, shapeSz);
-    svg += raw.replace('/>', ` fill="none" stroke="${getStroke(puzzle.shape)}" stroke-width="3" stroke-dasharray="${puzzle.dashArray}" />`);
+    const puzzleEmoji = (puzzle as any).emoji;
+    if (puzzleEmoji) {
+      // Render emoji with gaps (CSS letter-spacing simulation via opacity)
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${shapeSz * 0.7}" opacity="0.35" style="font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${puzzleEmoji}</text>`;
+    } else {
+      const raw = getShapeRawSVG(puzzle.shape, cx, cy, shapeSz);
+      svg += raw.replace('/>', ` fill="none" stroke="${getStroke(puzzle.shape)}" stroke-width="3" stroke-dasharray="${puzzle.dashArray}" />`);
+    }
 
     const optY = cy + shapeSz / 2 + 20;
     const optSize = 24;
     const optSpacing = 42;
     const optStartX = cx - optSpacing;
 
+    const optionEmojis = (puzzle as any).optionEmojis;
     puzzle.options.forEach((opt, oIdx) => {
       const ox = optStartX + oIdx * optSpacing;
       svg += `<text x="${ox}" y="${optY - 6}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#94A3B8">${String.fromCharCode(65 + oIdx)}</text>`;
-      svg += getShapeSVG(opt, ox, optY + optSize / 2 + 2, optSize, getFill(opt), getStroke(opt), getStrokeW());
+      if (optionEmojis && optionEmojis[oIdx]) {
+        svg += getEmojiSVG(optionEmojis[oIdx], ox, optY + optSize / 2 + 2, optSize);
+      } else {
+        svg += getShapeSVG(opt, ox, optY + optSize / 2 + 2, optSize, getFill(opt), getStroke(opt), getStrokeW());
+      }
     });
   });
 

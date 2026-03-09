@@ -57,6 +57,8 @@ const defaultConfig: WorksheetConfig = {
   pixelArtTheme: 'heart',
   pixelArtGridSize: 'simple',
   pixelArtBW: false,
+  useEmoji: false,
+  emojiTheme: 'animals',
 };
 
 export default function Index() {
@@ -65,7 +67,7 @@ export default function Index() {
 
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.handwritingLineMode, config.wordBoxDisplayMode, config.handwritingShowStartEnd, config.instructionFontSize, config.instructionBold, config.nameDateFontSize, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.gridDesignSize, config.gridDesignPattern, config.visualScanTarget, config.visualScanDensity, config.visualScanFontStyle, config.visualScanCharSize, config.visualScanTargetCount, config.pixelArtTheme, config.pixelArtGridSize, config.pixelArtBW]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.handwritingLineMode, config.wordBoxDisplayMode, config.handwritingShowStartEnd, config.instructionFontSize, config.instructionBold, config.nameDateFontSize, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.gridDesignSize, config.gridDesignPattern, config.visualScanTarget, config.visualScanDensity, config.visualScanFontStyle, config.visualScanCharSize, config.visualScanTargetCount, config.pixelArtTheme, config.pixelArtGridSize, config.pixelArtBW, config.useEmoji, config.emojiTheme]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));

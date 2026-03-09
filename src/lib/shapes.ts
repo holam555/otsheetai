@@ -48,6 +48,18 @@ export type HandwritingHighlightColor = 'blue' | 'yellow' | 'green' | 'pink' | '
 export type HandwritingLineMode = '3-line' | '4-line';
 export type WordBoxDisplayMode = 'boxOnly' | 'trilineOnly' | 'both';
 export type InstructionFontSize = 'small' | 'medium' | 'large';
+export type EmojiTheme = 'animals' | 'food' | 'transport' | 'nature' | 'faces';
+
+export const EMOJI_THEMES: Record<EmojiTheme, { icon: string; label: string; emojis: string[] }> = {
+  animals: { icon: '🐶', label: 'Animals', emojis: ['🐶', '🐱', '🐸', '🐰', '🦊', '🐻', '🐼', '🦁', '🐨', '🐯'] },
+  food: { icon: '🍎', label: 'Food', emojis: ['🍎', '🍌', '🍓', '🍕', '🍦', '🥕', '🍩', '🍇', '🌽', '🧁'] },
+  transport: { icon: '🚗', label: 'Transport', emojis: ['🚗', '🚌', '🚂', '✈️', '🚲', '🚀', '🛸', '🚁', '⛵', '🚒'] },
+  nature: { icon: '⭐', label: 'Nature', emojis: ['🌸', '🌻', '🌈', '⭐', '🌙', '☀️', '🍀', '🌊', '🌵', '🦋'] },
+  faces: { icon: '😀', label: 'Faces', emojis: ['😀', '😢', '😡', '😴', '🤔', '😎', '🥳', '😱', '🤗', '😅'] },
+};
+
+// Modes that support emoji
+export const EMOJI_ELIGIBLE_MODES: WorksheetMode[] = ['find', 'missing', 'oddOneOut', 'count', 'sequence', 'figureGround', 'closure'];
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
@@ -103,6 +115,8 @@ export interface WorksheetConfig {
   pixelArtTheme: PixelArtTheme;
   pixelArtGridSize: PixelArtGridSize;
   pixelArtBW: boolean;
+  useEmoji: boolean;
+  emojiTheme: EmojiTheme;
 }
 
 export interface CellData {
@@ -110,6 +124,7 @@ export interface CellData {
   isTarget?: boolean;
   isBlank?: boolean;
   rotation?: number;
+  emoji?: string;
 }
 
 export interface MissingPuzzle {
@@ -1708,6 +1723,79 @@ function generatePixelArtMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// Assign emoji to CellData based on shape→emoji mapping
+function assignEmojiToCells(cells: CellData[], shapeToEmoji: Map<ShapeName, string>) {
+  cells.forEach(cell => {
+    if (shapeToEmoji.has(cell.shape)) {
+      cell.emoji = shapeToEmoji.get(cell.shape);
+    }
+  });
+}
+
+function buildShapeEmojiMap(config: WorksheetConfig, shapes: ShapeName[]): Map<ShapeName, string> {
+  const theme = EMOJI_THEMES[config.emojiTheme];
+  const emojis = shuffle([...theme.emojis]);
+  const map = new Map<ShapeName, string>();
+  shapes.forEach((s, i) => {
+    map.set(s, emojis[i % emojis.length]);
+  });
+  return map;
+}
+
+function applyEmojiToWorksheet(config: WorksheetConfig, result: WorksheetData) {
+  if (!config.useEmoji || !EMOJI_ELIGIBLE_MODES.includes(config.mode)) return;
+
+  // Collect all unique shapes used
+  const allShapes = new Set<ShapeName>();
+
+  if (result.grid) result.grid.forEach(row => row.forEach(c => allShapes.add(c.shape)));
+  if (result.missingPuzzles) result.missingPuzzles.forEach(p => p.grid.forEach(row => row.forEach(c => allShapes.add(c.shape))));
+  if (result.countPuzzle) result.countPuzzle.grid.forEach(row => row.forEach(c => allShapes.add(c.shape)));
+  if (result.sequencePuzzles) result.sequencePuzzles.forEach(p => {
+    p.sequence.forEach(c => allShapes.add(c.shape));
+    p.options.forEach(c => allShapes.add(c.shape));
+  });
+  if (result.oddOneOutRows) result.oddOneOutRows.forEach(r => r.items.forEach(c => allShapes.add(c.shape)));
+  if (result.figureGroundPuzzle) result.figureGroundPuzzle.shapes.forEach(s => allShapes.add(s.shape));
+  if (result.closurePuzzles) result.closurePuzzles.forEach(p => {
+    allShapes.add(p.shape);
+    p.options.forEach(o => allShapes.add(o));
+  });
+
+  const map = buildShapeEmojiMap(config, Array.from(allShapes));
+
+  // Apply to all cell data
+  if (result.grid) result.grid.forEach(row => assignEmojiToCells(row, map));
+  if (result.missingPuzzles) result.missingPuzzles.forEach(p => p.grid.forEach(row => assignEmojiToCells(row, map)));
+  if (result.countPuzzle) {
+    result.countPuzzle.grid.forEach(row => assignEmojiToCells(row, map));
+    // Remap targetShapes emoji
+    (result.countPuzzle as any)._emojiMap = Object.fromEntries(map);
+  }
+  if (result.sequencePuzzles) result.sequencePuzzles.forEach(p => {
+    assignEmojiToCells(p.sequence, map);
+    assignEmojiToCells(p.options, map);
+    if (p.answer) p.answer.emoji = map.get(p.answer.shape);
+  });
+  if (result.oddOneOutRows) result.oddOneOutRows.forEach(r => assignEmojiToCells(r.items, map));
+  if (result.figureGroundPuzzle) {
+    result.figureGroundPuzzle.shapes.forEach(s => {
+      (s as any).emoji = map.get(s.shape);
+    });
+    (result.figureGroundPuzzle as any)._emojiMap = Object.fromEntries(map);
+  }
+  if (result.closurePuzzles) {
+    result.closurePuzzles.forEach(p => {
+      (p as any).emoji = map.get(p.shape);
+      (p as any).optionEmojis = p.options.map(o => map.get(o));
+    });
+  }
+
+  // Also store on targetShape/referenceShapes
+  if (result.targetShape) (result as any)._targetEmoji = map.get(result.targetShape);
+  if (result.referenceShapes) (result as any)._refEmojis = result.referenceShapes.map(s => map.get(s));
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -1731,6 +1819,8 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'visualScanning': result = generateVisualScanningMode(config); break;
     case 'pixelArt': result = generatePixelArtMode(config); break;
   }
+  // Apply emoji mapping
+  applyEmojiToWorksheet(config, result);
   // Apply custom instruction override
   if (config.customInstruction.trim()) {
     result.instructions = config.customInstruction.trim();
