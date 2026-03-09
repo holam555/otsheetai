@@ -1054,7 +1054,7 @@ function renderTextOnTriline(
 
   if (isDottedTrace) {
     // Use dotted font rendered as HTML overlay
-    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW);
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.25);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
