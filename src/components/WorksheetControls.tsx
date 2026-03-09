@@ -472,6 +472,248 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
             </div>
           </div>
         )}
+
+        {/* Dot Art Controls */}
+        {config.mode === 'dotArt' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Theme</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {([
+                  { value: 'heart' as DotArtTheme, label: '❤️ Heart' },
+                  { value: 'star' as DotArtTheme, label: '⭐ Star' },
+                  { value: 'sun' as DotArtTheme, label: '☀️ Sun' },
+                  { value: 'catFace' as DotArtTheme, label: '🐱 Cat Face' },
+                  { value: 'fish' as DotArtTheme, label: '🐟 Fish' },
+                  { value: 'butterfly' as DotArtTheme, label: '🦋 Butterfly' },
+                  { value: 'apple' as DotArtTheme, label: '🍎 Apple' },
+                  { value: 'tree' as DotArtTheme, label: '🌲 Tree' },
+                  { value: 'house' as DotArtTheme, label: '🏠 House' },
+                  { value: 'flower' as DotArtTheme, label: '🌸 Flower' },
+                ]).map(t => (
+                  <button
+                    key={t.value}
+                    onClick={() => update({ dotArtTheme: t.value })}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                      config.dotArtTheme === t.value
+                        ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                        : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                    }`}
+                  >
+                    <span className="font-display">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Dot Size</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'large' as DotArtDotSize, label: 'Large' },
+                  { value: 'medium' as DotArtDotSize, label: 'Medium' },
+                  { value: 'small' as DotArtDotSize, label: 'Small' },
+                ]).map(s => (
+                  <Button key={s.value} variant={config.dotArtDotSize === s.value ? 'default' : 'outline'} size="sm" onClick={() => update({ dotArtDotSize: s.value })} className="font-display text-xs">{s.label}</Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Spacing</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['loose', 'normal', 'tight'] as const).map(s => (
+                  <Button key={s} variant={config.dotArtSpacing === s ? 'default' : 'outline'} size="sm" onClick={() => update({ dotArtSpacing: s })} className="font-display text-xs capitalize">{s}</Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">Color-coded Regions</Label>
+              <Switch checked={config.dotArtColorMode === 'colored'} onCheckedChange={(v) => update({ dotArtColorMode: v ? 'colored' : 'bw' })} />
+            </div>
+          </div>
+        )}
+
+        {/* Shape Tracing Controls */}
+        {config.mode === 'shapeTracing' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Shape</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {([
+                  { value: 'all' as ShapeTracingShape, label: '🔢 All Shapes' },
+                  { value: 'circle' as ShapeTracingShape, label: '⭕ Circle' },
+                  { value: 'square' as ShapeTracingShape, label: '⬜ Square' },
+                  { value: 'triangle' as ShapeTracingShape, label: '🔺 Triangle' },
+                  { value: 'diamond' as ShapeTracingShape, label: '🔷 Diamond' },
+                  { value: 'rectangle' as ShapeTracingShape, label: '▬ Rectangle' },
+                  { value: 'oval' as ShapeTracingShape, label: '⬭ Oval' },
+                  { value: 'star' as ShapeTracingShape, label: '⭐ Star' },
+                  { value: 'cross' as ShapeTracingShape, label: '✚ Cross' },
+                  { value: 'heart' as ShapeTracingShape, label: '❤️ Heart' },
+                ]).map(s => (
+                  <button
+                    key={s.value}
+                    onClick={() => update({ shapeTracingShape: s.value })}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                      config.shapeTracingShape === s.value
+                        ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                        : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                    }`}
+                  >
+                    <span className="font-display">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {config.shapeTracingShape !== 'all' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="font-display font-semibold text-sm">Rows</Label>
+                  <span className="text-xs font-bold text-primary">{config.shapeTracingRows}</span>
+                </div>
+                <Slider value={[config.shapeTracingRows]} min={2} max={4} step={1} onValueChange={([v]) => update({ shapeTracingRows: v })} />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Size</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['large', 'medium', 'small'] as ShapeTracingSize[]).map(s => (
+                  <Button key={s} variant={config.shapeTracingSize === s ? 'default' : 'outline'} size="sm" onClick={() => update({ shapeTracingSize: s })} className="font-display text-xs capitalize">{s}</Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">Show Starting Dot</Label>
+              <Switch checked={config.shapeTracingShowStart} onCheckedChange={(v) => update({ shapeTracingShowStart: v })} />
+            </div>
+          </div>
+        )}
+
+        {/* Spot the Difference Controls */}
+        {config.mode === 'spotDifference' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Theme</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {([
+                  { value: 'playground' as SpotDiffTheme, label: '🎪 Playground' },
+                  { value: 'kitchen' as SpotDiffTheme, label: '🍳 Kitchen' },
+                  { value: 'bedroom' as SpotDiffTheme, label: '🛏️ Bedroom' },
+                  { value: 'farm' as SpotDiffTheme, label: '🐄 Farm' },
+                  { value: 'ocean' as SpotDiffTheme, label: '🌊 Ocean' },
+                  { value: 'space' as SpotDiffTheme, label: '🚀 Space' },
+                  { value: 'garden' as SpotDiffTheme, label: '🌻 Garden' },
+                  { value: 'classroom' as SpotDiffTheme, label: '📚 Classroom' },
+                ]).map(t => (
+                  <button
+                    key={t.value}
+                    onClick={() => update({ spotDiffTheme: t.value })}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                      config.spotDiffTheme === t.value
+                        ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                        : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                    }`}
+                  >
+                    <span className="font-display">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Number of Differences</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([3, 5, 7] as SpotDiffCount[]).map(n => (
+                  <Button key={n} variant={config.spotDiffCount === n ? 'default' : 'outline'} size="sm" onClick={() => update({ spotDiffCount: n })} className="font-display text-xs">{n}</Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">Show Answers</Label>
+              <Switch checked={config.spotDiffShowAnswers} onCheckedChange={(v) => update({ spotDiffShowAnswers: v })} />
+            </div>
+          </div>
+        )}
+
+        {/* Visual Scanning Controls */}
+        {config.mode === 'visualScanning' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Target Character</Label>
+              <Input
+                value={config.visualScanTarget}
+                onChange={(e) => update({ visualScanTarget: e.target.value.slice(0, 1) })}
+                maxLength={1}
+                className="font-mono text-lg text-center w-16"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Grid Density</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'small' as VisualScanDensity, label: '8×6' },
+                  { value: 'medium' as VisualScanDensity, label: '10×8' },
+                  { value: 'large' as VisualScanDensity, label: '12×10' },
+                ]).map(d => (
+                  <Button key={d.value} variant={config.visualScanDensity === d.value ? 'default' : 'outline'} size="sm" onClick={() => update({ visualScanDensity: d.value })} className="font-display text-xs">{d.label}</Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Character Size</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['large', 'medium', 'small'] as VisualScanCharSize[]).map(s => (
+                  <Button key={s} variant={config.visualScanCharSize === s ? 'default' : 'outline'} size="sm" onClick={() => update({ visualScanCharSize: s })} className="font-display text-xs capitalize">{s}</Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Target Frequency</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['few', 'many'] as const).map(f => (
+                  <Button key={f} variant={config.visualScanTargetCount === f ? 'default' : 'outline'} size="sm" onClick={() => update({ visualScanTargetCount: f })} className="font-display text-xs capitalize">{f}</Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pixel Art Controls */}
+        {config.mode === 'pixelArt' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Theme</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {([
+                  { value: 'heart' as PixelArtTheme, label: '❤️ Heart' },
+                  { value: 'smiley' as PixelArtTheme, label: '😊 Smiley' },
+                  { value: 'star' as PixelArtTheme, label: '⭐ Star' },
+                  { value: 'catFace' as PixelArtTheme, label: '🐱 Cat' },
+                  { value: 'fish' as PixelArtTheme, label: '🐟 Fish' },
+                  { value: 'house' as PixelArtTheme, label: '🏠 House' },
+                  { value: 'sun' as PixelArtTheme, label: '☀️ Sun' },
+                  { value: 'flower' as PixelArtTheme, label: '🌸 Flower' },
+                  { value: 'rainbow' as PixelArtTheme, label: '🌈 Rainbow' },
+                  { value: 'rocket' as PixelArtTheme, label: '🚀 Rocket' },
+                ]).map(t => (
+                  <button
+                    key={t.value}
+                    onClick={() => update({ pixelArtTheme: t.value })}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                      config.pixelArtTheme === t.value
+                        ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                        : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                    }`}
+                  >
+                    <span className="font-display">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">B&W Mode (print-friendly)</Label>
+              <Switch checked={config.pixelArtBW} onCheckedChange={(v) => update({ pixelArtBW: v })} />
+            </div>
+          </div>
+        )}
         {/* Odd One Out Type */}
         {config.mode === 'oddOneOut' && (
           <div className="space-y-2">
