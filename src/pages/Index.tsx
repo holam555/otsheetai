@@ -4,7 +4,7 @@ import WorksheetControls from '@/components/WorksheetControls';
 import WorksheetPreview from '@/components/WorksheetPreview';
 
 const defaultConfig: WorksheetConfig = {
-  mode: 'handwriting',
+  mode: 'find',
   gridSize: 3,
   shapeSet: 'custom',
   selectedShapes: [...BASIC_SHAPES],
