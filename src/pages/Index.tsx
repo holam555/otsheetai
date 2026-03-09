@@ -32,6 +32,10 @@ const defaultConfig: WorksheetConfig = {
   handwritingShowColoredLines: true,
   handwritingLineColor: 'red',
   handwritingHighlightColor: 'blue',
+  mazeSize: 'medium',
+  mazeShape: 'square',
+  mazeShowSolution: false,
+  connectDotsShape: 'star',
 };
 
 export default function Index() {
