@@ -1040,49 +1040,40 @@ function renderSampleText(
   return svg;
 }
 
-// Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
-// lineH here = the raw mm-based size used as fontPx for the trace text
+// Sentence mode: sample row + 2 empty line rows
 function renderSentenceTrilineMode(
   text: string, rows: number, startY: number, availableH: number,
   lineH: number, contentW: number, fontFamily: string, config: WorksheetConfig
 ): string {
   const mmToPx = 2.833;
-  const fontPx = lineH; // lineH in px IS the font size
+  const fontPx = lineH;
   const zoneH = fontPx * 0.7; // top-to-bottom line distance
   const grassH = zoneH * 0.15;
-  const triSetH = zoneH + grassH; // total visual height of one tri-line set
+  const triSetH = zoneH + grassH;
   const groupGap = 12 * mmToPx;
   const setGap = 6 * mmToPx;
-  const refFontPx = fontPx * 0.55;
-  const refTextH = Math.max(fontPx * 0.85, 10 * mmToPx + refFontPx); // min 10mm gap between ref text bottom and top line
-  const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
+  // Sample text font size: capitals should reach top line
+  // Patrick Hand cap-height ≈ 0.68 of font-size, so fontSize = zoneH / 0.68
+  const sampleFontPx = zoneH / 0.68;
+  const sampleH = sampleFontPx * 1.1; // height for sample text row
+  const groupH = sampleH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
-  const allChars = Array.from(text);
-  // Auto-calculate trace font size so ascenders fill the zone
-  const traceFontPx = zoneH / 0.72;
   let svg = '';
 
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text in Patrick Hand (solid, dark grey)
-    const refBaselineY = groupY + refTextH * 0.85;
-    const refCharW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
-    for (let c = 0; c < allChars.length; c++) {
-      const cx = MARGIN + 4 + c * refCharW + refCharW / 2;
-      if (cx > MARGIN + contentW) break;
-      svg += `<text x="${cx}" y="${refBaselineY}" text-anchor="middle" font-family="'Patrick Hand', cursive" font-size="${refFontPx}" font-weight="400" fill="#333333">${escapeXml(allChars[c])}</text>`;
-    }
+    // Row 1: Sample text in Patrick Hand
+    const sampleBaselineY = groupY + sampleH * 0.85;
+    svg += renderSampleText(text, MARGIN, sampleBaselineY, sampleFontPx, contentW);
 
-    // Row 2: Dotted trace on colored tri-lines
-    // baseline = botY of the tri-line set; topY = baselineY - zoneH
-    const traceBaselineY = groupY + refTextH + zoneH;
-    svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
-    svg += renderTraceTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, config.handwritingShowStartEnd);
+    // Row 2: Empty tri-lines (child writes here)
+    const row2BaselineY = groupY + sampleH + zoneH;
+    svg += renderColoredTrilineSet(MARGIN, row2BaselineY, fontPx, contentW, config);
 
-    // Row 3: Blank colored tri-lines for independent writing
-    const blankBaselineY = traceBaselineY + grassH + setGap + zoneH;
-    svg += renderColoredTrilineSet(MARGIN, blankBaselineY, fontPx, contentW, config);
+    // Row 3: Empty tri-lines (second practice row)
+    const row3BaselineY = row2BaselineY + grassH + setGap + zoneH;
+    svg += renderColoredTrilineSet(MARGIN, row3BaselineY, fontPx, contentW, config);
   }
 
   return svg;
