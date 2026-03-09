@@ -799,36 +799,27 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        {/* Child's Name & Age */}
-        <div className="grid grid-cols-[1fr_80px] gap-2">
-          <div className="space-y-2">
-            <Label className="font-display font-semibold text-sm">Child's Name</Label>
-            <Input
-              value={config.childName}
-              onChange={(e) => update({ childName: e.target.value })}
-              placeholder="Enter name…"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="font-display font-semibold text-sm">Age</Label>
-            <Input
-              type="number"
-              min={2}
-              max={12}
-              value={config.childAge ?? ''}
-              onChange={(e) => {
-                const val = e.target.value ? parseInt(e.target.value) : null;
-                const age = val !== null ? Math.min(12, Math.max(2, val)) : null;
-                const partial: Partial<WorksheetConfig> = { childAge: age };
-                if (age !== null) {
-                  if (age <= 3) partial.difficulty = 'easy';
-                  else if (age <= 5 && config.difficulty === 'hard') partial.difficulty = 'medium';
-                }
-                update(partial);
-              }}
-              placeholder="2-12"
-            />
-          </div>
+        {/* Age */}
+        <div className="space-y-2">
+          <Label className="font-display font-semibold text-sm">Age</Label>
+          <Input
+            type="number"
+            min={2}
+            max={12}
+            value={config.childAge ?? ''}
+            onChange={(e) => {
+              const val = e.target.value ? parseInt(e.target.value) : null;
+              const age = val !== null ? Math.min(12, Math.max(2, val)) : null;
+              const partial: Partial<WorksheetConfig> = { childAge: age };
+              if (age !== null) {
+                if (age <= 3) partial.difficulty = 'easy';
+                else if (age <= 5 && config.difficulty === 'hard') partial.difficulty = 'medium';
+              }
+              update(partial);
+            }}
+            placeholder="2-12"
+            className="w-20"
+          />
         </div>
 
         {/* Name/Date Header Font Size */}
@@ -919,30 +910,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         </div>
 
-        {/* Border Style — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
-          <div className="space-y-2">
-            <Label className="font-display font-semibold text-sm">Border Style</Label>
-            <div className="flex gap-2">
-              {BORDER_STYLES.map(b => (
-                <BorderPreview
-                  key={b.value}
-                  style={b.value}
-                  selected={config.borderStyle === b.value}
-                  onClick={() => update({ borderStyle: b.value })}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Grid Lines — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
-          <div className="flex items-center justify-between">
-            <Label className="font-display font-semibold text-sm">Grid Lines</Label>
-            <Switch checked={config.showGridLines} onCheckedChange={(v) => update({ showGridLines: v })} />
-          </div>
-        )}
 
         {/* Colour — VP modes only */}
         {!isHandwritingMode(config.mode) && (
