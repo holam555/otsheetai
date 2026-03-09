@@ -1612,6 +1612,85 @@ function renderScissorSkillsMode(config: WorksheetConfig, data: WorksheetData): 
   return svg;
 }
 
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+// ========== MODE 18: GRID DESIGNS ==========
+function renderGridDesignsMode(config: WorksheetConfig, data: WorksheetData): string {
+  const gd = data.gridDesignData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const gridSize = gd.gridSize;
+
+  let svg = '';
+
+  // Two grids side by side: reference (left) and blank (right)
+  const gridW = (availW - 40) / 2;
+  const cellSize = Math.min(gridW / gridSize, availH / gridSize);
+  const totalGridW = cellSize * gridSize;
+  const totalGridH = cellSize * gridSize;
+  const refX = MARGIN + (gridW - totalGridW) / 2;
+  const blankX = MARGIN + gridW + 40 + (gridW - totalGridW) / 2;
+  const gridY = startY + (availH - totalGridH) / 2;
+
+  // Labels
+  svg += `<text x="${refX + totalGridW / 2}" y="${gridY - 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Reference</text>`;
+  svg += `<text x="${blankX + totalGridW / 2}" y="${gridY - 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Copy Here</text>`;
+
+  // Arrow between grids
+  const arrowY = gridY + totalGridH / 2;
+  const arrowX1 = refX + totalGridW + 5;
+  const arrowX2 = blankX - 5;
+  svg += `<line x1="${arrowX1}" y1="${arrowY}" x2="${arrowX2}" y2="${arrowY}" stroke="#94A3B8" stroke-width="1.5" />`;
+  svg += `<polygon points="${arrowX2},${arrowY - 4} ${arrowX2 + 6},${arrowY} ${arrowX2},${arrowY + 4}" fill="#94A3B8" />`;
+
+  // Draw grids
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      const rx = refX + c * cellSize;
+      const ry = gridY + r * cellSize;
+      const bx = blankX + c * cellSize;
+      const by = gridY + r * cellSize;
+
+      // Reference cell
+      svg += `<rect x="${rx}" y="${ry}" width="${cellSize}" height="${cellSize}" fill="white" stroke="#CBD5E1" stroke-width="1" />`;
+
+      const cell = gd.grid[r]?.[c];
+      if (cell) {
+        const cx = rx + cellSize / 2;
+        const cy = ry + cellSize / 2;
+        const s = cellSize * 0.35;
+        if (cell.type === 'shape') {
+          if (cell.value === 'circle') svg += `<circle cx="${cx}" cy="${cy}" r="${s}" fill="#3B82F6" />`;
+          else if (cell.value === 'square') svg += `<rect x="${cx - s}" y="${cy - s}" width="${s * 2}" height="${s * 2}" fill="#EF4444" />`;
+          else if (cell.value === 'triangle') svg += `<polygon points="${cx},${cy - s} ${cx + s},${cy + s} ${cx - s},${cy + s}" fill="#22C55E" />`;
+          else if (cell.value === 'cross') {
+            const w = s * 0.4;
+            svg += `<rect x="${cx - w}" y="${cy - s}" width="${w * 2}" height="${s * 2}" fill="#F59E0B" />`;
+            svg += `<rect x="${cx - s}" y="${cy - w}" width="${s * 2}" height="${w * 2}" fill="#F59E0B" />`;
+          } else if (cell.value === 'dot') svg += `<circle cx="${cx}" cy="${cy}" r="${s * 0.4}" fill="#1E293B" />`;
+        } else if (cell.type === 'color') {
+          svg += `<rect x="${rx + 2}" y="${ry + 2}" width="${cellSize - 4}" height="${cellSize - 4}" rx="3" fill="${cell.color || '#94A3B8'}" />`;
+        } else if (cell.type === 'line') {
+          if (cell.value === 'diagonal-lr') svg += `<line x1="${rx + 4}" y1="${ry + 4}" x2="${rx + cellSize - 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
+          else if (cell.value === 'diagonal-rl') svg += `<line x1="${rx + cellSize - 4}" y1="${ry + 4}" x2="${rx + 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
+          else if (cell.value === 'cross') {
+            svg += `<line x1="${rx + 4}" y1="${ry + 4}" x2="${rx + cellSize - 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
+            svg += `<line x1="${rx + cellSize - 4}" y1="${ry + 4}" x2="${rx + 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
+          } else if (cell.value === 'dot') svg += `<circle cx="${cx}" cy="${cy}" r="${s * 0.3}" fill="#1E293B" />`;
+        }
+      }
+
+      // Blank cell
+      svg += `<rect x="${bx}" y="${by}" width="${cellSize}" height="${cellSize}" fill="white" stroke="#CBD5E1" stroke-width="1" />`;
+    }
+  }
+
+  return svg;
+}
+
 // ========== MODE 22: VISUAL SCANNING ==========
 function renderVisualScanningMode(config: WorksheetConfig, data: WorksheetData): string {
   const vs = data.visualScanData!;

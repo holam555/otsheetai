@@ -201,6 +201,11 @@ export interface TracingPathsData {
 export interface ScissorSkillsData {
   lines: { pathD: string; startX: number; startY: number }[];
 }
+export interface GridDesignData {
+  grid: { type: string; value: string; color?: string }[][];
+  gridSize: number;
+  pattern: GridDesignPattern;
+}
 
 
 export interface VisualScanData {
