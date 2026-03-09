@@ -88,6 +88,11 @@ export interface WorksheetConfig {
   handwritingLineColor: HandwritingLineColor;
   handwritingHighlightColor: HandwritingHighlightColor;
   handwritingLineMode: HandwritingLineMode;
+  wordBoxDisplayMode: WordBoxDisplayMode;
+  handwritingShowStartEnd: boolean;
+  instructionFontSize: InstructionFontSize;
+  instructionBold: boolean;
+  nameDateFontSize: HeaderFontSize;
   mazeSize: MazeSize;
   mazeShape: MazeShape;
   mazeShowSolution: boolean;
