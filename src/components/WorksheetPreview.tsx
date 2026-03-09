@@ -1031,14 +1031,15 @@ function renderFourLineSet(
 }
 
 // Add a trace overlay (rendered as HTML div, not SVG)
-function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number) {
-  const topY = baselineY - fontPx * 0.85; // approximate ascender offset
+function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1) {
+  const topY = baselineY - fontPx * 0.85;
   _traceOverlays.push({
     text,
     x,
     y: topY,
     fontPx,
     width: contentW,
+    opacity,
   });
 }
 
