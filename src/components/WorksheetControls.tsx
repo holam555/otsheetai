@@ -746,22 +746,87 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        {/* Shape Picker — VP modes only */}
+        {/* Shape / Emoji Picker — VP modes only */}
         {!isHandwritingMode(config.mode) && (
           <div className="space-y-2">
-            <Label className="font-display font-semibold text-sm">Shapes ({config.selectedShapes.length} selected)</Label>
-            <div className="grid grid-cols-6 gap-1.5">
-              {ALL_SHAPES.map(shape => (
-                <ShapeIcon
-                  key={shape}
-                  shape={shape}
-                  selected={config.selectedShapes.includes(shape)}
-                  onClick={() => toggleShape(shape)}
-                />
-              ))}
-            </div>
-            {config.selectedShapes.length <= 2 && (
-              <p className="text-[10px] text-destructive">Minimum 2 shapes required</p>
+            {EMOJI_ELIGIBLE_MODES.includes(config.mode) ? (
+              <>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Button
+                    variant={!config.useEmoji ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ useEmoji: false })}
+                    className="font-display text-xs flex-1"
+                  >
+                    🔷 Shapes
+                  </Button>
+                  <Button
+                    variant={config.useEmoji ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ useEmoji: true })}
+                    className="font-display text-xs flex-1"
+                  >
+                    😀 Emoji
+                  </Button>
+                </div>
+                {config.useEmoji ? (
+                  <div className="space-y-1.5">
+                    <Label className="font-display font-semibold text-sm">Theme</Label>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {(Object.entries(EMOJI_THEMES) as [EmojiTheme, typeof EMOJI_THEMES[EmojiTheme]][]).map(([key, theme]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => update({ emojiTheme: key })}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left ${
+                            config.emojiTheme === key
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border bg-background hover:border-muted-foreground/40'
+                          }`}
+                        >
+                          <span className="text-lg">{theme.icon}</span>
+                          <span className="font-display font-semibold text-sm">{theme.label}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{theme.emojis.slice(0, 5).join(' ')}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Label className="font-display font-semibold text-sm">Shapes ({config.selectedShapes.length} selected)</Label>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {ALL_SHAPES.map(shape => (
+                        <ShapeIcon
+                          key={shape}
+                          shape={shape}
+                          selected={config.selectedShapes.includes(shape)}
+                          onClick={() => toggleShape(shape)}
+                        />
+                      ))}
+                    </div>
+                    {config.selectedShapes.length <= 2 && (
+                      <p className="text-[10px] text-destructive">Minimum 2 shapes required</p>
+                    )}
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <Label className="font-display font-semibold text-sm">Shapes ({config.selectedShapes.length} selected)</Label>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {ALL_SHAPES.map(shape => (
+                    <ShapeIcon
+                      key={shape}
+                      shape={shape}
+                      selected={config.selectedShapes.includes(shape)}
+                      onClick={() => toggleShape(shape)}
+                    />
+                  ))}
+                </div>
+                {config.selectedShapes.length <= 2 && (
+                  <p className="text-[10px] text-destructive">Minimum 2 shapes required</p>
+                )}
+              </>
             )}
           </div>
         )}
