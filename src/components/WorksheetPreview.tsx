@@ -1024,80 +1024,19 @@ function renderFourLineSet(
   return svg;
 }
 
-// Add a trace overlay (rendered as HTML div, not SVG)
-function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1) {
-  const topY = baselineY - fontPx * 0.78;
-  _traceOverlays.push({
-    text,
-    x,
-    y: topY,
-    fontPx,
-    width: contentW,
-    opacity,
-  });
-}
-
-// Render text on tri-lines — text y = baselineY exactly
-function renderTextOnTriline(
-  chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
-  fontFamily: string, color: string, isDottedTrace: boolean, showStartEnd: boolean = false
+// Render sample text as SVG using Patrick Hand
+function renderSampleText(
+  text: string, x: number, baselineY: number, fontPx: number, contentW: number
 ): string {
+  const chars = Array.from(text);
   if (chars.length === 0) return '';
   const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
   let svg = '';
-
-  if (isDottedTrace) {
-    // Use dotted font rendered as HTML overlay
-    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.25);
-  } else {
-    for (let c = 0; c < chars.length; c++) {
-      const cx = x + 4 + c * charW + charW / 2;
-      if (cx > x + contentW) break;
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
-    }
-  }
-
-  // Start/end dots per letter
-  if (showStartEnd && isDottedTrace) {
-    for (let c = 0; c < chars.length; c++) {
-      const cx = x + 4 + c * charW + charW / 2;
-      if (cx > x + contentW) break;
-      const dotR = Math.max(2.5, fontPx * 0.06);
-      svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
-      svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
-    }
-  }
-
-  return svg;
-}
-
-// Render trace text as SVG using Edu AU VIC WA NT Dots font
-// y = bottom red line, dominant-baseline=auto so baseline sits on bottom line
-function renderTraceTextOnTriline(
-  chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
-  showStartEnd: boolean = false
-): string {
-  if (chars.length === 0) return '';
-  const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
-  let svg = '';
-
   for (let c = 0; c < chars.length; c++) {
     const cx = x + 4 + c * charW + charW / 2;
     if (cx > x + contentW) break;
-    svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" dominant-baseline="auto" font-family="'Edu AU VIC WA NT Dots', sans-serif" font-size="${fontPx}" fill="#aaaaaa" stroke="none">${escapeXml(chars[c])}</text>`;
+    svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" dominant-baseline="auto" font-family="'Patrick Hand', cursive" font-size="${fontPx}" font-weight="400" fill="#333333">${escapeXml(chars[c])}</text>`;
   }
-
-  // Start/end dots per letter
-  if (showStartEnd) {
-    for (let c = 0; c < chars.length; c++) {
-      const cx = x + 4 + c * charW + charW / 2;
-      if (cx > x + contentW) break;
-      const dotR = Math.max(2.5, fontPx * 0.06);
-      svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
-      svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
-    }
-  }
-
   return svg;
 }
 
