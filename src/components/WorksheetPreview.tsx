@@ -33,17 +33,21 @@ export default function WorksheetPreview({ config, data }: Props) {
   const shapeScale = config.difficulty === 'easy' ? 1.15 : config.difficulty === 'medium' ? 1.0 : 0.85;
 
   // Header font sizes
-  const nameFontSize = config.headerFontSize === 'small' ? 14 : config.headerFontSize === 'large' ? 24 : 18;
+  const nameFontSize = config.nameDateFontSize === 'small' ? 12 : config.nameDateFontSize === 'large' ? 20 : 16;
+  const dateFontSize = config.nameDateFontSize === 'small' ? 9 : config.nameDateFontSize === 'large' ? 14 : 11;
   const nameWeight = config.headerBold ? '800' : '600';
   const ageStr = config.childAge !== null ? ` (Age ${config.childAge})` : '';
   const nameStr = config.childName ? config.childName + ageStr : '___________________';
+
+  const instrFontSize = config.instructionFontSize === 'small' ? 11 : config.instructionFontSize === 'large' ? 18 : 14;
+  const instrWeight = config.instructionBold ? '800' : '700';
 
   const headerSVG = `
     <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="#0D9488">OTsheet.ai</text>
     <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="#E2E8F0" stroke-width="1" />
     <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${nameStr}</text>
-    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#94A3B8">Date: ____/____/________</text>
-    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="700" fill="#1E293B">${data.instructions}</text>
+    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="${dateFontSize}" fill="#94A3B8">Date: ____/____/________</text>
+    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${instrFontSize}" font-weight="${instrWeight}" fill="#1E293B">${data.instructions}</text>
   `;
 
   const footerSVG = `
