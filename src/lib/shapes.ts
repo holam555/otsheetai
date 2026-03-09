@@ -200,48 +200,6 @@ export interface ScissorSkillsData {
   lines: { pathD: string; startX: number; startY: number }[];
 }
 
-export interface ColorByNumberRegion {
-  pathD: string;
-  colorIndex: number;
-  labelX: number;
-  labelY: number;
-}
-
-export interface ColorByNumberData {
-  regions: ColorByNumberRegion[];
-  colorKey: { index: number; color: string; name: string }[];
-}
-
-export interface GridDesignData {
-  grid: { type: string; value: string; color?: string }[][];
-  gridSize: number;
-  pattern: GridDesignPattern;
-}
-
-export interface DotArtData {
-  dots: { x: number; y: number; region: number }[];
-  theme: DotArtTheme;
-  regionColors: string[];
-}
-
-export interface ShapeTracingData {
-  shapes: { pathD: string; startX: number; startY: number; arrowAngle: number; shapeName: string }[];
-}
-
-export interface SpotDiffSceneObject {
-  type: string;
-  x: number; y: number;
-  w: number; h: number;
-  fill: string;
-  extra?: Record<string, any>;
-}
-
-export interface SpotDiffData {
-  leftScene: SpotDiffSceneObject[];
-  rightScene: SpotDiffSceneObject[];
-  differences: { x: number; y: number; r: number; description: string }[];
-  theme: SpotDiffTheme;
-}
 
 export interface VisualScanData {
   grid: string[][];
