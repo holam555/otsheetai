@@ -1071,6 +1071,36 @@ function renderTextOnTriline(
   return svg;
 }
 
+// Render trace text as SVG using Edu AU VIC WA NT Dots font
+// y = bottom red line, dominant-baseline=auto so baseline sits on bottom line
+function renderTraceTextOnTriline(
+  chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
+  showStartEnd: boolean = false
+): string {
+  if (chars.length === 0) return '';
+  const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
+  let svg = '';
+
+  for (let c = 0; c < chars.length; c++) {
+    const cx = x + 4 + c * charW + charW / 2;
+    if (cx > x + contentW) break;
+    svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" dominant-baseline="auto" font-family="'Edu AU VIC WA NT Dots', sans-serif" font-size="${fontPx}" fill="#aaaaaa" stroke="none">${escapeXml(chars[c])}</text>`;
+  }
+
+  // Start/end dots per letter
+  if (showStartEnd) {
+    for (let c = 0; c < chars.length; c++) {
+      const cx = x + 4 + c * charW + charW / 2;
+      if (cx > x + contentW) break;
+      const dotR = Math.max(2.5, fontPx * 0.06);
+      svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
+      svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
+    }
+  }
+
+  return svg;
+}
+
 // Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
 // lineH here = the raw mm-based size used as fontPx for the trace text
 function renderSentenceTrilineMode(
@@ -1096,15 +1126,20 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using KG Primary Dots font overlay
+    // Row 1: Reference text in Patrick Hand (solid, dark grey)
     const refBaselineY = groupY + refTextH * 0.85;
-    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW);
+    const refCharW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
+    for (let c = 0; c < allChars.length; c++) {
+      const cx = MARGIN + 4 + c * refCharW + refCharW / 2;
+      if (cx > MARGIN + contentW) break;
+      svg += `<text x="${cx}" y="${refBaselineY}" text-anchor="middle" font-family="'Patrick Hand', cursive" font-size="${refFontPx}" font-weight="400" fill="#333333">${escapeXml(allChars[c])}</text>`;
+    }
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
     const traceBaselineY = groupY + refTextH + zoneH;
     svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
-    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
+    svg += renderTraceTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, config.handwritingShowStartEnd);
 
     // Row 3: Blank colored tri-lines for independent writing
     const blankBaselineY = traceBaselineY + grassH + setGap + zoneH;
@@ -1198,8 +1233,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.25);
+    // 1. Word label in Patrick Hand (solid, dark grey)
+    svg += `<text x="${colX}" y="${blockY + 12}" font-family="'Patrick Hand', cursive" font-size="13" font-weight="400" fill="#333333">${escapeXml(word.trim())}</text>`;
 
     let nextY = blockY + labelH;
 
@@ -1211,7 +1246,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
       const traceFontPx = zoneH / 0.72;
       const traceBaselineY = nextY + zoneH;
       svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-      svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
+      svg += renderTraceTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, config.handwritingShowStartEnd);
       nextY = traceBaselineY + grassH + gapBetweenParts;
     }
 
