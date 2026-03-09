@@ -624,7 +624,7 @@ function renderSequenceMode(
       const oy = seqY + cellSz / 2;
       svg += `<text x="${ox}" y="${oy - optSize / 2 - 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#94A3B8">${String.fromCharCode(65 + oIdx)}</text>`;
       svg += `<rect x="${ox - optSize / 2}" y="${oy - optSize / 2}" width="${optSize}" height="${optSize}" ${getCellBorderAttrs(config, '#94A3B8', 1)} />`;
-      svg += getShapeSVG(opt.shape, ox, oy, optSize * shapeScale, getFill(opt.shape), getStroke(opt.shape), getStrokeW());
+      svg += getCellSVG(opt, ox, oy, optSize * shapeScale, getFill(opt.shape), getStroke(opt.shape), getStrokeW());
     });
   });
 
