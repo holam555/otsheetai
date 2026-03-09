@@ -1081,12 +1081,17 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
   // Sizing
   const tallH = Math.max(25 * mmToPx, lineH);
   const medH = Math.max(18 * mmToPx, lineH * 0.72);
-  const descH = tallH; // same height but with extra below baseline
-  const descExtra = 7 * mmToPx; // extra space below baseline for descenders
-  const labelH = 16; // label text height
-  const trilineSetH = lineH; // tri-line trace height
+  const descH = tallH;
+  const descExtra = 7 * mmToPx;
+  const labelH = 16;
+  const trilineSetH = lineH;
   const gapBetweenParts = 6 * mmToPx;
-  const wordBlockH = labelH + trilineSetH + gapBetweenParts + tallH + descExtra + gapBetweenParts;
+
+  const displayMode = config.wordBoxDisplayMode || 'boxOnly';
+  const showTriline = displayMode === 'trilineOnly' || displayMode === 'both';
+  const showBoxes = displayMode === 'boxOnly' || displayMode === 'both';
+
+  const wordBlockH = labelH + (showTriline ? trilineSetH + gapBetweenParts : 0) + (showBoxes ? tallH + descExtra + gapBetweenParts : 0) + gapBetweenParts;
   const maxPerCol = Math.min(4, Math.floor(availableH / wordBlockH));
 
   let svg = '';
@@ -1101,48 +1106,53 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label in black
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${fontFamily}" font-size="13" font-weight="700" fill="#1E293B">${escapeXml(word.trim())}</text>`;
+    // 1. Word label as dotted trace
+    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${fontFamily}" font-size="13" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(word.trim())}</text>`;
 
-    // 2. Tri-line trace with colored lines — baseline-anchored
-    const fontPxTrace = lineH;
-    const zoneH = fontPxTrace * 0.7;
-    const grassH = zoneH * 0.15;
-    const traceFontPx = zoneH / 0.72; // auto-size so ascenders fill zone
-    const traceBaselineY = blockY + labelH + zoneH;
-    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-    svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true);
+    let nextY = blockY + labelH;
 
-    // 3. Adaptive word boxes
-    const boxesY = traceBaselineY + grassH + gapBetweenParts;
-    const boxW = Math.min(colW / chars.length, tallH * 0.8); // uniform width
-    const baseline = boxesY + tallH; // shared baseline
+    // 2. Tri-line trace (if enabled)
+    if (showTriline) {
+      const fontPxTrace = lineH;
+      const zoneH = fontPxTrace * 0.7;
+      const grassH = zoneH * 0.15;
+      const traceFontPx = zoneH / 0.72;
+      const traceBaselineY = nextY + zoneH;
+      svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
+      svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true);
+      nextY = traceBaselineY + grassH + gapBetweenParts;
+    }
 
-    chars.forEach((ch, cIdx) => {
-      const bx = colX + cIdx * boxW;
-      const type = getLetterType(ch);
-      let boxTop: number;
-      let boxHeight: number;
+    // 3. Adaptive word boxes (if enabled)
+    if (showBoxes) {
+      const boxesY = nextY;
+      const boxW = Math.min(colW / chars.length, tallH * 0.8);
+      const baseline = boxesY + tallH;
 
-      if (type === 'tall') {
-        boxTop = boxesY;
-        boxHeight = tallH;
-      } else if (type === 'descender') {
-        boxTop = baseline - medH;
-        boxHeight = medH + descExtra;
-      } else {
-        boxTop = baseline - medH;
-        boxHeight = medH;
-      }
+      chars.forEach((ch, cIdx) => {
+        const bx = colX + cIdx * boxW;
+        const type = getLetterType(ch);
+        let boxTop: number;
+        let boxHeight: number;
 
-      // Thick black border box
-      svg += `<rect x="${bx}" y="${boxTop}" width="${boxW}" height="${boxHeight}" fill="none" stroke="#1E293B" stroke-width="1.8" rx="2" />`;
+        if (type === 'tall') {
+          boxTop = boxesY;
+          boxHeight = tallH;
+        } else if (type === 'descender') {
+          boxTop = baseline - medH;
+          boxHeight = medH + descExtra;
+        } else {
+          boxTop = baseline - medH;
+          boxHeight = medH;
+        }
 
-      // Baseline indicator (thin line across all boxes)
-      if (cIdx === 0) {
-        svg += `<line x1="${colX}" y1="${baseline}" x2="${colX + chars.length * boxW}" y2="${baseline}" stroke="#DC2626" stroke-width="0.6" stroke-dasharray="3 2" />`;
-      }
-    });
+        svg += `<rect x="${bx}" y="${boxTop}" width="${boxW}" height="${boxHeight}" fill="none" stroke="#1E293B" stroke-width="1.8" rx="2" />`;
+
+        if (cIdx === 0) {
+          svg += `<line x1="${colX}" y1="${baseline}" x2="${colX + chars.length * boxW}" y2="${baseline}" stroke="#DC2626" stroke-width="0.6" stroke-dasharray="3 2" />`;
+        }
+      });
+    }
   });
 
   return svg;
