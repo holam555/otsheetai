@@ -1233,8 +1233,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.25);
+    // 1. Word label in Patrick Hand (solid, dark grey)
+    svg += `<text x="${colX}" y="${blockY + 12}" font-family="'Patrick Hand', cursive" font-size="13" font-weight="400" fill="#333333">${escapeXml(word.trim())}</text>`;
 
     let nextY = blockY + labelH;
 
@@ -1246,7 +1246,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
       const traceFontPx = zoneH / 0.72;
       const traceBaselineY = nextY + zoneH;
       svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-      svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
+      svg += renderTraceTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, config.handwritingShowStartEnd);
       nextY = traceBaselineY + grassH + gapBetweenParts;
     }
 
