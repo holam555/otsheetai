@@ -331,7 +331,7 @@ function renderMissingMode(
           svg += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${cellSz * 0.4}" fill="#CBD5E1">?</text>`;
           svg += `<rect x="${cx - cellSz * 0.38}" y="${cy - cellSz * 0.38}" width="${cellSz * 0.76}" height="${cellSz * 0.76}" rx="4" fill="none" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4,3" />`;
         } else {
-          svg += getShapeSVG(cell.shape, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+          svg += getCellSVG(cell, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
         }
       });
     });
