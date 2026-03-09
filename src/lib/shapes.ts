@@ -19,7 +19,7 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots' | 'tracingPaths' | 'scissorSkills' | 'gridDesigns' | 'visualScanning' | 'pixelArt';
+export type WorksheetMode = 'find' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots' | 'tracingPaths' | 'scissorSkills' | 'visualScanning' | 'pixelArt';
 export type MazeSize = 'small' | 'medium' | 'large';
 export type MazeShape = 'square' | 'rectangle' | 'circle';
 export type ConnectDotsShape = 'star' | 'heart' | 'house' | 'fish' | 'sun' | 'butterfly' | 'rocket' | 'tree' | 'catFace' | 'flower';
@@ -27,8 +27,7 @@ export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
 export type TracingStrokeType = 'vertical' | 'horizontal' | 'diagonal' | 'curved' | 'waves' | 'zigzag' | 'spiral' | 'loops' | 'mixed';
 export type TracingThickness = 'thick' | 'medium' | 'thin';
 export type ScissorLineType = 'straight' | 'wavy' | 'zigzag' | 'mixed';
-export type GridDesignSize = 3 | 4 | 5;
-export type GridDesignPattern = 'shapes' | 'colors' | 'lines';
+
 export type VisualScanDensity = 'small' | 'medium' | 'large';
 export type VisualScanFontStyle = 'standard' | 'dyslexia';
 export type VisualScanCharSize = 'large' | 'medium' | 'small';
@@ -47,6 +46,7 @@ export type HandwritingLineColor = 'red' | 'blue' | 'green' | 'black';
 export type HandwritingHighlightColor = 'blue' | 'yellow' | 'green' | 'pink' | 'none';
 export type HandwritingLineMode = '3-line' | '4-line';
 export type WordBoxDisplayMode = 'boxOnly' | 'trilineOnly' | 'both';
+export type HandwritingLayout = 'triline' | 'fourline' | 'wordbox' | 'gridbox' | 'triline-wordbox' | 'fourline-wordbox';
 export type InstructionFontSize = 'small' | 'medium' | 'large';
 export type EmojiTheme = 'animals' | 'food' | 'transport' | 'nature' | 'faces';
 
@@ -59,7 +59,7 @@ export const EMOJI_THEMES: Record<EmojiTheme, { icon: string; label: string; emo
 };
 
 // Modes that support emoji
-export const EMOJI_ELIGIBLE_MODES: WorksheetMode[] = ['find', 'missing', 'oddOneOut', 'count', 'sequence', 'figureGround', 'closure'];
+export const EMOJI_ELIGIBLE_MODES: WorksheetMode[] = ['find', 'oddOneOut', 'count', 'sequence'];
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
@@ -78,6 +78,7 @@ export interface WorksheetConfig {
   headerFontSize: HeaderFontSize;
   headerBold: boolean;
   oddOneOutType: OddOneOutType;
+  oddOneOutCustomTarget: string;
   handwritingText: string;
   handwritingRows: number;
   handwritingPaperStyle: HandwritingPaperStyle;
@@ -92,6 +93,7 @@ export interface WorksheetConfig {
   handwritingHighlightColor: HandwritingHighlightColor;
   handwritingLineMode: HandwritingLineMode;
   wordBoxDisplayMode: WordBoxDisplayMode;
+  handwritingLayout: HandwritingLayout;
   handwritingShowStartEnd: boolean;
   instructionFontSize: InstructionFontSize;
   instructionBold: boolean;
@@ -105,8 +107,6 @@ export interface WorksheetConfig {
   tracingThickness: TracingThickness;
   scissorLineType: ScissorLineType;
   scissorLineCount: number;
-  gridDesignSize: GridDesignSize;
-  gridDesignPattern: GridDesignPattern;
   visualScanTarget: string;
   visualScanDensity: VisualScanDensity;
   visualScanFontStyle: VisualScanFontStyle;
@@ -125,13 +125,6 @@ export interface CellData {
   isBlank?: boolean;
   rotation?: number;
   emoji?: string;
-}
-
-export interface MissingPuzzle {
-  grid: CellData[][];
-  blankRow: number;
-  blankCol: number;
-  answer: ShapeName;
 }
 
 export interface PatternPuzzle {
@@ -216,13 +209,6 @@ export interface TracingPathsData {
 export interface ScissorSkillsData {
   lines: { pathD: string; startX: number; startY: number }[];
 }
-export interface GridDesignData {
-  grid: { type: string; value: string; color?: string }[][];
-  gridSize: number;
-  pattern: GridDesignPattern;
-}
-
-
 export interface VisualScanData {
   grid: string[][];
   target: string;
@@ -243,8 +229,6 @@ export interface WorksheetData {
   skillLabel: string;
   targetShape?: ShapeName;
   grid?: CellData[][];
-  referenceShapes?: ShapeName[];
-  missingPuzzles?: MissingPuzzle[];
   patternPuzzles?: PatternPuzzle[];
   countPuzzle?: CountPuzzle;
   copyPuzzles?: CopyPuzzle[];
@@ -259,7 +243,6 @@ export interface WorksheetData {
   connectDotsData?: ConnectDotsData;
   tracingPathsData?: TracingPathsData;
   scissorSkillsData?: ScissorSkillsData;
-  gridDesignData?: GridDesignData;
   visualScanData?: VisualScanData;
   pixelArtData?: PixelArtData;
 }
@@ -367,76 +350,37 @@ function generateFindMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
-// ========== MODE 2: MISSING SHAPE ==========
-function generateMissingMode(config: WorksheetConfig): WorksheetData {
-  const shapes = getActiveShapes(config);
-  const refShapes = shapes.slice(0, 4);
-  const puzzleSize = config.gridSize <= 3 ? 2 : 3;
-  const puzzleCount = config.exerciseCount;
-
-  const puzzles: MissingPuzzle[] = [];
-  for (let p = 0; p < puzzleCount; p++) {
-    const totalCells = puzzleSize * puzzleSize;
-    const cells: CellData[] = [];
-    for (let i = 0; i < totalCells; i++) {
-      cells.push({
-        shape: refShapes[i % refShapes.length],
-        isBlank: false,
-        rotation: getDifficultyRotation(config.difficulty),
-      });
-    }
-    const blankIdx = Math.floor(Math.random() * totalCells);
-    const answer = cells[blankIdx].shape;
-    cells[blankIdx] = { shape: answer, isBlank: true };
-
-    const grid: CellData[][] = [];
-    for (let r = 0; r < puzzleSize; r++) {
-      grid.push(cells.slice(r * puzzleSize, (r + 1) * puzzleSize));
-    }
-
-    puzzles.push({
-      grid,
-      blankRow: Math.floor(blankIdx / puzzleSize),
-      blankCol: blankIdx % puzzleSize,
-      answer,
-    });
-  }
-
-  return {
-    mode: 'missing',
-    instructions: 'Draw the missing shape in each grid!',
-    skillLabel: 'Shape Recognition',
-    referenceShapes: refShapes,
-    missingPuzzles: puzzles,
-  };
-}
-
 // ========== MODE 3: MATCH PATTERN ==========
 function generatePatternMode(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
   const puzzleCount = config.exerciseCount;
+  const gridN = config.gridSize; // 2, 3, 4, or 5 — drives N×N pattern size
+  const cellCount = gridN * gridN;
 
   const puzzles: PatternPuzzle[] = [];
   for (let p = 0; p < puzzleCount; p++) {
-    const patternShapes = pickN(shapes, Math.min(4, shapes.length));
-    const pattern: CellData[][] = [
-      [
-        { shape: patternShapes[0], rotation: getDifficultyRotation(config.difficulty) },
-        { shape: patternShapes[1 % patternShapes.length], rotation: getDifficultyRotation(config.difficulty) },
-      ],
-      [
-        { shape: patternShapes[2 % patternShapes.length], rotation: getDifficultyRotation(config.difficulty) },
-        { shape: patternShapes[3 % patternShapes.length], rotation: getDifficultyRotation(config.difficulty) },
-      ],
-    ];
+    const patternShapes = pickN(shapes, Math.min(cellCount, shapes.length));
+
+    // Build an N×N grid
+    const flatCells: CellData[] = [];
+    for (let i = 0; i < cellCount; i++) {
+      flatCells.push({
+        shape: patternShapes[i % patternShapes.length],
+        rotation: getDifficultyRotation(config.difficulty),
+      });
+    }
+    const pattern: CellData[][] = [];
+    for (let r = 0; r < gridN; r++) {
+      pattern.push(flatCells.slice(r * gridN, (r + 1) * gridN));
+    }
 
     const correct: CellData[][] = pattern.map(row => row.map(c => ({ ...c })));
 
     const distractors: CellData[][][] = [];
     for (let d = 0; d < 2; d++) {
       if (config.difficulty === 'hard') {
-        const dr = Math.floor(Math.random() * 2);
-        const dc = Math.floor(Math.random() * 2);
+        const dr = Math.floor(Math.random() * gridN);
+        const dc = Math.floor(Math.random() * gridN);
         const origShape = pattern[dr][dc].shape;
         const similar = getSimilarDistractors(origShape, shapes, 'hard');
         const replacement = similar.length > 0 ? randomFrom(similar) : randomFrom(shapes.filter(s => s !== origShape));
@@ -447,8 +391,8 @@ function generatePatternMode(config: WorksheetConfig): WorksheetData {
         const distractor: CellData[][] = pattern.map(row => row.map(c => ({ ...c })));
         const swapCount = config.difficulty === 'easy' ? 2 : 1;
         for (let s = 0; s < swapCount; s++) {
-          const dr = Math.floor(Math.random() * 2);
-          const dc = Math.floor(Math.random() * 2);
+          const dr = Math.floor(Math.random() * gridN);
+          const dc = Math.floor(Math.random() * gridN);
           distractor[dr][dc] = { shape: randomFrom(shapes.filter(sh => sh !== distractor[dr][dc].shape)) };
         }
         distractors.push(distractor);
@@ -476,17 +420,19 @@ function generatePatternMode(config: WorksheetConfig): WorksheetData {
 }
 
 // ========== MODE 4: FIND AND COUNT ==========
+// Grid size drives everything: N×N = N reference shapes + N² cells
 function generateCountMode(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
-  // Scale grid density based on exerciseCount
-  const densityScale = config.exerciseCount / 5;
-  const ROWS = Math.min(12, Math.max(6, Math.round(8 * densityScale)));
-  const COLS = 6;
+  const N = config.gridSize; // 2, 3, 4, or 5
+  const ROWS = N;
+  const COLS = N;
   const totalCells = ROWS * COLS;
 
-  const targetCount = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 4 : Math.min(5, shapes.length);
+  // N reference shapes to count, matching the grid size
+  const targetCount = Math.min(N, shapes.length);
   const targetShapes = pickN(shapes, targetCount);
 
+  // Hard mode adds distractors; easy/medium use only target shapes
   const pool = config.difficulty === 'hard'
     ? [...targetShapes, ...shapes.filter(s => !targetShapes.includes(s))]
     : targetShapes;
@@ -526,8 +472,8 @@ function generateCountMode(config: WorksheetConfig): WorksheetData {
 // ========== MODE 5: COPY THE PATTERN ==========
 function generateCopyMode(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
-  const gridSize = config.difficulty === 'easy' ? 3 : 4;
-  const puzzleCount = Math.min(config.exerciseCount, 5);
+  const gridSize = config.gridSize;
+  const puzzleCount = config.exerciseCount;
 
   const puzzles: CopyPuzzle[] = [];
   for (let p = 0; p < puzzleCount; p++) {
@@ -671,12 +617,19 @@ function generateOddOneOutLetters(config: WorksheetConfig): WorksheetData {
   const rows: OddOneOutRow[] = [];
   const rowCount = config.exerciseCount;
 
+  const customTarget = (config.oddOneOutCustomTarget ?? '').trim();
+
   for (let r = 0; r < rowCount; r++) {
     const oddIndex = Math.floor(Math.random() * 5);
     let baseLetter: string;
     let oddLetter: string;
 
-    if (config.difficulty === 'easy') {
+    if (customTarget.length === 1) {
+      // Custom target: use it as the odd-one-out; pick a different base letter
+      oddLetter = customTarget;
+      const fallback = allLetters.filter(l => l !== oddLetter);
+      baseLetter = fallback[r % fallback.length];
+    } else if (config.difficulty === 'easy') {
       const pair = easyPairs[r % easyPairs.length];
       baseLetter = pair[0];
       oddLetter = pair[1];
@@ -721,12 +674,20 @@ function generateOddOneOutNumbers(config: WorksheetConfig): WorksheetData {
   const rows: OddOneOutRow[] = [];
   const rowCount = config.exerciseCount;
 
+  const customTarget = (config.oddOneOutCustomTarget ?? '').trim();
+  const allDigits = '0123456789'.split('');
+
   for (let r = 0; r < rowCount; r++) {
     const oddIndex = Math.floor(Math.random() * 5);
     let baseChar: string;
     let oddChar: string;
 
-    if (config.difficulty === 'easy') {
+    if (customTarget.length === 1) {
+      // Custom target: use it as the odd-one-out; pick a different base digit
+      oddChar = customTarget;
+      const fallback = allDigits.filter(d => d !== oddChar);
+      baseChar = fallback[r % fallback.length];
+    } else if (config.difficulty === 'easy') {
       const pair = easyPairs[r % easyPairs.length];
       baseChar = pair[0];
       oddChar = pair[1];
@@ -760,9 +721,9 @@ function generateOddOneOutNumbers(config: WorksheetConfig): WorksheetData {
 // ========== MODE 8: MIRROR IMAGE ==========
 function generateMirrorMode(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
-  const gridSize = 4;
+  const gridSize = config.gridSize;
   const shapeCount = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 5 : 7;
-  const puzzleCount = Math.min(config.exerciseCount, 4);
+  const puzzleCount = config.exerciseCount;
 
   const puzzles: MirrorPuzzle[] = [];
   for (let p = 0; p < puzzleCount; p++) {
@@ -1053,18 +1014,24 @@ const DOT_SHAPE_PATHS: Record<ConnectDotsShape, (s: number) => { x: number; y: n
       { x: s * 0.35, y: s - m }, { x: m, y: s - m }, { x: m, y: s * 0.4 },
     ];
   },
-  fish: (s) => {
-    const pts: { x: number; y: number }[] = [];
-    const cx = s * 0.4, cy = s / 2;
-    for (let i = 0; i <= 20; i++) {
-      const t = (i / 20) * Math.PI * 2;
-      const rx = s * 0.32, ry = s * 0.22;
-      pts.push({ x: cx + Math.cos(t) * rx, y: cy + Math.sin(t) * ry });
-    }
-    // tail
-    pts.splice(10, 0, { x: s * 0.85, y: s * 0.25 }, { x: s * 0.9, y: s / 2 }, { x: s * 0.85, y: s * 0.75 });
-    return pts;
-  },
+  fish: (s) => [
+    { x: s * 0.10, y: s * 0.50 },  // mouth
+    { x: s * 0.16, y: s * 0.36 },  // upper lip
+    { x: s * 0.26, y: s * 0.28 },  // upper body
+    { x: s * 0.38, y: s * 0.25 },  // upper body peak
+    { x: s * 0.50, y: s * 0.27 },  // upper mid-body
+    { x: s * 0.60, y: s * 0.32 },  // upper body-tail
+    { x: s * 0.68, y: s * 0.38 },  // tail base upper
+    { x: s * 0.82, y: s * 0.20 },  // upper tail fin tip
+    { x: s * 0.90, y: s * 0.50 },  // tail tip
+    { x: s * 0.82, y: s * 0.80 },  // lower tail fin tip
+    { x: s * 0.68, y: s * 0.62 },  // tail base lower
+    { x: s * 0.60, y: s * 0.68 },  // lower body-tail
+    { x: s * 0.50, y: s * 0.73 },  // lower mid-body
+    { x: s * 0.38, y: s * 0.75 },  // lower body peak
+    { x: s * 0.26, y: s * 0.72 },  // lower body
+    { x: s * 0.16, y: s * 0.64 },  // lower lip
+  ],
   sun: (s) => {
     const pts: { x: number; y: number }[] = [];
     const cx = s / 2, cy = s / 2;
@@ -1075,24 +1042,34 @@ const DOT_SHAPE_PATHS: Record<ConnectDotsShape, (s: number) => { x: number; y: n
     }
     return pts;
   },
-  butterfly: (s) => {
-    const pts: { x: number; y: number }[] = [];
-    const cx = s / 2, cy = s / 2;
-    // Left wing
-    for (let i = 0; i <= 12; i++) {
-      const t = Math.PI / 2 + (i / 12) * Math.PI;
-      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.35 });
-    }
-    // Body
-    pts.push({ x: cx, y: s * 0.9 });
-    // Right wing
-    for (let i = 0; i <= 12; i++) {
-      const t = -Math.PI / 2 + (i / 12) * Math.PI;
-      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.35 });
-    }
-    pts.push({ x: cx, y: s * 0.1 });
-    return pts;
-  },
+  butterfly: (s) => [
+    { x: s * 0.50, y: s * 0.16 },  // body top
+    { x: s * 0.58, y: s * 0.14 },  // right upper wing start
+    { x: s * 0.70, y: s * 0.11 },
+    { x: s * 0.82, y: s * 0.17 },
+    { x: s * 0.90, y: s * 0.28 },
+    { x: s * 0.88, y: s * 0.40 },
+    { x: s * 0.78, y: s * 0.47 },  // right upper wing end
+    { x: s * 0.56, y: s * 0.50 },  // waist right
+    { x: s * 0.64, y: s * 0.54 },  // right lower wing start
+    { x: s * 0.78, y: s * 0.62 },
+    { x: s * 0.80, y: s * 0.74 },
+    { x: s * 0.70, y: s * 0.82 },
+    { x: s * 0.58, y: s * 0.80 },  // right lower wing end
+    { x: s * 0.50, y: s * 0.84 },  // body bottom
+    { x: s * 0.42, y: s * 0.80 },  // left lower wing start
+    { x: s * 0.30, y: s * 0.82 },
+    { x: s * 0.20, y: s * 0.74 },
+    { x: s * 0.22, y: s * 0.62 },
+    { x: s * 0.36, y: s * 0.54 },  // left lower wing end
+    { x: s * 0.44, y: s * 0.50 },  // waist left
+    { x: s * 0.22, y: s * 0.47 },  // left upper wing start
+    { x: s * 0.12, y: s * 0.40 },
+    { x: s * 0.10, y: s * 0.28 },
+    { x: s * 0.18, y: s * 0.17 },
+    { x: s * 0.30, y: s * 0.11 },
+    { x: s * 0.42, y: s * 0.14 },  // left upper wing end
+  ],
   rocket: (s) => {
     const m = s * 0.15;
     return [
@@ -1112,30 +1089,26 @@ const DOT_SHAPE_PATHS: Record<ConnectDotsShape, (s: number) => { x: number; y: n
       { x: s * 0.18, y: s * 0.58 }, { x: s * 0.38, y: s * 0.35 }, { x: s * 0.25, y: s * 0.35 },
     ];
   },
-  catFace: (s) => {
-    const pts: { x: number; y: number }[] = [];
-    const cx = s / 2, cy = s * 0.55;
-    // Ears
-    pts.push({ x: s * 0.2, y: s * 0.12 }, { x: s * 0.15, y: s * 0.35 });
-    // Left face
-    for (let i = 0; i <= 8; i++) {
-      const t = Math.PI * 0.7 + (i / 8) * Math.PI * 0.6;
-      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.32 });
-    }
-    // Chin
-    for (let i = 0; i <= 6; i++) {
-      const t = Math.PI * 1.3 + (i / 6) * Math.PI * 0.4;
-      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.32 });
-    }
-    // Right face
-    for (let i = 0; i <= 8; i++) {
-      const t = -Math.PI * 0.3 + (i / 8) * Math.PI * 0.6;
-      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.32 });
-    }
-    // Right ear
-    pts.push({ x: s * 0.85, y: s * 0.35 }, { x: s * 0.8, y: s * 0.12 });
-    return pts;
-  },
+  catFace: (s) => [
+    { x: s * 0.50, y: s * 0.10 },  // top center notch
+    { x: s * 0.64, y: s * 0.08 },  // near right ear
+    { x: s * 0.76, y: s * 0.04 },  // right ear tip
+    { x: s * 0.80, y: s * 0.18 },  // right ear inner
+    { x: s * 0.85, y: s * 0.30 },  // right temple
+    { x: s * 0.88, y: s * 0.46 },  // right cheek
+    { x: s * 0.84, y: s * 0.62 },  // right cheek lower
+    { x: s * 0.74, y: s * 0.76 },  // right jaw
+    { x: s * 0.60, y: s * 0.84 },  // right chin
+    { x: s * 0.50, y: s * 0.86 },  // chin center
+    { x: s * 0.40, y: s * 0.84 },  // left chin
+    { x: s * 0.26, y: s * 0.76 },  // left jaw
+    { x: s * 0.16, y: s * 0.62 },  // left cheek lower
+    { x: s * 0.12, y: s * 0.46 },  // left cheek
+    { x: s * 0.15, y: s * 0.30 },  // left temple
+    { x: s * 0.20, y: s * 0.18 },  // left ear inner
+    { x: s * 0.24, y: s * 0.04 },  // left ear tip
+    { x: s * 0.36, y: s * 0.08 },  // near left ear
+  ],
   flower: (s) => {
     const pts: { x: number; y: number }[] = [];
     const cx = s / 2, cy = s * 0.4;
@@ -1462,41 +1435,6 @@ function generateScissorSkillsMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
-// ========== MODE 18: GRID DESIGNS ==========
-function generateGridDesignsMode(config: WorksheetConfig): WorksheetData {
-  const size = config.gridDesignSize;
-  const pattern = config.gridDesignPattern;
-  const SHAPE_OPTIONS = ['circle', 'square', 'triangle', 'cross', 'dot'];
-  const COLOR_OPTIONS = ['#EF4444', '#3B82F6', '#22C55E', '#F59E0B'];
-  const LINE_OPTIONS = ['diagonal-lr', 'diagonal-rl', 'cross', 'dot'];
-
-  const grid: GridDesignData['grid'] = [];
-  for (let r = 0; r < size; r++) {
-    const row: { type: string; value: string; color?: string }[] = [];
-    for (let c = 0; c < size; c++) {
-      if (pattern === 'shapes') {
-        const shape = SHAPE_OPTIONS[Math.floor(Math.random() * SHAPE_OPTIONS.length)];
-        row.push({ type: 'shape', value: shape });
-      } else if (pattern === 'colors') {
-        const color = COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
-        row.push({ type: 'color', value: color, color });
-      } else {
-        const line = LINE_OPTIONS[Math.floor(Math.random() * LINE_OPTIONS.length)];
-        row.push({ type: 'line', value: line });
-      }
-    }
-    grid.push(row);
-  }
-
-  return {
-    mode: 'gridDesigns',
-    instructions: 'Copy the pattern from the left grid to the right grid!',
-    skillLabel: 'Visual Motor Integration · Spatial Relations · Copying',
-    gridDesignData: { grid, gridSize: size, pattern },
-  };
-}
-
-
 // ========== MODE 22: VISUAL SCANNING ==========
 function generateVisualScanningMode(config: WorksheetConfig): WorksheetData {
   const target = config.visualScanTarget || 'b';
@@ -1749,7 +1687,6 @@ function applyEmojiToWorksheet(config: WorksheetConfig, result: WorksheetData) {
   const allShapes = new Set<ShapeName>();
 
   if (result.grid) result.grid.forEach(row => row.forEach(c => allShapes.add(c.shape)));
-  if (result.missingPuzzles) result.missingPuzzles.forEach(p => p.grid.forEach(row => row.forEach(c => allShapes.add(c.shape))));
   if (result.countPuzzle) result.countPuzzle.grid.forEach(row => row.forEach(c => allShapes.add(c.shape)));
   if (result.sequencePuzzles) result.sequencePuzzles.forEach(p => {
     p.sequence.forEach(c => allShapes.add(c.shape));
@@ -1766,7 +1703,6 @@ function applyEmojiToWorksheet(config: WorksheetConfig, result: WorksheetData) {
 
   // Apply to all cell data
   if (result.grid) result.grid.forEach(row => assignEmojiToCells(row, map));
-  if (result.missingPuzzles) result.missingPuzzles.forEach(p => p.grid.forEach(row => assignEmojiToCells(row, map)));
   if (result.countPuzzle) {
     result.countPuzzle.grid.forEach(row => assignEmojiToCells(row, map));
     // Remap targetShapes emoji
@@ -1791,16 +1727,14 @@ function applyEmojiToWorksheet(config: WorksheetConfig, result: WorksheetData) {
     });
   }
 
-  // Also store on targetShape/referenceShapes
+  // Also store on targetShape
   if (result.targetShape) (result as any)._targetEmoji = map.get(result.targetShape);
-  if (result.referenceShapes) (result as any)._refEmojis = result.referenceShapes.map(s => map.get(s));
 }
 
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
     case 'find': result = generateFindMode(config); break;
-    case 'missing': result = generateMissingMode(config); break;
     case 'pattern': result = generatePatternMode(config); break;
     case 'count': result = generateCountMode(config); break;
     case 'copy': result = generateCopyMode(config); break;
@@ -1815,7 +1749,6 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'connectDots': result = generateConnectDotsMode(config); break;
     case 'tracingPaths': result = generateTracingPathsMode(config); break;
     case 'scissorSkills': result = generateScissorSkillsMode(config); break;
-    case 'gridDesigns': result = generateGridDesignsMode(config); break;
     case 'visualScanning': result = generateVisualScanningMode(config); break;
     case 'pixelArt': result = generatePixelArtMode(config); break;
   }

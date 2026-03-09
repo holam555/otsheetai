@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingLineMode, WordBoxDisplayMode, InstructionFontSize, MazeSize, MazeShape, ConnectDotsShape, TracingStrokeType, TracingThickness, ScissorLineType, GridDesignSize, GridDesignPattern, VisualScanDensity, VisualScanCharSize, PixelArtTheme, EMOJI_THEMES, EMOJI_ELIGIBLE_MODES, EmojiTheme } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingLineMode, WordBoxDisplayMode, HandwritingLayout, InstructionFontSize, MazeSize, MazeShape, ConnectDotsShape, TracingStrokeType, TracingThickness, ScissorLineType, VisualScanDensity, VisualScanCharSize, PixelArtTheme, EMOJI_THEMES, EMOJI_ELIGIBLE_MODES, EmojiTheme } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,7 +23,6 @@ const HANDWRITING_MODES: { value: WorksheetMode; label: string; icon: string }[]
 
 const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'find', label: 'Find the Shape', icon: '🔍' },
-  { value: 'missing', label: 'Missing Shape', icon: '❓' },
   { value: 'pattern', label: 'Match Pattern', icon: '🔲' },
   { value: 'oddOneOut', label: 'Odd One Out', icon: '⭕' },
   { value: 'count', label: 'Find and Count', icon: '🔢' },
@@ -36,12 +35,28 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'connectDots', label: 'Connect the Dots', icon: '🔗' },
   { value: 'tracingPaths', label: 'Tracing Paths', icon: '✏️' },
   { value: 'scissorSkills', label: 'Scissor Skills', icon: '✂️' },
-  { value: 'gridDesigns', label: 'Grid Designs', icon: '📐' },
   { value: 'visualScanning', label: 'Visual Scanning', icon: '👀' },
   { value: 'pixelArt', label: 'Pixel Art', icon: '🟩' },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting';
+
+function handwritingLayoutToConfig(layout: HandwritingLayout): Partial<WorksheetConfig> {
+  switch (layout) {
+    case 'triline':
+      return { handwritingSubMode: 'sentence', handwritingPaperStyle: 'triline', handwritingLineMode: '3-line' };
+    case 'fourline':
+      return { handwritingSubMode: 'sentence', handwritingPaperStyle: 'triline', handwritingLineMode: '4-line' };
+    case 'wordbox':
+      return { handwritingSubMode: 'wordBoxes', wordBoxDisplayMode: 'boxOnly', handwritingLineMode: '3-line' };
+    case 'gridbox':
+      return { handwritingSubMode: 'sentence', handwritingPaperStyle: 'gridbox', handwritingLineMode: '3-line' };
+    case 'triline-wordbox':
+      return { handwritingSubMode: 'wordBoxes', wordBoxDisplayMode: 'both', handwritingLineMode: '3-line' };
+    case 'fourline-wordbox':
+      return { handwritingSubMode: 'wordBoxes', wordBoxDisplayMode: 'both', handwritingLineMode: '4-line' };
+  }
+}
 
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
   { value: 'shapes', label: 'Shapes' },
@@ -57,6 +72,9 @@ const DIFFICULTIES: { value: Difficulty; label: string }[] = [
 ];
 
 const EXERCISE_COUNTS = [3, 5, 8, 10];
+
+// Max exercises per grid size for Match Pattern
+const PATTERN_MAX_EXERCISES: Record<number, number> = { 2: 6, 3: 4, 4: 3, 5: 2 };
 
 const BORDER_STYLES: { value: BorderStyle; label: string }[] = [
   { value: 'plain', label: 'Plain' },
@@ -117,7 +135,15 @@ function BorderPreview({ style, selected, onClick }: { style: BorderStyle; selec
 }
 
 export default function WorksheetControls({ config, onChange, onGenerate, onPrint }: Props) {
-  const update = (partial: Partial<WorksheetConfig>) => onChange({ ...config, ...partial });
+  const update = (partial: Partial<WorksheetConfig>) => {
+    const merged = { ...config, ...partial };
+    // For Match Pattern: cap exerciseCount to the grid-size max
+    if (merged.mode === 'pattern') {
+      const max = PATTERN_MAX_EXERCISES[merged.gridSize] ?? 6;
+      if (merged.exerciseCount > max) merged.exerciseCount = max;
+    }
+    onChange(merged);
+  };
   const available = getAvailableDifficulties(config.childAge);
 
   const toggleShape = (shape: ShapeName) => {
@@ -367,49 +393,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        {/* Grid Designs Controls */}
-        {config.mode === 'gridDesigns' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Grid Size</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([3, 4, 5] as GridDesignSize[]).map(s => (
-                  <Button
-                    key={s}
-                    variant={config.gridDesignSize === s ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ gridDesignSize: s })}
-                    className="font-display text-xs"
-                  >
-                    {s}×{s}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Pattern Type</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: 'shapes' as GridDesignPattern, label: 'Shapes' },
-                  { value: 'colors' as GridDesignPattern, label: 'Colors' },
-                  { value: 'lines' as GridDesignPattern, label: 'Lines' },
-                ]).map(p => (
-                  <Button
-                    key={p.value}
-                    variant={config.gridDesignPattern === p.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ gridDesignPattern: p.value })}
-                    className="font-display text-xs"
-                  >
-                    {p.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-
         {/* Visual Scanning Controls */}
         {config.mode === 'visualScanning' && (
           <div className="space-y-4">
@@ -511,33 +494,109 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
+        {/* Odd One Out — Custom target for Letters / Numbers */}
+        {config.mode === 'oddOneOut' && (config.oddOneOutType === 'letters' || config.oddOneOutType === 'numbers') && (
+          <div className="space-y-1.5">
+            <Label className="font-display font-semibold text-sm">Custom target (optional)</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                value={config.oddOneOutCustomTarget ?? ''}
+                onChange={(e) => update({ oddOneOutCustomTarget: e.target.value.slice(0, 1) })}
+                maxLength={1}
+                className="font-mono text-lg text-center w-14 h-10"
+                placeholder="—"
+              />
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {config.oddOneOutCustomTarget
+                  ? `"${config.oddOneOutCustomTarget}" will appear as the odd one out in every row`
+                  : 'Leave empty to use auto-generated targets'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Match Pattern — Quick Start presets */}
+        {config.mode === 'pattern' && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Quick Start</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Easy', gridSize: 2 as GridSize, exerciseCount: 3 },
+                { label: 'Medium', gridSize: 3 as GridSize, exerciseCount: 3 },
+                { label: 'Hard', gridSize: 4 as GridSize, exerciseCount: 2 },
+              ].map(p => (
+                <Button
+                  key={p.label}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => update({ gridSize: p.gridSize, exerciseCount: p.exerciseCount })}
+                  className="font-display text-xs"
+                >
+                  {p.label}
+                  <span className="ml-1 text-muted-foreground">{p.gridSize}×{p.gridSize}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Find and Count — single grid selector (replaces global grid + exercises) */}
+        {config.mode === 'count' && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Grid Size</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {([2, 3, 4, 5] as GridSize[]).map(s => (
+                <Button
+                  key={s}
+                  variant={config.gridSize === s ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ gridSize: s })}
+                  className="font-display text-xs"
+                >
+                  {s}×{s}
+                </Button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {config.gridSize} reference shapes · {config.gridSize}×{config.gridSize} grid ({config.gridSize * config.gridSize} cells)
+            </p>
+          </div>
+        )}
+
         {/* Handwriting Practice Controls */}
         {config.mode === 'handwriting' && (
           <div className="space-y-4">
-            {/* Sub-mode toggle */}
+            {/* Layout picker — 6 options in 2 columns */}
             <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Type</Label>
+              <Label className="font-display font-semibold text-sm">Layout</Label>
               <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={config.handwritingSubMode === 'sentence' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => update({ handwritingSubMode: 'sentence' })}
-                  className="font-display text-xs"
-                >
-                  Sentence
-                </Button>
-                <Button
-                  variant={config.handwritingSubMode === 'wordBoxes' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => update({ handwritingSubMode: 'wordBoxes' })}
-                  className="font-display text-xs"
-                >
-                  Word Boxes
-                </Button>
+                {([
+                  { value: 'triline' as HandwritingLayout, label: 'Tri-line', icon: '📝' },
+                  { value: 'fourline' as HandwritingLayout, label: '4-line (HK)', icon: '📝' },
+                  { value: 'wordbox' as HandwritingLayout, label: 'Word Box', icon: '🔤' },
+                  { value: 'gridbox' as HandwritingLayout, label: 'Grid Box', icon: '⬜' },
+                  { value: 'triline-wordbox' as HandwritingLayout, label: 'Tri-line + Word', icon: '📋' },
+                  { value: 'fourline-wordbox' as HandwritingLayout, label: '4-line + Word', icon: '📋' },
+                ]).map(l => (
+                  <Button
+                    key={l.value}
+                    variant={config.handwritingLayout === l.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const derived = handwritingLayoutToConfig(l.value);
+                      update({ handwritingLayout: l.value, ...derived });
+                    }}
+                    className="font-display text-xs h-auto py-2 flex flex-col gap-0.5"
+                  >
+                    <span>{l.icon}</span>
+                    <span>{l.label}</span>
+                  </Button>
+                ))}
               </div>
             </div>
 
-            {config.handwritingSubMode === 'sentence' && (
+            {/* Text input — for line-based layouts */}
+            {(config.handwritingLayout === 'triline' || config.handwritingLayout === 'fourline' || config.handwritingLayout === 'gridbox') && (
               <div className="space-y-2">
                 <Label className="font-display font-semibold text-sm">Text to practise</Label>
                 <Input
@@ -548,82 +607,38 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
               </div>
             )}
 
-            {config.handwritingSubMode === 'wordBoxes' && (
-              <>
-                <div className="space-y-2">
-                  <Label className="font-display font-semibold text-sm">Words (one per line, max 8)</Label>
-                  <Textarea
-                    value={config.handwritingWords}
-                    onChange={(e) => update({ handwritingWords: e.target.value })}
-                    placeholder={"cat\ndog\nbird\nfish"}
-                    rows={4}
-                    className="text-sm font-mono"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-display font-semibold text-sm">Display Mode</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {([
-                      { value: 'boxOnly' as WordBoxDisplayMode, label: 'Box Only' },
-                      { value: 'trilineOnly' as WordBoxDisplayMode, label: 'Tri-line' },
-                      { value: 'both' as WordBoxDisplayMode, label: 'Both' },
-                    ]).map(m => (
-                      <Button
-                        key={m.value}
-                        variant={config.wordBoxDisplayMode === m.value ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => update({ wordBoxDisplayMode: m.value })}
-                        className="font-display text-xs"
-                      >
-                        {m.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </>
+            {/* Words textarea — for word box layouts */}
+            {(config.handwritingLayout === 'wordbox' || config.handwritingLayout === 'triline-wordbox' || config.handwritingLayout === 'fourline-wordbox') && (
+              <div className="space-y-2">
+                <Label className="font-display font-semibold text-sm">Words (one per line, max 8)</Label>
+                <Textarea
+                  value={config.handwritingWords}
+                  onChange={(e) => update({ handwritingWords: e.target.value })}
+                  placeholder={"cat\ndog\nbird\nfish"}
+                  rows={4}
+                  className="text-sm font-mono"
+                />
+              </div>
             )}
 
-            {config.handwritingSubMode === 'sentence' && (
-              <>
-                {/* Practice Rows Slider */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="font-display font-semibold text-sm">Practice Rows</Label>
-                    <span className="text-xs font-bold text-primary">{config.handwritingRows}</span>
-                  </div>
-                  <Slider
-                    value={[config.handwritingRows]}
-                    min={2}
-                    max={8}
-                    step={1}
-                    onValueChange={([v]) => update({ handwritingRows: v })}
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>2</span><span>8</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-display font-semibold text-sm">Paper Style</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {([
-                      { value: 'triline' as const, label: 'Tri-line' },
-                      { value: 'gridbox' as const, label: 'Grid Box' },
-                      { value: 'both' as const, label: 'Both' },
-                    ]).map(s => (
-                      <Button
-                        key={s.value}
-                        variant={config.handwritingPaperStyle === s.value ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => update({ handwritingPaperStyle: s.value })}
-                        className="font-display text-xs"
-                      >
-                        {s.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </>
+            {/* Practice Rows Slider — not applicable for word box layouts */}
+            {config.handwritingLayout !== 'wordbox' && config.handwritingLayout !== 'triline-wordbox' && config.handwritingLayout !== 'fourline-wordbox' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Practice Rows</Label>
+                <span className="text-xs font-bold text-primary">{config.handwritingRows}</span>
+              </div>
+              <Slider
+                value={[config.handwritingRows]}
+                min={2}
+                max={8}
+                step={1}
+                onValueChange={([v]) => update({ handwritingRows: v })}
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>2</span><span>8</span>
+              </div>
+            </div>
             )}
 
             {/* Font Size Slider (mm) */}
@@ -644,90 +659,41 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
               </div>
             </div>
 
-            {/* Font Selector — Print and Cursive only */}
-            <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Font</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  { value: 'print' as HandwritingFont, label: 'Print', family: "'Arial', sans-serif" },
-                  { value: 'cursive' as HandwritingFont, label: 'Cursive', family: "'Segoe Script', cursive" },
-                ]).map(f => (
-                  <Button
-                    key={f.value}
-                    variant={config.handwritingFont === f.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ handwritingFont: f.value })}
-                    className="font-display text-xs"
-                  >
-                    <span>{f.label}</span>
-                    <span className="text-muted-foreground ml-1" style={{ fontFamily: f.family, fontSize: '12px' }}>Aa</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Show Start/End Points toggle */}
-            <div className="flex items-center justify-between">
-              <Label className="font-display font-semibold text-sm">Show start/end points</Label>
-              <Switch checked={config.handwritingShowStartEnd} onCheckedChange={(v) => update({ handwritingShowStartEnd: v })} />
-            </div>
-
-            {/* Line Style Controls */}
-            <div className="space-y-3 border-t border-border pt-3">
-              <Label className="font-display font-semibold text-sm">Line Style</Label>
-
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Line mode</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {([
-                    { value: '3-line' as HandwritingLineMode, label: '3-Line' },
-                    { value: '4-line' as HandwritingLineMode, label: '4-Line (HK)' },
-                  ]).map(m => (
-                    <Button
-                      key={m.value}
-                      variant={config.handwritingLineMode === m.value ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => update({ handwritingLineMode: m.value })}
-                      className="font-display text-xs"
-                    >
-                      {m.label}
-                    </Button>
-                  ))}
+            {/* Line colour — for line-based layouts */}
+            {config.handwritingLayout !== 'wordbox' && config.handwritingLayout !== 'gridbox' && (
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Coloured lines</Label>
+                  <Switch checked={config.handwritingShowColoredLines} onCheckedChange={(v) => update({ handwritingShowColoredLines: v })} />
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">Coloured lines</Label>
-                <Switch checked={config.handwritingShowColoredLines} onCheckedChange={(v) => update({ handwritingShowColoredLines: v })} />
-              </div>
-
-              {config.handwritingShowColoredLines && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Line colour</Label>
-                  <div className="flex gap-1.5">
-                    {([
-                      { value: 'red' as HandwritingLineColor, color: '#DC2626', label: 'Red' },
-                      { value: 'blue' as HandwritingLineColor, color: '#2563EB', label: 'Blue' },
-                      { value: 'green' as HandwritingLineColor, color: '#16A34A', label: 'Green' },
-                      { value: 'black' as HandwritingLineColor, color: '#1E293B', label: 'Black' },
-                    ]).map(c => (
-                      <button
-                        key={c.value}
-                        onClick={() => update({ handwritingLineColor: c.value })}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${config.handwritingLineColor === c.value ? 'border-foreground scale-110 shadow-sm' : 'border-border hover:border-muted-foreground/50'}`}
-                        style={{ backgroundColor: c.color }}
-                        title={c.label}
-                      />
-                    ))}
+                {config.handwritingShowColoredLines && (
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Line colour</Label>
+                    <div className="flex gap-1.5">
+                      {([
+                        { value: 'red' as HandwritingLineColor, color: '#DC2626', label: 'Red' },
+                        { value: 'blue' as HandwritingLineColor, color: '#2563EB', label: 'Blue' },
+                        { value: 'green' as HandwritingLineColor, color: '#16A34A', label: 'Green' },
+                        { value: 'black' as HandwritingLineColor, color: '#1E293B', label: 'Black' },
+                      ]).map(c => (
+                        <button
+                          key={c.value}
+                          onClick={() => update({ handwritingLineColor: c.value })}
+                          className={`w-7 h-7 rounded-full border-2 transition-all ${config.handwritingLineColor === c.value ? 'border-foreground scale-110 shadow-sm' : 'border-border hover:border-muted-foreground/50'}`}
+                          style={{ backgroundColor: c.color }}
+                          title={c.label}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Grid Size — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
+        {/* Grid Size — VP modes only (hidden for count/figureGround/closure: no effect or own selector) */}
+        {!isHandwritingMode(config.mode) && config.mode !== 'count' && config.mode !== 'figureGround' && config.mode !== 'closure' && (
           <div className="space-y-2">
             <Label className="font-display font-semibold text-sm">Grid Size</Label>
             <div className="grid grid-cols-4 gap-2">
@@ -831,8 +797,8 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        {/* Difficulty — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
+        {/* Difficulty — VP modes only (hidden for pattern: Quick Start presets replace it) */}
+        {!isHandwritingMode(config.mode) && config.mode !== 'pattern' && (
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Label className="font-display font-semibold text-sm">Difficulty</Label>
@@ -865,8 +831,35 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
         )}
 
 
-        {/* Exercises per sheet — VP modes only */}
-        {!isHandwritingMode(config.mode) && (
+        {/* Exercises per sheet — pattern mode: custom capped buttons */}
+        {!isHandwritingMode(config.mode) && config.mode === 'pattern' && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="font-display font-semibold text-sm">Exercises per sheet</Label>
+              <span className="text-[10px] text-amber-600 font-semibold">
+                Max {PATTERN_MAX_EXERCISES[config.gridSize] ?? 6} for {config.gridSize}×{config.gridSize}
+              </span>
+            </div>
+            <div className="flex gap-1.5">
+              {[2, 3, 4, 5, 6]
+                .filter(n => n <= (PATTERN_MAX_EXERCISES[config.gridSize] ?? 6))
+                .map(n => (
+                  <Button
+                    key={n}
+                    variant={config.exerciseCount === n ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ exerciseCount: n })}
+                    className="font-display text-xs flex-1"
+                  >
+                    {n}
+                  </Button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Exercises per sheet — standard slider for all other VP modes except count/figureGround */}
+        {!isHandwritingMode(config.mode) && config.mode !== 'pattern' && config.mode !== 'count' && config.mode !== 'figureGround' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="font-display font-semibold text-sm">Exercises per sheet</Label>

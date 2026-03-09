@@ -76,13 +76,14 @@ export default function WorksheetPreview({ config, data }: Props) {
   // No trace overlays to collect
 
   let bodySVG = '';
+  let page2SVG: string | null = null;
 
   if (data.mode === 'find') {
     bodySVG = renderFindMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
-  } else if (data.mode === 'missing') {
-    bodySVG = renderMissingMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'pattern') {
-    bodySVG = renderPatternMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+    const result = renderPatternMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
+    bodySVG = result.page1;
+    page2SVG = result.page2;
   } else if (data.mode === 'count') {
     bodySVG = renderCountMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'copy') {
@@ -107,8 +108,6 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderTracingPathsMode(config, data);
   } else if (data.mode === 'scissorSkills') {
     bodySVG = renderScissorSkillsMode(config, data);
-  } else if (data.mode === 'gridDesigns') {
-    bodySVG = renderGridDesignsMode(config, data);
   } else if (data.mode === 'visualScanning') {
     bodySVG = renderVisualScanningMode(config, data);
   } else if (data.mode === 'pixelArt') {
@@ -116,7 +115,7 @@ export default function WorksheetPreview({ config, data }: Props) {
   }
 
 
-  const svgContent = `
+  const page1Svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%">
       <rect width="${W}" height="${H}" fill="white" rx="4" />
       ${headerSVG}
@@ -125,14 +124,31 @@ export default function WorksheetPreview({ config, data }: Props) {
     </svg>
   `;
 
+  const page2SvgContent = page2SVG ? `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%">
+      <rect width="${W}" height="${H}" fill="white" rx="4" />
+      ${headerSVG}
+      ${page2SVG}
+      ${footerSVG}
+    </svg>
+  ` : null;
+
   return (
-    <div
-      id="worksheet-preview"
-      ref={containerRef}
-      className="bg-card rounded-xl shadow-lg border border-border"
-      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
-    >
-      <div dangerouslySetInnerHTML={{ __html: svgContent }} style={{ width: '100%', height: '100%' }} />
+    <div id="worksheet-preview" ref={containerRef} className="space-y-4">
+      <div
+        className="bg-card rounded-xl shadow-lg border border-border"
+        style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
+      >
+        <div dangerouslySetInnerHTML={{ __html: page1Svg }} style={{ width: '100%', height: '100%' }} />
+      </div>
+      {page2SvgContent && (
+        <div
+          className="bg-card rounded-xl shadow-lg border border-border"
+          style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
+        >
+          <div dangerouslySetInnerHTML={{ __html: page2SvgContent }} style={{ width: '100%', height: '100%' }} />
+        </div>
+      )}
     </div>
   );
 }
@@ -199,105 +215,28 @@ function renderFindMode(
   return svg;
 }
 
-// ========== MODE 2: MISSING SHAPE ==========
-function renderMissingMode(
-  config: WorksheetConfig,
-  data: WorksheetData,
-  shapeScale: number,
-  getFill: (s: ShapeName) => string,
-  getStroke: (s: ShapeName) => string,
-  getStrokeW: () => number,
-) {
-  const refShapes = data.referenceShapes!;
-  const puzzles = data.missingPuzzles!;
-
-  let svg = '';
-
-  const refY = MARGIN + 85;
-  const refH = 56;
-  const refW = Math.min(refShapes.length * 80, W - MARGIN * 2);
-  const refX = (W - refW) / 2;
-  const refCellW = refW / refShapes.length;
-
-  svg += `<rect x="${refX}" y="${refY}" width="${refW}" height="${refH}" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5" />`;
-  svg += `<text x="${W / 2}" y="${refY - 6}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Reference Shapes:</text>`;
-
-  const refEmojis = (data as any)._refEmojis;
-  refShapes.forEach((shape, i) => {
-    const cx = refX + i * refCellW + refCellW / 2;
-    const cy = refY + refH / 2;
-    if (refEmojis && refEmojis[i]) {
-      svg += getEmojiSVG(refEmojis[i], cx, cy, 42);
-    } else {
-      svg += getShapeSVG(shape, cx, cy, 42, getFill(shape), getStroke(shape), getStrokeW());
-    }
-    svg += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${refEmojis && refEmojis[i] ? '' : shape}</text>`;
-  });
-
-  const puzzleTop = refY + refH + 24;
-  const availH = H - puzzleTop - MARGIN - 35;
-  const cols = puzzles.length <= 3 ? puzzles.length : Math.min(3, puzzles.length);
-  const rows = Math.ceil(puzzles.length / cols);
-  const puzzleAreaW = W - MARGIN * 2;
-  const puzzleCellW = puzzleAreaW / cols;
-  const puzzleCellH = availH / rows;
-  const subGridMaxSize = Math.min(puzzleCellW - 30, puzzleCellH - 30, 130);
-
-  puzzles.forEach((puzzle, idx) => {
-    const col = idx % cols;
-    const row = Math.floor(idx / cols);
-    const pSize = puzzle.grid.length;
-    const cellSz = subGridMaxSize / pSize;
-    const px = MARGIN + col * puzzleCellW + (puzzleCellW - subGridMaxSize) / 2;
-    const py = puzzleTop + row * puzzleCellH + (puzzleCellH - subGridMaxSize) / 2;
-
-    svg += `<text x="${px + subGridMaxSize / 2}" y="${py - 6}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">${idx + 1}.</text>`;
-    svg += `<rect x="${px}" y="${py}" width="${subGridMaxSize}" height="${subGridMaxSize}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
-
-    if (config.showGridLines) {
-      for (let i = 1; i < pSize; i++) {
-        svg += `<line x1="${px + i * cellSz}" y1="${py}" x2="${px + i * cellSz}" y2="${py + subGridMaxSize}" stroke="#E2E8F0" stroke-width="0.8" />`;
-        svg += `<line x1="${px}" y1="${py + i * cellSz}" x2="${px + subGridMaxSize}" y2="${py + i * cellSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
-      }
-    }
-
-    puzzle.grid.forEach((gridRow, r) => {
-      gridRow.forEach((cell, c) => {
-        const cx = px + c * cellSz + cellSz / 2;
-        const cy = py + r * cellSz + cellSz / 2;
-        if (cell.isBlank) {
-          svg += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${cellSz * 0.4}" fill="#CBD5E1">?</text>`;
-          svg += `<rect x="${cx - cellSz * 0.38}" y="${cy - cellSz * 0.38}" width="${cellSz * 0.76}" height="${cellSz * 0.76}" rx="4" fill="none" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4,3" />`;
-        } else {
-          svg += getCellSVG(cell, cx, cy, cellSz * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
-        }
-      });
-    });
-  });
-
-  if (config.showAnswerKey) {
-    const answers = puzzles.map((p, i) => `${i + 1}:${p.answer}`).join('  ');
-    svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
-  }
-
-  return svg;
-}
-
 // ========== MODE 3: MATCH PATTERN ==========
-function renderPatternMode(
-  config: WorksheetConfig,
-  data: WorksheetData,
+// Returns { page1: string, page2: string | null }
+function renderPatternPage(
+  puzzles: import('@/lib/shapes').PatternPuzzle[],
+  startIdx: number,
   shapeScale: number,
   getFill: (s: ShapeName) => string,
   getStroke: (s: ShapeName) => string,
   getStrokeW: () => number,
-) {
-  const puzzles = data.patternPuzzles!;
+  config: WorksheetConfig,
+  showAnswerKeyOnPage: boolean,
+  allPuzzles: import('@/lib/shapes').PatternPuzzle[],
+): string {
   let svg = '';
 
   const startY = MARGIN + 88;
   const availH = H - startY - MARGIN - 35;
-  const rowH = availH / puzzles.length;
+  // Fixed min row height so box never exceeds 90px
+  const MIN_ROW_H = 106;
+  const perPage = Math.max(1, Math.floor(availH / MIN_ROW_H));
+  const pagePuzzles = puzzles.slice(startIdx, startIdx + perPage);
+  const rowH = availH / pagePuzzles.length;
   const patternBoxSize = Math.min(rowH - 16, 90);
   const optionBoxSize = Math.min(patternBoxSize * 0.82, 68);
 
@@ -307,10 +246,11 @@ function renderPatternMode(
     ? optionBoxSize + 8
     : optionBoxSize + 16;
 
-  puzzles.forEach((puzzle, pIdx) => {
+  pagePuzzles.forEach((puzzle, pIdx) => {
+    const globalIdx = startIdx + pIdx;
     const rowY = startY + pIdx * rowH + (rowH - patternBoxSize) / 2;
 
-    svg += `<text x="${leftColX - 12}" y="${rowY + patternBoxSize / 2 + 4}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="13" font-weight="700" fill="#64748B">${pIdx + 1}.</text>`;
+    svg += `<text x="${leftColX - 12}" y="${rowY + patternBoxSize / 2 + 4}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="13" font-weight="700" fill="#64748B">${globalIdx + 1}.</text>`;
     svg += renderMiniGrid(puzzle.pattern, leftColX, rowY, patternBoxSize, shapeScale, getFill, getStroke, getStrokeW, config.showGridLines, config);
 
     const arrowX = leftColX + patternBoxSize + 14;
@@ -330,12 +270,34 @@ function renderPatternMode(
     svg += `<circle cx="${leftColX + patternBoxSize / 2}" cy="${rowY + patternBoxSize + 8}" r="3" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
   });
 
-  if (config.showAnswerKey) {
-    const answers = puzzles.map((p, i) => `${i + 1}→${String.fromCharCode(65 + p.correctIndex)}`).join('  ');
+  if (showAnswerKeyOnPage) {
+    const answers = allPuzzles.map((p, i) => `${i + 1}→${String.fromCharCode(65 + p.correctIndex)}`).join('  ');
     svg += `<text x="${W / 2}" y="${H - MARGIN - 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">Answers: ${answers}</text>`;
   }
 
   return svg;
+}
+
+function renderPatternMode(
+  config: WorksheetConfig,
+  data: WorksheetData,
+  shapeScale: number,
+  getFill: (s: ShapeName) => string,
+  getStroke: (s: ShapeName) => string,
+  getStrokeW: () => number,
+): { page1: string; page2: string | null } {
+  const puzzles = data.patternPuzzles!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 35;
+  const MIN_ROW_H = 106;
+  const perPage = Math.max(1, Math.floor(availH / MIN_ROW_H));
+
+  const page1 = renderPatternPage(puzzles, 0, shapeScale, getFill, getStroke, getStrokeW, config, config.showAnswerKey, puzzles);
+  const page2 = puzzles.length > perPage
+    ? renderPatternPage(puzzles, perPage, shapeScale, getFill, getStroke, getStrokeW, config, false, puzzles)
+    : null;
+
+  return { page1, page2 };
 }
 
 function renderMiniGrid(
@@ -1000,61 +962,75 @@ function renderFourLineSet(
   let svg = '';
   for (let i = 0; i < 4; i++) {
     const ly = topY + i * spacing;
-    svg += `<line x1="${x}" y1="${ly}" x2="${x + width}" y2="${ly}" stroke="${lineColor}" stroke-width="1.2" />`;
+    const isMiddle = i === 1 || i === 2;
+    if (isMiddle) {
+      // Inner two lines: dashed grey, same style as tri-line middle
+      svg += `<line x1="${x}" y1="${ly}" x2="${x + width}" y2="${ly}" stroke="#94A3B8" stroke-width="0.8" stroke-dasharray="4 3" />`;
+    } else {
+      svg += `<line x1="${x}" y1="${ly}" x2="${x + width}" y2="${ly}" stroke="${lineColor}" stroke-width="1.2" />`;
+    }
   }
   return svg;
 }
 
-// Render sample text as SVG using Patrick Hand
-function renderSampleText(
-  text: string, x: number, baselineY: number, fontPx: number, contentW: number
+// Render text using KG Primary Penmanship (solid or dotted).
+// baselineY = SVG y baseline = bottom red line.
+// fontPx is sized so cap-height fills the zone exactly (caps touch top red line).
+function renderPenmanshipText(
+  text: string, x: number, baselineY: number, fontPx: number, _contentW: number, dotted: boolean
 ): string {
-  const chars = Array.from(text);
-  if (chars.length === 0) return '';
-  const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
-  let svg = '';
-  for (let c = 0; c < chars.length; c++) {
-    const cx = x + 4 + c * charW + charW / 2;
-    if (cx > x + contentW) break;
-    svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" dominant-baseline="auto" font-family="'Patrick Hand', cursive" font-size="${fontPx}" font-weight="400" fill="#333333">${escapeXml(chars[c])}</text>`;
-  }
-  return svg;
+  if (!text) return '';
+  const fontFamily = dotted
+    ? "'KG Primary Dots', sans-serif"
+    : "'KG Primary Penmanship 2', sans-serif";
+  return `<text x="${x + 2}" y="${baselineY}" dominant-baseline="auto" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="#333333">${escapeXml(text)}</text>`;
 }
 
-// Sentence mode: sample row + 2 empty line rows
+// Sentence mode:
+//   Row 1 — KG Primary Penmanship (solid) on trilines  → model text
+//   Row 2 — KG Primary Penmanship Dotted on trilines   → tracing
+//   Row 3 — Empty trilines                             → independent practice
+// Sizing: capitals touch top red line, baseline sits on bottom red line.
 function renderSentenceTrilineMode(
   text: string, rows: number, startY: number, availableH: number,
   lineH: number, contentW: number, fontFamily: string, config: WorksheetConfig
 ): string {
   const mmToPx = 2.833;
   const fontPx = lineH;
-  const zoneH = fontPx * 0.7; // top-to-bottom line distance
+  const zoneH = fontPx * 0.7; // distance between top red line and baseline (bottom red line)
   const grassH = zoneH * 0.15;
   const triSetH = zoneH + grassH;
-  const groupGap = 12 * mmToPx;
   const setGap = 6 * mmToPx;
-  // Sample text font size: capitals should reach top line
-  // Patrick Hand cap-height ≈ 0.68 of font-size, so fontSize = zoneH / 0.68
-  const sampleFontPx = zoneH / 0.68;
-  const sampleH = sampleFontPx * 1.1; // height for sample text row
-  const groupH = sampleH + triSetH + setGap + triSetH + groupGap;
-  const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
+  const rowH = triSetH + setGap;
+
+  // KG Primary Penmanship cap-height ≈ 0.72 × font-size
+  // → font-size = zoneH / 0.72 makes capitals exactly touch the top red line
+  const kgFontPx = zoneH / 0.72;
+
+  let currentY = startY;
   let svg = '';
 
-  for (let g = 0; g < maxGroups; g++) {
-    const groupY = startY + g * groupH;
+  // Row 1: solid model text
+  if (currentY + zoneH <= startY + availableH) {
+    const baselineY = currentY + zoneH;
+    svg += renderColoredTrilineSet(MARGIN, baselineY, fontPx, contentW, config);
+    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, false);
+    currentY += rowH;
+  }
 
-    // Row 1: Sample text in Patrick Hand
-    const sampleBaselineY = groupY + sampleH * 0.85;
-    svg += renderSampleText(text, MARGIN, sampleBaselineY, sampleFontPx, contentW);
+  // Row 2: dotted trace text
+  if (currentY + zoneH <= startY + availableH) {
+    const baselineY = currentY + zoneH;
+    svg += renderColoredTrilineSet(MARGIN, baselineY, fontPx, contentW, config);
+    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, true);
+    currentY += rowH;
+  }
 
-    // Row 2: Empty tri-lines (child writes here)
-    const row2BaselineY = groupY + sampleH + zoneH;
-    svg += renderColoredTrilineSet(MARGIN, row2BaselineY, fontPx, contentW, config);
-
-    // Row 3: Empty tri-lines (second practice row)
-    const row3BaselineY = row2BaselineY + grassH + setGap + zoneH;
-    svg += renderColoredTrilineSet(MARGIN, row3BaselineY, fontPx, contentW, config);
+  // rows × blank practice rows
+  const maxBlank = Math.min(rows, Math.floor((startY + availableH - currentY) / rowH));
+  for (let r = 0; r < maxBlank; r++) {
+    const baselineY = currentY + zoneH + r * rowH;
+    svg += renderColoredTrilineSet(MARGIN, baselineY, fontPx, contentW, config);
   }
 
   return svg;
@@ -1086,7 +1062,7 @@ function renderGridBoxRows(
       if (r === 0) {
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
-        svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="'Patrick Hand', cursive" font-size="${charFontPx}" font-weight="400" fill="#333333">${escapeXml(ch)}</text>`;
+        svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="'KG Primary Penmanship 2', sans-serif" font-size="${charFontPx}" font-weight="400" fill="#333333">${escapeXml(ch)}</text>`;
       }
     }
   }
@@ -1112,12 +1088,13 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
   const colW = (contentW - 20) / 2; // 2 columns with 20px gap
   const lineH = fontSizeMm * mmToPx;
 
-  // Sizing
-  const tallH = Math.max(25 * mmToPx, lineH);
-  const medH = Math.max(18 * mmToPx, lineH * 0.72);
+  // Sizing — all proportional to fontSizeMm
+  const tallH = lineH;
+  const medH = lineH * 0.72;
   const descH = tallH;
-  const descExtra = 7 * mmToPx;
-  const labelH = 16;
+  const descExtra = lineH * 0.3;
+  const labelFontPx = Math.max(10, lineH * 0.55);
+  const labelH = labelFontPx + 8;
   const trilineSetH = lineH;
   const gapBetweenParts = 6 * mmToPx;
 
@@ -1141,7 +1118,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label in Patrick Hand (solid, dark grey)
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="'Patrick Hand', cursive" font-size="13" font-weight="400" fill="#333333">${escapeXml(word.trim())}</text>`;
+    svg += `<text x="${colX}" y="${blockY + labelFontPx}" font-family="'KG Primary Penmanship 2', sans-serif" font-size="${labelFontPx}" font-weight="400" fill="#333333">${escapeXml(word.trim())}</text>`;
 
     let nextY = blockY + labelH;
 
@@ -1554,81 +1531,6 @@ function renderScissorSkillsMode(config: WorksheetConfig, data: WorksheetData): 
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-}
-
-// ========== MODE 18: GRID DESIGNS ==========
-function renderGridDesignsMode(config: WorksheetConfig, data: WorksheetData): string {
-  const gd = data.gridDesignData!;
-  const startY = MARGIN + 88;
-  const availH = H - startY - MARGIN - 45;
-  const availW = W - MARGIN * 2;
-  const gridSize = gd.gridSize;
-
-  let svg = '';
-
-  // Two grids side by side: reference (left) and blank (right)
-  const gridW = (availW - 40) / 2;
-  const cellSize = Math.min(gridW / gridSize, availH / gridSize);
-  const totalGridW = cellSize * gridSize;
-  const totalGridH = cellSize * gridSize;
-  const refX = MARGIN + (gridW - totalGridW) / 2;
-  const blankX = MARGIN + gridW + 40 + (gridW - totalGridW) / 2;
-  const gridY = startY + (availH - totalGridH) / 2;
-
-  // Labels
-  svg += `<text x="${refX + totalGridW / 2}" y="${gridY - 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Reference</text>`;
-  svg += `<text x="${blankX + totalGridW / 2}" y="${gridY - 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Copy Here</text>`;
-
-  // Arrow between grids
-  const arrowY = gridY + totalGridH / 2;
-  const arrowX1 = refX + totalGridW + 5;
-  const arrowX2 = blankX - 5;
-  svg += `<line x1="${arrowX1}" y1="${arrowY}" x2="${arrowX2}" y2="${arrowY}" stroke="#94A3B8" stroke-width="1.5" />`;
-  svg += `<polygon points="${arrowX2},${arrowY - 4} ${arrowX2 + 6},${arrowY} ${arrowX2},${arrowY + 4}" fill="#94A3B8" />`;
-
-  // Draw grids
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const rx = refX + c * cellSize;
-      const ry = gridY + r * cellSize;
-      const bx = blankX + c * cellSize;
-      const by = gridY + r * cellSize;
-
-      // Reference cell
-      svg += `<rect x="${rx}" y="${ry}" width="${cellSize}" height="${cellSize}" fill="white" stroke="#CBD5E1" stroke-width="1" />`;
-
-      const cell = gd.grid[r]?.[c];
-      if (cell) {
-        const cx = rx + cellSize / 2;
-        const cy = ry + cellSize / 2;
-        const s = cellSize * 0.35;
-        if (cell.type === 'shape') {
-          if (cell.value === 'circle') svg += `<circle cx="${cx}" cy="${cy}" r="${s}" fill="#3B82F6" />`;
-          else if (cell.value === 'square') svg += `<rect x="${cx - s}" y="${cy - s}" width="${s * 2}" height="${s * 2}" fill="#EF4444" />`;
-          else if (cell.value === 'triangle') svg += `<polygon points="${cx},${cy - s} ${cx + s},${cy + s} ${cx - s},${cy + s}" fill="#22C55E" />`;
-          else if (cell.value === 'cross') {
-            const w = s * 0.4;
-            svg += `<rect x="${cx - w}" y="${cy - s}" width="${w * 2}" height="${s * 2}" fill="#F59E0B" />`;
-            svg += `<rect x="${cx - s}" y="${cy - w}" width="${s * 2}" height="${w * 2}" fill="#F59E0B" />`;
-          } else if (cell.value === 'dot') svg += `<circle cx="${cx}" cy="${cy}" r="${s * 0.4}" fill="#1E293B" />`;
-        } else if (cell.type === 'color') {
-          svg += `<rect x="${rx + 2}" y="${ry + 2}" width="${cellSize - 4}" height="${cellSize - 4}" rx="3" fill="${cell.color || '#94A3B8'}" />`;
-        } else if (cell.type === 'line') {
-          if (cell.value === 'diagonal-lr') svg += `<line x1="${rx + 4}" y1="${ry + 4}" x2="${rx + cellSize - 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
-          else if (cell.value === 'diagonal-rl') svg += `<line x1="${rx + cellSize - 4}" y1="${ry + 4}" x2="${rx + 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
-          else if (cell.value === 'cross') {
-            svg += `<line x1="${rx + 4}" y1="${ry + 4}" x2="${rx + cellSize - 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
-            svg += `<line x1="${rx + cellSize - 4}" y1="${ry + 4}" x2="${rx + 4}" y2="${ry + cellSize - 4}" stroke="#1E293B" stroke-width="2" />`;
-          } else if (cell.value === 'dot') svg += `<circle cx="${cx}" cy="${cy}" r="${s * 0.3}" fill="#1E293B" />`;
-        }
-      }
-
-      // Blank cell
-      svg += `<rect x="${bx}" y="${by}" width="${cellSize}" height="${cellSize}" fill="white" stroke="#CBD5E1" stroke-width="1" />`;
-    }
-  }
-
-  return svg;
 }
 
 // ========== MODE 22: VISUAL SCANNING ==========

@@ -20,6 +20,7 @@ const defaultConfig: WorksheetConfig = {
   headerFontSize: 'medium',
   headerBold: false,
   oddOneOutType: 'shapes',
+  oddOneOutCustomTarget: '',
   handwritingText: '',
   handwritingRows: 3,
   handwritingPaperStyle: 'triline',
@@ -34,6 +35,7 @@ const defaultConfig: WorksheetConfig = {
   handwritingHighlightColor: 'blue',
   handwritingLineMode: '3-line',
   wordBoxDisplayMode: 'boxOnly',
+  handwritingLayout: 'triline',
   handwritingShowStartEnd: false,
   instructionFontSize: 'medium',
   instructionBold: false,
@@ -47,8 +49,6 @@ const defaultConfig: WorksheetConfig = {
   tracingThickness: 'medium',
   scissorLineType: 'mixed',
   scissorLineCount: 6,
-  gridDesignSize: 3,
-  gridDesignPattern: 'shapes',
   visualScanTarget: 'b',
   visualScanDensity: 'medium',
   visualScanFontStyle: 'standard',
@@ -67,7 +67,7 @@ export default function Index() {
 
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.handwritingLineMode, config.wordBoxDisplayMode, config.handwritingShowStartEnd, config.instructionFontSize, config.instructionBold, config.nameDateFontSize, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.gridDesignSize, config.gridDesignPattern, config.visualScanTarget, config.visualScanDensity, config.visualScanFontStyle, config.visualScanCharSize, config.visualScanTargetCount, config.pixelArtTheme, config.pixelArtGridSize, config.pixelArtBW, config.useEmoji, config.emojiTheme]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.oddOneOutCustomTarget, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.handwritingLineMode, config.wordBoxDisplayMode, config.handwritingLayout, config.handwritingShowStartEnd, config.instructionFontSize, config.instructionBold, config.nameDateFontSize, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.visualScanTarget, config.visualScanDensity, config.visualScanFontStyle, config.visualScanCharSize, config.visualScanTargetCount, config.pixelArtTheme, config.pixelArtGridSize, config.pixelArtBW, config.useEmoji, config.emojiTheme]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
