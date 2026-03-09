@@ -955,8 +955,17 @@ function renderFourLineSet(
   return svg;
 }
 
-// Trace font: use Patrick Hand for natural handwriting look
-const TRACE_FONT = "'Patrick Hand', 'Caveat', cursive";
+// Trace font: Edu NSW ACT Foundation — a real handwriting education font
+const TRACE_FONT = "'Edu NSW ACT Foundation', 'Patrick Hand', cursive";
+
+// Render trace text as foreignObject with CSS text-stroke for clean dotted outlines
+function renderTraceForeignObject(
+  text: string, x: number, y: number, width: number, height: number, fontPx: number, opacity: number = 1
+): string {
+  const ghostDiv = `<div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Edu NSW ACT Foundation', cursive; font-size: ${fontPx}px; color: transparent; -webkit-text-stroke: 2px rgba(203,213,225,0.35); line-height: 1; letter-spacing: 0.05em; white-space: nowrap; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-end;">${escapeXml(text)}</div>`;
+  const dashedDiv = `<div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Edu NSW ACT Foundation', cursive; font-size: ${fontPx}px; color: transparent; background-image: repeating-linear-gradient(90deg, #999 0px, #999 3px, transparent 3px, transparent 7px); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 0px; line-height: 1; letter-spacing: 0.05em; white-space: nowrap; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-end;">${escapeXml(text)}</div>`;
+  return `<foreignObject x="${x}" y="${y}" width="${width}" height="${height}" style="opacity:${opacity}"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;">${ghostDiv}${dashedDiv}</div></foreignObject>`;
+}
 
 // Render text on tri-lines — text y = baselineY exactly
 function renderTextOnTriline(
@@ -965,26 +974,33 @@ function renderTextOnTriline(
 ): string {
   if (chars.length === 0) return '';
   const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
-  const traceFont = isDottedTrace ? TRACE_FONT : fontFamily;
   let svg = '';
-  for (let c = 0; c < chars.length; c++) {
-    const cx = x + 4 + c * charW + charW / 2;
-    if (cx > x + contentW) break;
-    if (isDottedTrace) {
-      // Ghost guide layer: solid, very light
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${traceFont}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#CBD5E1" stroke-width="1.8" opacity="0.25">${escapeXml(chars[c])}</text>`;
-      // Dashed trace layer: follows letter curves
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${traceFont}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="3 4" stroke-linecap="round">${escapeXml(chars[c])}</text>`;
-    } else {
+
+  if (isDottedTrace) {
+    // Use foreignObject CSS approach for clean dotted trace
+    const text = chars.join('');
+    const foHeight = fontPx * 1.3;
+    const foY = baselineY - fontPx * 0.95;
+    svg += renderTraceForeignObject(text, x + 4, foY, contentW, foHeight, fontPx);
+  } else {
+    for (let c = 0; c < chars.length; c++) {
+      const cx = x + 4 + c * charW + charW / 2;
+      if (cx > x + contentW) break;
       svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
     }
-    // Start/end dots per letter
-    if (showStartEnd && isDottedTrace) {
+  }
+
+  // Start/end dots per letter
+  if (showStartEnd && isDottedTrace) {
+    for (let c = 0; c < chars.length; c++) {
+      const cx = x + 4 + c * charW + charW / 2;
+      if (cx > x + contentW) break;
       const dotR = Math.max(2.5, fontPx * 0.06);
       svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
       svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
     }
   }
+
   return svg;
 }
 
@@ -1013,16 +1029,11 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using Patrick Hand font
-    const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
-    for (let c = 0; c < allChars.length; c++) {
-      const cx = MARGIN + 4 + c * charW + charW / 2;
-      if (cx > W - MARGIN) break;
-      // Ghost guide
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${TRACE_FONT}" font-size="${refFontPx}" font-weight="400" fill="none" stroke="#CBD5E1" stroke-width="1.5" opacity="0.25">${escapeXml(allChars[c])}</text>`;
-      // Dashed trace
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${TRACE_FONT}" font-size="${refFontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="3 4" stroke-linecap="round">${escapeXml(allChars[c])}</text>`;
-    }
+    // Row 1: Reference text as dotted trace using Edu NSW ACT Foundation font via CSS
+    const refText = allChars.join('');
+    const refFoHeight = refFontPx * 1.3;
+    const refFoY = groupY + refTextH * 0.85 - refFontPx * 0.95;
+    svg += renderTraceForeignObject(refText, MARGIN + 4, refFoY, contentW, refFoHeight, refFontPx);
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
@@ -1065,7 +1076,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="none" stroke="${ghostColor}" stroke-width="0.8" stroke-dasharray="2 2">${escapeXml(ch)}</text>`;
+          svg += renderTraceForeignObject(ch, bx + 2, baseY + boxSize * 0.1, boxSize - 4, boxSize * 0.85, charFontPx);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
@@ -1122,9 +1133,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label as dotted trace
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${TRACE_FONT}" font-size="13" font-weight="400" fill="none" stroke="#CBD5E1" stroke-width="1.5" opacity="0.25">${escapeXml(word.trim())}</text>`;
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${TRACE_FONT}" font-size="13" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="3 4" stroke-linecap="round">${escapeXml(word.trim())}</text>`;
+    // 1. Word label as dotted trace using CSS approach
+    svg += renderTraceForeignObject(word.trim(), colX, blockY - 2, colW, 18, 13);
 
     let nextY = blockY + labelH;
 
