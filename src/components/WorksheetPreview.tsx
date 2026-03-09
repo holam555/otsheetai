@@ -1055,7 +1055,7 @@ function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: num
   // Position the div so CSS baseline aligns with baselineY.
   // For most fonts, the baseline sits at roughly 80% of the em-square from the top of the text box.
   // So div top = baselineY - fontPx * 0.80
-  const topY = baselineY - fontPx * 0.78;
+  const topY = baselineY - fontPx * 0.76;
   _traceOverlays.push({
     text,
     x,
