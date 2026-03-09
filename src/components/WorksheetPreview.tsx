@@ -202,15 +202,11 @@ export default function WorksheetPreview({ config, data }: Props) {
                 position: 'relative',
                 fontFamily: o.isTrace ? "'Edu AU VIC WA NT Dots', cursive" : "'Patrick Hand', cursive",
                 fontSize: o.fontPx,
-                color: o.color,
+                color: o.isTrace ? '#aaaaaa' : o.color,
                 opacity: o.opacity,
                 lineHeight: 1,
                 letterSpacing: '0.05em',
                 whiteSpace: 'nowrap',
-                ...(o.isTrace ? {
-                  WebkitTextStroke: `2.5px ${o.color}`,
-                  paintOrder: 'stroke fill',
-                } : {}),
               }}
             >
               {o.text}
