@@ -191,7 +191,7 @@ export default function WorksheetPreview({ config, data }: Props) {
                   lineHeight: 1,
                   letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  WebkitTextStroke: '1px #cccccc',
+                  WebkitTextStroke: '0.5px #cccccc',
                 }}
               >
                 {o.text}
