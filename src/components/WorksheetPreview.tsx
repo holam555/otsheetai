@@ -500,7 +500,7 @@ function renderCountMode(
     row.forEach((cell, c) => {
       const cx = gridX + c * cellSize + cellSize / 2;
       const cy = gridTop + r * cellSize + cellSize / 2;
-      svg += getShapeSVG(cell.shape, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW(), cell.rotation);
+      svg += getCellSVG(cell, cx, cy, cellSize * shapeScale, getFill(cell.shape), getStroke(cell.shape), getStrokeW());
     });
   });
 
