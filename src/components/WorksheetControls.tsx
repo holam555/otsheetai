@@ -367,49 +367,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        {/* Color by Number Controls */}
-        {config.mode === 'colorByNumber' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="font-display font-semibold text-sm">Theme</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: 'shapes' as ColorByNumberTheme, label: '🏠 Shapes' },
-                  { value: 'animal' as ColorByNumberTheme, label: '🐱 Animal' },
-                  { value: 'pattern' as ColorByNumberTheme, label: '🔷 Pattern' },
-                ]).map(t => (
-                  <Button
-                    key={t.value}
-                    variant={config.colorByNumberTheme === t.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => update({ colorByNumberTheme: t.value })}
-                    className="font-display text-xs"
-                  >
-                    {t.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="font-display font-semibold text-sm">Number of Colors</Label>
-                <span className="text-xs font-bold text-primary">{config.colorByNumberColors}</span>
-              </div>
-              <Slider
-                value={[config.colorByNumberColors]}
-                min={3}
-                max={6}
-                step={1}
-                onValueChange={([v]) => update({ colorByNumberColors: v })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="font-display font-semibold text-sm">B&W Mode (print-friendly)</Label>
-              <Switch checked={config.colorByNumberBW} onCheckedChange={(v) => update({ colorByNumberBW: v })} />
-            </div>
-          </div>
-        )}
-
         {/* Grid Designs Controls */}
         {config.mode === 'gridDesigns' && (
           <div className="space-y-4">
