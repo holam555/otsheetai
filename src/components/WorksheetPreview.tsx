@@ -1164,15 +1164,13 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
 
     let nextY = blockY + labelH;
 
-    // 2. Tri-line trace (if enabled)
+    // 2. Empty tri-lines (if enabled)
     if (showTriline) {
       const fontPxTrace = lineH;
       const zoneH = fontPxTrace * 0.7;
       const grassH = zoneH * 0.15;
-      const traceFontPx = zoneH / 0.72;
       const traceBaselineY = nextY + zoneH;
       svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-      svg += renderTraceTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, config.handwritingShowStartEnd);
       nextY = traceBaselineY + grassH + gapBetweenParts;
     }
 
