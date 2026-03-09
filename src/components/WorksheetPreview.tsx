@@ -78,6 +78,10 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderTraceNameMode(config, data);
   } else if (data.mode === 'handwriting') {
     bodySVG = renderHandwritingMode(config, data);
+  } else if (data.mode === 'maze') {
+    bodySVG = renderMazeMode(config, data);
+  } else if (data.mode === 'connectDots') {
+    bodySVG = renderConnectDotsMode(config, data);
   }
 
   const svgContent = `
