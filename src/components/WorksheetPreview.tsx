@@ -958,7 +958,7 @@ function renderFourLineSet(
 // Render text on tri-lines — text y = baselineY exactly
 function renderTextOnTriline(
   chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
-  fontFamily: string, color: string, isDottedTrace: boolean
+  fontFamily: string, color: string, isDottedTrace: boolean, showStartEnd: boolean = false
 ): string {
   if (chars.length === 0) return '';
   const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
@@ -971,8 +971,17 @@ function renderTextOnTriline(
     } else {
       svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
     }
+    // Start/end dots per letter
+    if (showStartEnd && isDottedTrace) {
+      const dotR = Math.max(2.5, fontPx * 0.06);
+      // Green start dot at top-left of character
+      svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
+      // Red end dot at bottom-right of character
+      svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
+    }
   }
   return svg;
+}
 }
 
 // Sentence mode: 3-row groups (reference / trace / blank) with colored tri-lines
