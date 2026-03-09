@@ -85,6 +85,7 @@ export interface WorksheetConfig {
   handwritingShowColoredLines: boolean;
   handwritingLineColor: HandwritingLineColor;
   handwritingHighlightColor: HandwritingHighlightColor;
+  handwritingLineMode: HandwritingLineMode;
   mazeSize: MazeSize;
   mazeShape: MazeShape;
   mazeShowSolution: boolean;
