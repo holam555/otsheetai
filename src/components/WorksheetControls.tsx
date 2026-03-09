@@ -35,6 +35,10 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'closure', label: 'Visual Closure', icon: '👁️' },
   { value: 'maze', label: 'Maze', icon: '🏁' },
   { value: 'connectDots', label: 'Connect the Dots', icon: '🔗' },
+  { value: 'tracingPaths', label: 'Tracing Paths', icon: '✏️' },
+  { value: 'scissorSkills', label: 'Scissor Skills', icon: '✂️' },
+  { value: 'colorByNumber', label: 'Color by Number', icon: '🎨' },
+  { value: 'gridDesigns', label: 'Grid Designs', icon: '📐' },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
