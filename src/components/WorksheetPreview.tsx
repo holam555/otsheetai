@@ -1067,8 +1067,6 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
   const fontFamilyMap: Record<string, string> = {
     print: "Arial, Helvetica, sans-serif",
     cursive: "'Segoe Script', 'Comic Sans MS', cursive",
-    manuscript: "'Courier New', Courier, monospace",
-    dotted: "Arial, sans-serif",
   };
   const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
 
