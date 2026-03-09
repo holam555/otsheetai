@@ -224,8 +224,13 @@ function renderFindMode(
 
   let svg = '';
   svg += `<rect x="${refBoxX}" y="${refBoxY}" width="${refBoxW}" height="${refBoxH}" rx="8" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="8,5" />`;
-  svg += `<text x="${refBoxX + 12}" y="${refBoxY + 16}" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Find this shape:</text>`;
-  svg += getShapeSVG(targetShape, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale, getFill(targetShape), getStroke(targetShape), getStrokeW());
+  svg += `<text x="${refBoxX + 12}" y="${refBoxY + 16}" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Find this:</text>`;
+  const targetEmoji = (data as any)._targetEmoji;
+  if (targetEmoji) {
+    svg += getEmojiSVG(targetEmoji, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale);
+  } else {
+    svg += getShapeSVG(targetShape, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale, getFill(targetShape), getStroke(targetShape), getStrokeW());
+  }
 
   const gridTop = refBoxY + refBoxH + 20;
   const gridAreaH = H - gridTop - MARGIN - 35;
