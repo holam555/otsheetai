@@ -67,8 +67,8 @@ export default function WorksheetPreview({ config, data }: Props) {
   }, []);
 
   // Header font sizes
-  const nameFontSize = config.nameDateFontSize === 'small' ? 12 : config.nameDateFontSize === 'large' ? 20 : 16;
-  const dateFontSize = config.nameDateFontSize === 'small' ? 9 : config.nameDateFontSize === 'large' ? 14 : 11;
+  const nameFontSize = 16;
+  const dateFontSize = 11;
   const nameWeight = config.headerBold ? '800' : '600';
   const ageStr = config.childAge !== null ? ` (Age ${config.childAge})` : '';
   const nameStr = config.childName ? config.childName + ageStr : '___________________';
