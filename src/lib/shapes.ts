@@ -19,7 +19,7 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots' | 'tracingPaths' | 'scissorSkills' | 'colorByNumber' | 'gridDesigns' | 'dotArt' | 'shapeTracing' | 'spotDifference' | 'visualScanning' | 'pixelArt';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots' | 'tracingPaths' | 'scissorSkills' | 'gridDesigns' | 'visualScanning' | 'pixelArt';
 export type MazeSize = 'small' | 'medium' | 'large';
 export type MazeShape = 'square' | 'rectangle' | 'circle';
 export type ConnectDotsShape = 'star' | 'heart' | 'house' | 'fish' | 'sun' | 'butterfly' | 'rocket' | 'tree' | 'catFace' | 'flower';
