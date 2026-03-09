@@ -140,8 +140,6 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderPixelArtMode(config, data);
   }
 
-  // Collect trace overlays during SVG generation
-  _traceOverlays = [];
 
   const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%">
