@@ -1172,7 +1172,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.6, '#aaaaaa', true);
+          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.85, '#aaaaaa', true);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
