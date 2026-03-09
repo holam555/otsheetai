@@ -1034,7 +1034,7 @@ function renderFourLineSet(
 }
 
 // Add a trace overlay (rendered as HTML div, not SVG)
-function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1) {
+function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1, color: string = '#aaaaaa', isTrace: boolean = false) {
   const topY = baselineY - fontPx * 0.85;
   _traceOverlays.push({
     text,
@@ -1043,6 +1043,8 @@ function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: num
     fontPx,
     width: contentW,
     opacity,
+    color,
+    isTrace,
   });
 }
 
