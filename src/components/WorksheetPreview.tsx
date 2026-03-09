@@ -90,6 +90,16 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderColorByNumberMode(config, data);
   } else if (data.mode === 'gridDesigns') {
     bodySVG = renderGridDesignsMode(config, data);
+  } else if (data.mode === 'dotArt') {
+    bodySVG = renderDotArtMode(config, data);
+  } else if (data.mode === 'shapeTracing') {
+    bodySVG = renderShapeTracingMode(config, data);
+  } else if (data.mode === 'spotDifference') {
+    bodySVG = renderSpotDifferenceMode(config, data);
+  } else if (data.mode === 'visualScanning') {
+    bodySVG = renderVisualScanningMode(config, data);
+  } else if (data.mode === 'pixelArt') {
+    bodySVG = renderPixelArtMode(config, data);
   }
 
   const svgContent = `
@@ -1645,4 +1655,281 @@ function renderGridDesignsMode(config: WorksheetConfig, data: WorksheetData): st
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+// ========== MODE 19: DOT ART ==========
+function renderDotArtMode(config: WorksheetConfig, data: WorksheetData): string {
+  const da = data.dotArtData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const dotSizeMm = config.dotArtDotSize === 'large' ? 25 : config.dotArtDotSize === 'medium' ? 18 : 12;
+  const dotR = dotSizeMm * 2.833 / 2;
+
+  // Scale dots to fit area
+  const scaleX = availW / 400;
+  const scaleY = availH / 500;
+
+  let svg = '';
+
+  // Reference image (15% size) in top right
+  const refScale = 0.12;
+  const refW = availW * refScale;
+  const refH = availH * refScale;
+  const refX = W - MARGIN - refW - 5;
+  const refY = startY + 5;
+  svg += `<rect x="${refX - 3}" y="${refY - 3}" width="${refW + 6}" height="${refH + 6}" fill="none" stroke="#CBD5E1" stroke-width="1" rx="3" />`;
+  svg += `<text x="${refX + refW / 2}" y="${refY + refH + 12}" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" fill="#94A3B8">Reference</text>`;
+
+  // Draw reference dots (filled)
+  da.dots.forEach(dot => {
+    const rx = refX + dot.x * refScale * scaleX;
+    const ry = refY + dot.y * refScale * scaleY;
+    const color = config.dotArtColorMode === 'colored' ? da.regionColors[dot.region % da.regionColors.length] : '#64748B';
+    svg += `<circle cx="${rx}" cy="${ry}" r="${dotR * refScale}" fill="${color}" />`;
+  });
+
+  // Draw main dots (stroke only)
+  da.dots.forEach(dot => {
+    const dx = MARGIN + dot.x * scaleX;
+    const dy = startY + 20 + dot.y * scaleY;
+    const strokeColor = config.dotArtColorMode === 'colored' ? da.regionColors[dot.region % da.regionColors.length] : '#94A3B8';
+    svg += `<circle cx="${dx}" cy="${dy}" r="${dotR}" fill="none" stroke="${strokeColor}" stroke-width="1.5" />`;
+  });
+
+  return svg;
+}
+
+// ========== MODE 20: SHAPE TRACING ==========
+function renderShapeTracingMode(config: WorksheetConfig, data: WorksheetData): string {
+  const st = data.shapeTracingData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const rowCount = st.shapes.length;
+  const rowH = availH / rowCount;
+
+  let svg = '';
+
+  st.shapes.forEach((shape, i) => {
+    const cy = startY + i * rowH + rowH / 2;
+    const cx = MARGIN + availW / 2;
+    const scale = Math.min(availW / 600, rowH / 200) * (config.shapeTracingSize === 'large' ? 1.2 : config.shapeTracingSize === 'small' ? 0.7 : 1.0);
+
+    // Row separator
+    if (i > 0) {
+      svg += `<line x1="${MARGIN}" y1="${startY + i * rowH}" x2="${W - MARGIN}" y2="${startY + i * rowH}" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4 4" />`;
+    }
+
+    // Shape label
+    svg += `<text x="${MARGIN + 5}" y="${startY + i * rowH + 14}" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">${shape.shapeName}</text>`;
+
+    // Transform path to center in row
+    const transformedPath = shape.pathD
+      .replace(/([\d.-]+)\s*,\s*([\d.-]+)/g, (_, x, y) => {
+        const tx = cx + (parseFloat(x) - 250) * scale;
+        const ty = cy + parseFloat(y) * scale;
+        return `${tx},${ty}`;
+      })
+      .replace(/([MLAQCZ])\s*([\d.-]+)\s+([\d.-]+)/g, (_, cmd, x, y) => {
+        if (cmd === 'Z') return cmd;
+        const tx = cx + (parseFloat(x) - 250) * scale;
+        const ty = cy + parseFloat(y) * scale;
+        return `${cmd} ${tx} ${ty}`;
+      });
+
+    // Dotted outline (guide)
+    const dashGap = config.difficulty === 'easy' ? '8 6' : config.difficulty === 'hard' ? '4 3' : '6 5';
+    svg += `<path d="${transformedPath}" fill="none" stroke="#CBD5E1" stroke-width="2.5" stroke-dasharray="${dashGap}" stroke-linecap="round" />`;
+
+    // Starting dot
+    if (config.shapeTracingShowStart) {
+      const sx = cx + (shape.startX - 250) * scale;
+      const sy = cy + shape.startY * scale;
+      svg += `<circle cx="${sx}" cy="${sy}" r="5" fill="#22C55E" />`;
+
+      // Direction arrow
+      const arrowLen = 15;
+      const ax = sx + Math.cos(shape.arrowAngle) * arrowLen;
+      const ay = sy + Math.sin(shape.arrowAngle) * arrowLen;
+      svg += `<line x1="${sx}" y1="${sy}" x2="${ax}" y2="${ay}" stroke="#22C55E" stroke-width="2" />`;
+      svg += `<polygon points="${ax},${ay} ${ax - 4 * Math.cos(shape.arrowAngle - 0.5)},${ay - 4 * Math.sin(shape.arrowAngle - 0.5)} ${ax - 4 * Math.cos(shape.arrowAngle + 0.5)},${ay - 4 * Math.sin(shape.arrowAngle + 0.5)}" fill="#22C55E" />`;
+    }
+
+    // Second row: blank outline for independent tracing
+    if (rowCount <= 4 && i < rowCount) {
+      // Leave space — the blank is implicit (dotted lines above are the guide)
+    }
+  });
+
+  return svg;
+}
+
+// ========== MODE 21: SPOT THE DIFFERENCE ==========
+function renderSpotDifferenceMode(config: WorksheetConfig, data: WorksheetData): string {
+  const sd = data.spotDiffData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 65;
+  const availW = W - MARGIN * 2;
+
+  const gap = 15;
+  const sceneW = (availW - gap) / 2;
+  const sceneH = availH - 40;
+  const scaleX = sceneW / 400;
+  const scaleY = sceneH / 400;
+
+  let svg = '';
+
+  // Labels
+  svg += `<text x="${MARGIN + sceneW / 2}" y="${startY - 3}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#64748B">Picture A</text>`;
+  svg += `<text x="${MARGIN + sceneW + gap + sceneW / 2}" y="${startY - 3}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#94A3B8">Picture B</text>`;
+
+  function renderScene(scene: typeof sd.leftScene, offsetX: number) {
+    let s = '';
+    s += `<rect x="${offsetX}" y="${startY}" width="${sceneW}" height="${sceneH}" fill="none" stroke="#CBD5E1" stroke-width="1.5" rx="4" />`;
+    s += `<clipPath id="clip-${offsetX}"><rect x="${offsetX}" y="${startY}" width="${sceneW}" height="${sceneH}" /></clipPath>`;
+    s += `<g clip-path="url(#clip-${offsetX})">`;
+
+    scene.forEach(obj => {
+      if (obj.extra?.hidden) return;
+      const ox = offsetX + obj.x * scaleX;
+      const oy = startY + obj.y * scaleY;
+      const ow = obj.w * scaleX;
+      const oh = obj.h * scaleY;
+
+      switch (obj.type) {
+        case 'rect':
+          s += `<rect x="${ox}" y="${oy}" width="${ow}" height="${oh}" fill="${obj.fill}" />`;
+          break;
+        case 'circle':
+          s += `<circle cx="${ox + ow / 2}" cy="${oy + oh / 2}" r="${Math.min(ow, oh) / 2}" fill="${obj.fill}" />`;
+          break;
+        case 'ellipse':
+          s += `<ellipse cx="${ox + ow / 2}" cy="${oy + oh / 2}" rx="${ow / 2}" ry="${oh / 2}" fill="${obj.fill}" />`;
+          break;
+        case 'triangle':
+          s += `<polygon points="${ox + ow / 2},${oy} ${ox + ow},${oy + oh} ${ox},${oy + oh}" fill="${obj.fill}" />`;
+          break;
+      }
+    });
+
+    s += '</g>';
+    return s;
+  }
+
+  svg += renderScene(sd.leftScene, MARGIN);
+  svg += renderScene(sd.rightScene, MARGIN + sceneW + gap);
+
+  // Answer key circles
+  if (config.spotDiffShowAnswers) {
+    sd.differences.forEach(diff => {
+      // Mark on right scene
+      const dx = MARGIN + sceneW + gap + diff.x * scaleX;
+      const dy = startY + diff.y * scaleY;
+      svg += `<circle cx="${dx}" cy="${dy}" r="${diff.r * Math.min(scaleX, scaleY)}" fill="none" stroke="#EF4444" stroke-width="2" stroke-dasharray="4 3" />`;
+    });
+  }
+
+  // Counter circles at bottom
+  const counterY = startY + sceneH + 15;
+  for (let i = 0; i < sd.differences.length; i++) {
+    const cx = MARGIN + availW / 2 - (sd.differences.length * 20) / 2 + i * 20 + 10;
+    svg += `<circle cx="${cx}" cy="${counterY}" r="7" fill="none" stroke="#94A3B8" stroke-width="1.5" />`;
+    svg += `<text x="${cx}" y="${counterY + 3.5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#CBD5E1">${i + 1}</text>`;
+  }
+
+  return svg;
+}
+
+// ========== MODE 22: VISUAL SCANNING ==========
+function renderVisualScanningMode(config: WorksheetConfig, data: WorksheetData): string {
+  const vs = data.visualScanData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const charSize = config.visualScanCharSize === 'large' ? 18 : config.visualScanCharSize === 'small' ? 12 : 15;
+
+  const cellW = availW / vs.cols;
+  const cellH = availH / vs.rows;
+
+  let svg = '';
+
+  // Grid
+  for (let r = 0; r < vs.rows; r++) {
+    for (let c = 0; c < vs.cols; c++) {
+      const x = MARGIN + c * cellW;
+      const y = startY + r * cellH;
+
+      // Cell border
+      svg += `<rect x="${x}" y="${y}" width="${cellW}" height="${cellH}" fill="none" stroke="#E2E8F0" stroke-width="0.5" />`;
+
+      // Character
+      const ch = vs.grid[r][c];
+      const isTarget = ch === vs.target;
+      const isHighlighted = config.showAnswerKey && isTarget;
+
+      if (isHighlighted) {
+        svg += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="#DCFCE7" rx="3" />`;
+      }
+
+      const fontFamily = config.visualScanFontStyle === 'dyslexia' ? 'OpenDyslexic, sans-serif' : 'Inter, sans-serif';
+      svg += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + charSize * 0.35}" text-anchor="middle" font-family="${fontFamily}" font-size="${charSize}" font-weight="500" fill="#1E293B">${escapeXml(ch)}</text>`;
+    }
+  }
+
+  // Target count at bottom
+  svg += `<text x="${W / 2}" y="${startY + availH + 15}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#94A3B8">Total '${escapeXml(vs.target)}' to find: ${vs.targetPositions.length}</text>`;
+
+  return svg;
+}
+
+// ========== MODE 23: PIXEL ART ==========
+function renderPixelArtMode(config: WorksheetConfig, data: WorksheetData): string {
+  const pa = data.pixelArtData!;
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const gridSize = pa.gridSize;
+
+  // Color key at top
+  const keyH = 35;
+  const keyItemW = availW / pa.colorKey.length;
+  let svg = '';
+
+  pa.colorKey.forEach((ck, i) => {
+    const kx = MARGIN + i * keyItemW + keyItemW / 2;
+    const ky = startY + keyH / 2;
+    const swatchFill = config.pixelArtBW ? 'none' : ck.color;
+    const swatchStroke = config.pixelArtBW ? '#1E293B' : ck.color;
+    svg += `<rect x="${kx - 25}" y="${ky - 10}" width="18" height="18" rx="2" fill="${swatchFill}" stroke="${swatchStroke}" stroke-width="1.5" />`;
+    svg += `<text x="${kx - 16}" y="${ky + 4}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="${config.pixelArtBW ? '#1E293B' : (ck.index === 0 ? '#64748B' : 'white')}">${ck.index}</text>`;
+    svg += `<text x="${kx + 2}" y="${ky + 3}" font-family="Inter, sans-serif" font-size="8" fill="#64748B">${ck.name}</text>`;
+  });
+
+  // Grid
+  const drawTop = startY + keyH + 10;
+  const drawH = availH - keyH - 15;
+  const cellSize = Math.min(drawH / gridSize, availW / (pa.grid[0]?.length || gridSize));
+  const gridW = cellSize * (pa.grid[0]?.length || gridSize);
+  const gridH = cellSize * gridSize;
+  const gridX = MARGIN + (availW - gridW) / 2;
+
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < (pa.grid[r]?.length || gridSize); c++) {
+      const x = gridX + c * cellSize;
+      const y = drawTop + r * cellSize;
+      const colorIdx = pa.grid[r]?.[c] || 0;
+
+      svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="none" stroke="#CBD5E1" stroke-width="0.5" />`;
+
+      // Number in cell
+      const fontSize = Math.min(cellSize * 0.45, 14);
+      svg += `<text x="${x + cellSize / 2}" y="${y + cellSize / 2 + fontSize * 0.35}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="600" fill="#64748B">${colorIdx}</text>`;
+    }
+  }
+
+  // Outer border
+  svg += `<rect x="${gridX}" y="${drawTop}" width="${gridW}" height="${gridH}" fill="none" stroke="#1E293B" stroke-width="2" rx="2" />`;
+
+  return svg;
 }

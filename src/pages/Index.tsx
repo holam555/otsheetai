@@ -46,6 +46,25 @@ const defaultConfig: WorksheetConfig = {
   colorByNumberBW: true,
   gridDesignSize: 3,
   gridDesignPattern: 'shapes',
+  dotArtTheme: 'heart',
+  dotArtDotSize: 'medium',
+  dotArtSpacing: 'normal',
+  dotArtColorMode: 'bw',
+  shapeTracingShape: 'circle',
+  shapeTracingSize: 'large',
+  shapeTracingRows: 3,
+  shapeTracingShowStart: true,
+  spotDiffTheme: 'playground',
+  spotDiffCount: 5,
+  spotDiffShowAnswers: false,
+  visualScanTarget: 'b',
+  visualScanDensity: 'medium',
+  visualScanFontStyle: 'standard',
+  visualScanCharSize: 'medium',
+  visualScanTargetCount: 'few',
+  pixelArtTheme: 'heart',
+  pixelArtGridSize: 'simple',
+  pixelArtBW: false,
 };
 
 export default function Index() {
@@ -54,7 +73,7 @@ export default function Index() {
 
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.colorByNumberTheme, config.colorByNumberColors, config.colorByNumberBW, config.gridDesignSize, config.gridDesignPattern]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.colorByNumberTheme, config.colorByNumberColors, config.colorByNumberBW, config.gridDesignSize, config.gridDesignPattern, config.dotArtTheme, config.dotArtDotSize, config.dotArtSpacing, config.dotArtColorMode, config.shapeTracingShape, config.shapeTracingSize, config.shapeTracingRows, config.shapeTracingShowStart, config.spotDiffTheme, config.spotDiffCount, config.visualScanTarget, config.visualScanDensity, config.visualScanFontStyle, config.visualScanCharSize, config.visualScanTargetCount, config.pixelArtTheme, config.pixelArtGridSize, config.pixelArtBW]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
