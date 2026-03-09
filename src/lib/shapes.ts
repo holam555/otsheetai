@@ -2078,11 +2078,7 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'connectDots': result = generateConnectDotsMode(config); break;
     case 'tracingPaths': result = generateTracingPathsMode(config); break;
     case 'scissorSkills': result = generateScissorSkillsMode(config); break;
-    case 'colorByNumber': result = generateColorByNumberMode(config); break;
     case 'gridDesigns': result = generateGridDesignsMode(config); break;
-    case 'dotArt': result = generateDotArtMode(config); break;
-    case 'shapeTracing': result = generateShapeTracingMode(config); break;
-    case 'spotDifference': result = generateSpotDifferenceMode(config); break;
     case 'visualScanning': result = generateVisualScanningMode(config); break;
     case 'pixelArt': result = generatePixelArtMode(config); break;
   }
