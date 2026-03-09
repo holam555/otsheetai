@@ -191,7 +191,7 @@ export default function WorksheetPreview({ config, data }: Props) {
                   lineHeight: 1,
                   letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  WebkitTextStroke: '1px #cccccc',
+                  WebkitTextStroke: '0.5px #cccccc',
                 }}
               >
                 {o.text}
@@ -202,15 +202,11 @@ export default function WorksheetPreview({ config, data }: Props) {
                 position: 'relative',
                 fontFamily: o.isTrace ? "'Edu AU VIC WA NT Dots', cursive" : "'Patrick Hand', cursive",
                 fontSize: o.fontPx,
-                color: o.color,
+                color: o.isTrace ? '#aaaaaa' : o.color,
                 opacity: o.opacity,
                 lineHeight: 1,
                 letterSpacing: '0.05em',
                 whiteSpace: 'nowrap',
-                ...(o.isTrace ? {
-                  WebkitTextStroke: `2.5px ${o.color}`,
-                  paintOrder: 'stroke fill',
-                } : {}),
               }}
             >
               {o.text}
@@ -1080,7 +1076,7 @@ function renderTextOnTriline(
 
   if (isDottedTrace) {
     // Use dotted font rendered as HTML overlay
-    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.6, '#999999', true);
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW, 0.6, '#aaaaaa', true);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
@@ -1121,8 +1117,8 @@ function renderSentenceTrilineMode(
   const groupH = refTextH + triSetH + setGap + triSetH + groupGap;
   const maxGroups = Math.min(rows, Math.floor(availableH / groupH));
   const allChars = Array.from(text);
-  // Auto-calculate trace font size so ascenders fill the zone
-  const traceFontPx = zoneH / 0.72;
+  // Trace font size: cap-height must equal zoneH. CSS cap-height ≈ 0.7 * fontSize for most fonts.
+  const traceFontPx = zoneH / 0.7;
   let svg = '';
 
   for (let g = 0; g < maxGroups; g++) {
@@ -1173,7 +1169,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.6, '#999999', true);
+          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7, 0.6, '#aaaaaa', true);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
@@ -1231,7 +1227,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.6, '#999999', true);
+    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.6, '#aaaaaa', true);
 
     let nextY = blockY + labelH;
 
