@@ -82,6 +82,14 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderMazeMode(config, data);
   } else if (data.mode === 'connectDots') {
     bodySVG = renderConnectDotsMode(config, data);
+  } else if (data.mode === 'tracingPaths') {
+    bodySVG = renderTracingPathsMode(config, data);
+  } else if (data.mode === 'scissorSkills') {
+    bodySVG = renderScissorSkillsMode(config, data);
+  } else if (data.mode === 'colorByNumber') {
+    bodySVG = renderColorByNumberMode(config, data);
+  } else if (data.mode === 'gridDesigns') {
+    bodySVG = renderGridDesignsMode(config, data);
   }
 
   const svgContent = `
