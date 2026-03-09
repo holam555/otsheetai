@@ -955,6 +955,9 @@ function renderFourLineSet(
   return svg;
 }
 
+// Trace font: use Patrick Hand for natural handwriting look
+const TRACE_FONT = "'Patrick Hand', 'Caveat', cursive";
+
 // Render text on tri-lines — text y = baselineY exactly
 function renderTextOnTriline(
   chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
@@ -962,21 +965,23 @@ function renderTextOnTriline(
 ): string {
   if (chars.length === 0) return '';
   const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
+  const traceFont = isDottedTrace ? TRACE_FONT : fontFamily;
   let svg = '';
   for (let c = 0; c < chars.length; c++) {
     const cx = x + 4 + c * charW + charW / 2;
     if (cx > x + contentW) break;
     if (isDottedTrace) {
-      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
+      // Ghost guide layer: solid, very light
+      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${traceFont}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#CBD5E1" stroke-width="1.8" opacity="0.25">${escapeXml(chars[c])}</text>`;
+      // Dashed trace layer: follows letter curves
+      svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${traceFont}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="3 4" stroke-linecap="round">${escapeXml(chars[c])}</text>`;
     } else {
       svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
     }
     // Start/end dots per letter
     if (showStartEnd && isDottedTrace) {
       const dotR = Math.max(2.5, fontPx * 0.06);
-      // Green start dot at top-left of character
       svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
-      // Red end dot at bottom-right of character
       svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
     }
   }
