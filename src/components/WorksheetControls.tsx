@@ -45,7 +45,7 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'pixelArt', label: 'Pixel Art', icon: '🟩' },
 ];
 
-const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
+const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting';
 
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
   { value: 'shapes', label: 'Shapes' },
