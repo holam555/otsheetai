@@ -289,11 +289,16 @@ function renderMissingMode(
   svg += `<rect x="${refX}" y="${refY}" width="${refW}" height="${refH}" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5" />`;
   svg += `<text x="${W / 2}" y="${refY - 6}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Reference Shapes:</text>`;
 
+  const refEmojis = (data as any)._refEmojis;
   refShapes.forEach((shape, i) => {
     const cx = refX + i * refCellW + refCellW / 2;
     const cy = refY + refH / 2;
-    svg += getShapeSVG(shape, cx, cy, 42, getFill(shape), getStroke(shape), getStrokeW());
-    svg += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${shape}</text>`;
+    if (refEmojis && refEmojis[i]) {
+      svg += getEmojiSVG(refEmojis[i], cx, cy, 42);
+    } else {
+      svg += getShapeSVG(shape, cx, cy, 42, getFill(shape), getStroke(shape), getStrokeW());
+    }
+    svg += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${refEmojis && refEmojis[i] ? '' : shape}</text>`;
   });
 
   const puzzleTop = refY + refH + 24;
