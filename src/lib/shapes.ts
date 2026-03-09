@@ -115,6 +115,8 @@ export interface WorksheetConfig {
   pixelArtTheme: PixelArtTheme;
   pixelArtGridSize: PixelArtGridSize;
   pixelArtBW: boolean;
+  useEmoji: boolean;
+  emojiTheme: EmojiTheme;
 }
 
 export interface CellData {
