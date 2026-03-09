@@ -15,6 +15,8 @@ interface TraceOverlay {
   fontPx: number;
   width: number;
   opacity: number;
+  color: string;
+  isTrace: boolean;
 }
 
 let _traceOverlays: TraceOverlay[] = [];
