@@ -1,4 +1,4 @@
-import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingHighlightColor } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingHighlightColor, MazeSize, MazeShape, ConnectDotsShape } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,6 +33,8 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'mirror', label: 'Mirror Image', icon: '🪞' },
   { value: 'figureGround', label: 'Figure Ground', icon: '🌫️' },
   { value: 'closure', label: 'Visual Closure', icon: '👁️' },
+  { value: 'maze', label: 'Maze', icon: '🏁' },
+  { value: 'connectDots', label: 'Connect the Dots', icon: '🔗' },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
@@ -181,6 +183,91 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                 >
                   <span className="text-base leading-none">{m.icon}</span>
                   <span className="font-display">{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Maze Controls */}
+        {config.mode === 'maze' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Maze Size</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'small' as MazeSize, label: '8×8' },
+                  { value: 'medium' as MazeSize, label: '12×12' },
+                  { value: 'large' as MazeSize, label: '16×16' },
+                ]).map(s => (
+                  <Button
+                    key={s.value}
+                    variant={config.mazeSize === s.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ mazeSize: s.value })}
+                    className="font-display text-xs"
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display font-semibold text-sm">Shape</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'square' as MazeShape, label: '⬜ Square' },
+                  { value: 'rectangle' as MazeShape, label: '▬ Rectangle' },
+                  { value: 'circle' as MazeShape, label: '⚪ Circle' },
+                ]).map(s => (
+                  <Button
+                    key={s.value}
+                    variant={config.mazeShape === s.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => update({ mazeShape: s.value })}
+                    className="font-display text-xs"
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            {config.difficulty === 'easy' && (
+              <div className="flex items-center justify-between">
+                <Label className="font-display font-semibold text-sm">Show Solution</Label>
+                <Switch checked={config.mazeShowSolution} onCheckedChange={(v) => update({ mazeShowSolution: v })} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Connect the Dots Controls */}
+        {config.mode === 'connectDots' && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Shape</Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {([
+                { value: 'star' as ConnectDotsShape, label: '⭐ Star' },
+                { value: 'heart' as ConnectDotsShape, label: '❤️ Heart' },
+                { value: 'house' as ConnectDotsShape, label: '🏠 House' },
+                { value: 'fish' as ConnectDotsShape, label: '🐟 Fish' },
+                { value: 'sun' as ConnectDotsShape, label: '☀️ Sun' },
+                { value: 'butterfly' as ConnectDotsShape, label: '🦋 Butterfly' },
+                { value: 'rocket' as ConnectDotsShape, label: '🚀 Rocket' },
+                { value: 'tree' as ConnectDotsShape, label: '🌲 Tree' },
+                { value: 'catFace' as ConnectDotsShape, label: '🐱 Cat Face' },
+                { value: 'flower' as ConnectDotsShape, label: '🌸 Flower' },
+              ]).map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => update({ connectDotsShape: s.value })}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                    config.connectDotsShape === s.value
+                      ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                      : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                  }`}
+                >
+                  <span className="font-display">{s.label}</span>
                 </button>
               ))}
             </div>

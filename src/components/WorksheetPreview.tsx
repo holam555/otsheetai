@@ -78,6 +78,10 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderTraceNameMode(config, data);
   } else if (data.mode === 'handwriting') {
     bodySVG = renderHandwritingMode(config, data);
+  } else if (data.mode === 'maze') {
+    bodySVG = renderMazeMode(config, data);
+  } else if (data.mode === 'connectDots') {
+    bodySVG = renderConnectDotsMode(config, data);
   }
 
   const svgContent = `
@@ -1233,6 +1237,135 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       svg += renderSentenceTrilineMode(text, rows, startY, availableH, lineH, contentW, fontFamily, config);
     }
   }
+
+  return svg;
+}
+
+// ========== MODE 13: MAZE ==========
+function renderMazeMode(config: WorksheetConfig, data: WorksheetData): string {
+  const maze = data.mazeData!;
+  const { grid, rows, cols, shape, solution } = maze;
+
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  const cellSize = Math.min(availW / cols, availH / rows);
+  const mazeW = cellSize * cols;
+  const mazeH = cellSize * rows;
+  const mazeX = (W - mazeW) / 2;
+  const mazeY = startY + (availH - mazeH) / 2;
+
+  let svg = '';
+
+  // Circle clip mask
+  if (shape === 'circle') {
+    const clipCx = mazeX + mazeW / 2;
+    const clipCy = mazeY + mazeH / 2;
+    const clipR = Math.min(mazeW, mazeH) / 2;
+    svg += `<defs><clipPath id="maze-circle"><circle cx="${clipCx}" cy="${clipCy}" r="${clipR}" /></clipPath></defs>`;
+    svg += `<circle cx="${clipCx}" cy="${clipCy}" r="${clipR}" fill="none" stroke="#1E293B" stroke-width="2.5" />`;
+    svg += `<g clip-path="url(#maze-circle)">`;
+  }
+
+  // Draw walls
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = mazeX + c * cellSize;
+      const y = mazeY + r * cellSize;
+      const cell = grid[r][c];
+      const sw = 1.5;
+      const color = '#1E293B';
+      if (cell.top) svg += `<line x1="${x}" y1="${y}" x2="${x + cellSize}" y2="${y}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" />`;
+      if (cell.right) svg += `<line x1="${x + cellSize}" y1="${y}" x2="${x + cellSize}" y2="${y + cellSize}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" />`;
+      if (cell.bottom) svg += `<line x1="${x}" y1="${y + cellSize}" x2="${x + cellSize}" y2="${y + cellSize}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" />`;
+      if (cell.left) svg += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + cellSize}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" />`;
+    }
+  }
+
+  if (shape === 'circle') {
+    svg += `</g>`;
+  }
+
+  // Solution path
+  if (config.difficulty === 'easy' && config.mazeShowSolution && solution.length > 1) {
+    const pathD = solution.map((p, i) => {
+      const px = mazeX + p[1] * cellSize + cellSize / 2;
+      const py = mazeY + p[0] * cellSize + cellSize / 2;
+      return `${i === 0 ? 'M' : 'L'} ${px} ${py}`;
+    }).join(' ');
+    svg += `<path d="${pathD}" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5" />`;
+  }
+
+  // Start marker (green circle)
+  const startCx = mazeX + cellSize / 2;
+  const startCy = mazeY + cellSize / 2;
+  svg += `<circle cx="${startCx}" cy="${startCy}" r="${cellSize * 0.25}" fill="#22C55E" />`;
+  svg += `<text x="${startCx}" y="${startCy + 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${cellSize * 0.22}" font-weight="700" fill="white">S</text>`;
+
+  // End marker (red star)
+  const endCx = mazeX + (cols - 0.5) * cellSize;
+  const endCy = mazeY + (rows - 0.5) * cellSize;
+  const starR = cellSize * 0.25;
+  const starPts: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const aOuter = -Math.PI / 2 + (2 * Math.PI * i) / 5;
+    const aInner = aOuter + Math.PI / 5;
+    starPts.push(`${endCx + Math.cos(aOuter) * starR},${endCy + Math.sin(aOuter) * starR}`);
+    starPts.push(`${endCx + Math.cos(aInner) * starR * 0.4},${endCy + Math.sin(aInner) * starR * 0.4}`);
+  }
+  svg += `<polygon points="${starPts.join(' ')}" fill="#EF4444" />`;
+
+  return svg;
+}
+
+// ========== MODE 14: CONNECT THE DOTS ==========
+function renderConnectDotsMode(config: WorksheetConfig, data: WorksheetData): string {
+  const dots = data.connectDotsData!;
+  const { dots: dotList, completedPath, shapeName } = dots;
+
+  const startY = MARGIN + 88;
+  const availH = H - startY - MARGIN - 45;
+  const availW = W - MARGIN * 2;
+  // Leave bottom quarter for coloring
+  const drawH = availH * 0.75;
+  const drawSize = Math.min(availW, drawH);
+  const scale = drawSize / 400;
+  const offsetX = (W - drawSize) / 2;
+  const offsetY = startY + 10;
+
+  let svg = '';
+
+  // Small reference image in top-right corner (20% size)
+  const refSize = drawSize * 0.18;
+  const refScale = refSize / 400;
+  const refX = W - MARGIN - refSize - 5;
+  const refY = startY + 5;
+  svg += `<rect x="${refX - 3}" y="${refY - 3}" width="${refSize + 6}" height="${refSize + 6}" rx="4" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />`;
+  svg += `<text x="${refX + refSize / 2}" y="${refY - 7}" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" fill="#94A3B8">Preview</text>`;
+  const refPath = dotList.map((d, i) => `${i === 0 ? 'M' : 'L'} ${refX + d.x * refScale} ${refY + d.y * refScale}`).join(' ') + ' Z';
+  svg += `<path d="${refPath}" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
+
+  // Draw dots
+  const dotRadius = Math.max(3, 5 - dotList.length * 0.03);
+  const fontSize = Math.max(6, 9 - dotList.length * 0.05);
+
+  dotList.forEach((dot) => {
+    const x = offsetX + dot.x * scale;
+    const y = offsetY + dot.y * scale;
+    svg += `<circle cx="${x}" cy="${y}" r="${dotRadius}" fill="#1E293B" />`;
+
+    // Number label - offset to avoid overlap
+    const angle = Math.atan2(dot.y - 200, dot.x - 200);
+    const labelDist = dotRadius + fontSize * 0.8;
+    const lx = x + Math.cos(angle) * labelDist;
+    const ly = y + Math.sin(angle) * labelDist + fontSize * 0.35;
+    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="600" fill="#64748B">${dot.index}</text>`;
+  });
+
+  // Coloring area label
+  const colorY = offsetY + drawSize + 15;
+  svg += `<text x="${W / 2}" y="${colorY}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">✏️ Colour your picture here!</text>`;
+  svg += `<rect x="${offsetX}" y="${colorY + 8}" width="${drawSize}" height="${availH * 0.2}" rx="6" fill="none" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="6,4" />`;
 
   return svg;
 }

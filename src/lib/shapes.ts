@@ -19,7 +19,10 @@ export const SHAPE_COLORS: Record<ShapeName, string> = {
   pentagon: '#A855F7',
 };
 
-export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting';
+export type WorksheetMode = 'find' | 'missing' | 'pattern' | 'count' | 'copy' | 'sequence' | 'oddOneOut' | 'mirror' | 'figureGround' | 'closure' | 'traceName' | 'handwriting' | 'maze' | 'connectDots';
+export type MazeSize = 'small' | 'medium' | 'large';
+export type MazeShape = 'square' | 'rectangle' | 'circle';
+export type ConnectDotsShape = 'star' | 'heart' | 'house' | 'fish' | 'sun' | 'butterfly' | 'rocket' | 'tree' | 'catFace' | 'flower';
 export type OddOneOutType = 'shapes' | 'letters' | 'numbers';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
@@ -62,6 +65,10 @@ export interface WorksheetConfig {
   handwritingShowColoredLines: boolean;
   handwritingLineColor: HandwritingLineColor;
   handwritingHighlightColor: HandwritingHighlightColor;
+  mazeSize: MazeSize;
+  mazeShape: MazeShape;
+  mazeShowSolution: boolean;
+  connectDotsShape: ConnectDotsShape;
 }
 
 export interface CellData {
@@ -131,6 +138,28 @@ export interface ClosurePuzzle {
   correctIndex: number;
 }
 
+export interface MazeCell {
+  top: boolean;
+  right: boolean;
+  bottom: boolean;
+  left: boolean;
+  visited: boolean;
+}
+
+export interface MazeData {
+  grid: MazeCell[][];
+  rows: number;
+  cols: number;
+  shape: MazeShape;
+  solution: [number, number][];
+}
+
+export interface ConnectDotsData {
+  dots: { x: number; y: number; index: number }[];
+  shapeName: ConnectDotsShape;
+  completedPath: string;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -149,6 +178,8 @@ export interface WorksheetData {
   closurePuzzles?: ClosurePuzzle[];
   traceNameData?: TraceNameData;
   handwritingData?: HandwritingData;
+  mazeData?: MazeData;
+  connectDotsData?: ConnectDotsData;
 }
 
 export interface HandwritingData {
@@ -794,6 +825,311 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
   };
 }
 
+// ========== MODE 13: MAZE ==========
+function generateMazeMode(config: WorksheetConfig): WorksheetData {
+  const sizeMap: Record<MazeSize, number> = { small: 8, medium: 12, large: 16 };
+  const dim = sizeMap[config.mazeSize];
+  const rows = dim;
+  const cols = config.mazeShape === 'rectangle' ? Math.round(dim * 1.4) : dim;
+
+  // Initialize grid
+  const grid: MazeCell[][] = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({
+      top: true, right: true, bottom: true, left: true, visited: false,
+    }))
+  );
+
+  // Recursive backtracking
+  const stack: [number, number][] = [];
+  const start: [number, number] = [0, 0];
+  grid[0][0].visited = true;
+  stack.push(start);
+
+  while (stack.length > 0) {
+    const [cr, cc] = stack[stack.length - 1];
+    const neighbors: [number, number, string, string][] = [];
+    if (cr > 0 && !grid[cr - 1][cc].visited) neighbors.push([cr - 1, cc, 'top', 'bottom']);
+    if (cr < rows - 1 && !grid[cr + 1][cc].visited) neighbors.push([cr + 1, cc, 'bottom', 'top']);
+    if (cc > 0 && !grid[cr][cc - 1].visited) neighbors.push([cr, cc - 1, 'left', 'right']);
+    if (cc < cols - 1 && !grid[cr][cc + 1].visited) neighbors.push([cr, cc + 1, 'right', 'left']);
+
+    if (neighbors.length === 0) {
+      stack.pop();
+    } else {
+      const [nr, nc, wall1, wall2] = neighbors[Math.floor(Math.random() * neighbors.length)];
+      (grid[cr][cc] as any)[wall1] = false;
+      (grid[nr][nc] as any)[wall2] = false;
+      grid[nr][nc].visited = true;
+      stack.push([nr, nc]);
+    }
+  }
+
+  // Add dead ends for hard difficulty or remove some for easy
+  if (config.difficulty === 'easy') {
+    // Remove extra walls to create wider paths
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        if (Math.random() < 0.25 && grid[r][c].right) {
+          grid[r][c].right = false;
+          grid[r][c + 1].left = false;
+        }
+      }
+    }
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (Math.random() < 0.25 && grid[r][c].bottom) {
+          grid[r][c].bottom = false;
+          grid[r + 1][c].top = false;
+        }
+      }
+    }
+  }
+
+  // Solve maze with BFS for solution path
+  const solution: [number, number][] = [];
+  const endR = rows - 1;
+  const endC = cols - 1;
+  const visited2: boolean[][] = Array.from({ length: rows }, () => Array(cols).fill(false));
+  const parent: ([number, number] | null)[][] = Array.from({ length: rows }, () => Array(cols).fill(null));
+  const queue: [number, number][] = [[0, 0]];
+  visited2[0][0] = true;
+
+  while (queue.length > 0) {
+    const [cr, cc] = queue.shift()!;
+    if (cr === endR && cc === endC) break;
+    const moves: [number, number, string][] = [
+      [cr - 1, cc, 'top'], [cr + 1, cc, 'bottom'], [cr, cc - 1, 'left'], [cr, cc + 1, 'right'],
+    ];
+    for (const [nr, nc, wall] of moves) {
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited2[nr][nc] && !(grid[cr][cc] as any)[wall]) {
+        visited2[nr][nc] = true;
+        parent[nr][nc] = [cr, cc];
+        queue.push([nr, nc]);
+      }
+    }
+  }
+
+  let cur: [number, number] | null = [endR, endC];
+  while (cur) {
+    solution.unshift(cur);
+    cur = parent[cur[0]][cur[1]];
+  }
+
+  // Circle mask: mark cells outside the circle as fully walled
+  if (config.mazeShape === 'circle') {
+    const centerR = (rows - 1) / 2;
+    const centerC = (cols - 1) / 2;
+    const radius = Math.min(rows, cols) / 2;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const dist = Math.sqrt((r - centerR) ** 2 + (c - centerC) ** 2);
+        if (dist > radius) {
+          grid[r][c].top = true;
+          grid[r][c].right = true;
+          grid[r][c].bottom = true;
+          grid[r][c].left = true;
+        }
+      }
+    }
+  }
+
+  return {
+    mode: 'maze',
+    instructions: 'Find your way from START to END!',
+    skillLabel: 'Visual Motor Integration · Planning',
+    mazeData: { grid, rows, cols, shape: config.mazeShape, solution },
+  };
+}
+
+// ========== MODE 14: CONNECT THE DOTS ==========
+const DOT_SHAPE_PATHS: Record<ConnectDotsShape, (s: number) => { x: number; y: number }[]> = {
+  star: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    for (let i = 0; i < 10; i++) {
+      const angle = (Math.PI / 2) + (2 * Math.PI * i) / 10;
+      const r = i % 2 === 0 ? s * 0.48 : s * 0.2;
+      pts.push({ x: s / 2 + Math.cos(angle) * r, y: s / 2 - Math.sin(angle) * r });
+    }
+    return pts;
+  },
+  heart: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    const cx = s / 2, cy = s * 0.45;
+    for (let i = 0; i <= 30; i++) {
+      const t = (i / 30) * Math.PI * 2;
+      const x = 16 * Math.sin(t) ** 3;
+      const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+      pts.push({ x: cx + x * s * 0.025, y: cy + y * s * 0.025 });
+    }
+    return pts;
+  },
+  house: (s) => {
+    const m = s * 0.1;
+    return [
+      { x: s / 2, y: m }, { x: s - m, y: s * 0.4 }, { x: s - m, y: s - m },
+      { x: s * 0.65, y: s - m }, { x: s * 0.65, y: s * 0.65 }, { x: s * 0.35, y: s * 0.65 },
+      { x: s * 0.35, y: s - m }, { x: m, y: s - m }, { x: m, y: s * 0.4 },
+    ];
+  },
+  fish: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    const cx = s * 0.4, cy = s / 2;
+    for (let i = 0; i <= 20; i++) {
+      const t = (i / 20) * Math.PI * 2;
+      const rx = s * 0.32, ry = s * 0.22;
+      pts.push({ x: cx + Math.cos(t) * rx, y: cy + Math.sin(t) * ry });
+    }
+    // tail
+    pts.splice(10, 0, { x: s * 0.85, y: s * 0.25 }, { x: s * 0.9, y: s / 2 }, { x: s * 0.85, y: s * 0.75 });
+    return pts;
+  },
+  sun: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    const cx = s / 2, cy = s / 2;
+    for (let i = 0; i < 16; i++) {
+      const angle = (2 * Math.PI * i) / 16;
+      const r = i % 2 === 0 ? s * 0.44 : s * 0.28;
+      pts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+    return pts;
+  },
+  butterfly: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    const cx = s / 2, cy = s / 2;
+    // Left wing
+    for (let i = 0; i <= 12; i++) {
+      const t = Math.PI / 2 + (i / 12) * Math.PI;
+      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.35 });
+    }
+    // Body
+    pts.push({ x: cx, y: s * 0.9 });
+    // Right wing
+    for (let i = 0; i <= 12; i++) {
+      const t = -Math.PI / 2 + (i / 12) * Math.PI;
+      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.35 });
+    }
+    pts.push({ x: cx, y: s * 0.1 });
+    return pts;
+  },
+  rocket: (s) => {
+    const m = s * 0.15;
+    return [
+      { x: s / 2, y: m }, { x: s * 0.65, y: s * 0.3 }, { x: s * 0.65, y: s * 0.65 },
+      { x: s * 0.8, y: s * 0.85 }, { x: s * 0.65, y: s * 0.75 }, { x: s * 0.65, y: s - m },
+      { x: s * 0.35, y: s - m }, { x: s * 0.35, y: s * 0.75 }, { x: s * 0.2, y: s * 0.85 },
+      { x: s * 0.35, y: s * 0.65 }, { x: s * 0.35, y: s * 0.3 },
+    ];
+  },
+  tree: (s) => {
+    const m = s * 0.08;
+    return [
+      { x: s / 2, y: m }, { x: s * 0.75, y: s * 0.35 }, { x: s * 0.62, y: s * 0.35 },
+      { x: s * 0.82, y: s * 0.58 }, { x: s * 0.68, y: s * 0.58 }, { x: s * 0.88, y: s * 0.78 },
+      { x: s * 0.58, y: s * 0.78 }, { x: s * 0.58, y: s - m }, { x: s * 0.42, y: s - m },
+      { x: s * 0.42, y: s * 0.78 }, { x: s * 0.12, y: s * 0.78 }, { x: s * 0.32, y: s * 0.58 },
+      { x: s * 0.18, y: s * 0.58 }, { x: s * 0.38, y: s * 0.35 }, { x: s * 0.25, y: s * 0.35 },
+    ];
+  },
+  catFace: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    const cx = s / 2, cy = s * 0.55;
+    // Ears
+    pts.push({ x: s * 0.2, y: s * 0.12 }, { x: s * 0.15, y: s * 0.35 });
+    // Left face
+    for (let i = 0; i <= 8; i++) {
+      const t = Math.PI * 0.7 + (i / 8) * Math.PI * 0.6;
+      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.32 });
+    }
+    // Chin
+    for (let i = 0; i <= 6; i++) {
+      const t = Math.PI * 1.3 + (i / 6) * Math.PI * 0.4;
+      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.32 });
+    }
+    // Right face
+    for (let i = 0; i <= 8; i++) {
+      const t = -Math.PI * 0.3 + (i / 8) * Math.PI * 0.6;
+      pts.push({ x: cx + Math.cos(t) * s * 0.38, y: cy + Math.sin(t) * s * 0.32 });
+    }
+    // Right ear
+    pts.push({ x: s * 0.85, y: s * 0.35 }, { x: s * 0.8, y: s * 0.12 });
+    return pts;
+  },
+  flower: (s) => {
+    const pts: { x: number; y: number }[] = [];
+    const cx = s / 2, cy = s * 0.4;
+    // Petals
+    for (let i = 0; i < 24; i++) {
+      const angle = (2 * Math.PI * i) / 24;
+      const r = s * (0.28 + 0.1 * Math.cos(6 * angle));
+      pts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+    // Stem
+    pts.push({ x: cx + s * 0.02, y: cy + s * 0.28 }, { x: cx + s * 0.02, y: s * 0.92 },
+      { x: cx - s * 0.02, y: s * 0.92 }, { x: cx - s * 0.02, y: cy + s * 0.28 });
+    return pts;
+  },
+};
+
+function generateConnectDotsMode(config: WorksheetConfig): WorksheetData {
+  const shapeName = config.connectDotsShape;
+  const dotCountRange: Record<Difficulty, [number, number]> = {
+    easy: [10, 20], medium: [20, 40], hard: [40, 80],
+  };
+  const [minDots, maxDots] = dotCountRange[config.difficulty];
+  const targetDots = Math.round(minDots + Math.random() * (maxDots - minDots));
+
+  const shapeSize = 400;
+  const rawPts = DOT_SHAPE_PATHS[shapeName](shapeSize);
+
+  // Resample to target number of dots
+  const dots: { x: number; y: number; index: number }[] = [];
+  const totalPts = rawPts.length;
+
+  if (targetDots >= totalPts) {
+    // Interpolate between points
+    const totalLen = rawPts.reduce((sum, p, i) => {
+      if (i === 0) return 0;
+      const prev = rawPts[i - 1];
+      return sum + Math.sqrt((p.x - prev.x) ** 2 + (p.y - prev.y) ** 2);
+    }, 0);
+    const segLen = totalLen / targetDots;
+    let accum = 0;
+    let ptIdx = 0;
+    dots.push({ x: rawPts[0].x, y: rawPts[0].y, index: 1 });
+    for (let i = 1; i < rawPts.length && dots.length < targetDots; i++) {
+      const dx = rawPts[i].x - rawPts[i - 1].x;
+      const dy = rawPts[i].y - rawPts[i - 1].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      accum += d;
+      while (accum >= segLen && dots.length < targetDots) {
+        accum -= segLen;
+        const t = 1 - accum / d;
+        dots.push({
+          x: rawPts[i - 1].x + dx * t,
+          y: rawPts[i - 1].y + dy * t,
+          index: dots.length + 1,
+        });
+      }
+    }
+  } else {
+    // Subsample
+    for (let i = 0; i < targetDots; i++) {
+      const srcIdx = Math.round((i / targetDots) * (totalPts - 1));
+      dots.push({ x: rawPts[srcIdx].x, y: rawPts[srcIdx].y, index: i + 1 });
+    }
+  }
+
+  // Build completed path
+  const completedPath = dots.map((d, i) => `${i === 0 ? 'M' : 'L'} ${d.x} ${d.y}`).join(' ') + ' Z';
+
+  return {
+    mode: 'connectDots',
+    instructions: `Connect the dots from 1 to ${dots.length} to reveal the picture!`,
+    skillLabel: 'Visual Sequential Memory · Fine Motor',
+    connectDotsData: { dots, shapeName, completedPath },
+  };
+}
+
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {
   let result: WorksheetData;
   switch (config.mode) {
@@ -809,6 +1145,8 @@ export function generateWorksheet(config: WorksheetConfig): WorksheetData {
     case 'closure': result = generateClosureMode(config); break;
     case 'traceName': result = generateTraceNameMode(config); break;
     case 'handwriting': result = generateHandwritingMode(config); break;
+    case 'maze': result = generateMazeMode(config); break;
+    case 'connectDots': result = generateConnectDotsMode(config); break;
   }
   // Apply custom instruction override
   if (config.customInstruction.trim()) {
