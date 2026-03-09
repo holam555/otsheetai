@@ -234,6 +234,45 @@ export interface GridDesignData {
   pattern: GridDesignPattern;
 }
 
+export interface DotArtData {
+  dots: { x: number; y: number; region: number }[];
+  theme: DotArtTheme;
+  regionColors: string[];
+}
+
+export interface ShapeTracingData {
+  shapes: { pathD: string; startX: number; startY: number; arrowAngle: number; shapeName: string }[];
+}
+
+export interface SpotDiffSceneObject {
+  type: string;
+  x: number; y: number;
+  w: number; h: number;
+  fill: string;
+  extra?: Record<string, any>;
+}
+
+export interface SpotDiffData {
+  leftScene: SpotDiffSceneObject[];
+  rightScene: SpotDiffSceneObject[];
+  differences: { x: number; y: number; r: number; description: string }[];
+  theme: SpotDiffTheme;
+}
+
+export interface VisualScanData {
+  grid: string[][];
+  target: string;
+  targetPositions: [number, number][];
+  rows: number;
+  cols: number;
+}
+
+export interface PixelArtData {
+  grid: number[][];
+  colorKey: { index: number; color: string; name: string }[];
+  gridSize: number;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -258,6 +297,11 @@ export interface WorksheetData {
   scissorSkillsData?: ScissorSkillsData;
   colorByNumberData?: ColorByNumberData;
   gridDesignData?: GridDesignData;
+  dotArtData?: DotArtData;
+  shapeTracingData?: ShapeTracingData;
+  spotDiffData?: SpotDiffData;
+  visualScanData?: VisualScanData;
+  pixelArtData?: PixelArtData;
 }
 
 export interface HandwritingData {
