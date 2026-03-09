@@ -176,6 +176,32 @@ export interface ConnectDotsData {
   completedPath: string;
 }
 
+export interface TracingPathsData {
+  rows: { pathD: string; startX: number; startY: number; endX: number; endY: number; strokeType: string }[];
+}
+
+export interface ScissorSkillsData {
+  lines: { pathD: string; startX: number; startY: number }[];
+}
+
+export interface ColorByNumberRegion {
+  pathD: string;
+  colorIndex: number;
+  labelX: number;
+  labelY: number;
+}
+
+export interface ColorByNumberData {
+  regions: ColorByNumberRegion[];
+  colorKey: { index: number; color: string; name: string }[];
+}
+
+export interface GridDesignData {
+  grid: { type: string; value: string; color?: string }[][];
+  gridSize: number;
+  pattern: GridDesignPattern;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -196,6 +222,10 @@ export interface WorksheetData {
   handwritingData?: HandwritingData;
   mazeData?: MazeData;
   connectDotsData?: ConnectDotsData;
+  tracingPathsData?: TracingPathsData;
+  scissorSkillsData?: ScissorSkillsData;
+  colorByNumberData?: ColorByNumberData;
+  gridDesignData?: GridDesignData;
 }
 
 export interface HandwritingData {
