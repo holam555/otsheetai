@@ -872,7 +872,6 @@ function renderClosureMode(
         svg += getShapeSVG(opt, ox, optY + optSize / 2 + 2, optSize, getFill(opt), getStroke(opt), getStrokeW());
       }
     });
-    });
   });
 
   if (config.showAnswerKey) {
