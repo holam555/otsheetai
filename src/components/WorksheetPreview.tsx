@@ -6,6 +6,18 @@ interface Props {
   data: WorksheetData;
 }
 
+// Trace overlay data: collected during SVG generation, rendered as HTML divs
+interface TraceOverlay {
+  text: string;
+  // Positions as percentage of SVG viewBox (0-100)
+  xPct: number;
+  yPct: number;
+  fontPx: number;
+  widthPct: number;
+}
+
+let _traceOverlays: TraceOverlay[] = [];
+
 const W = 595;
 const H = 842;
 const MARGIN = 40;
@@ -104,6 +116,9 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderPixelArtMode(config, data);
   }
 
+  // Collect trace overlays during SVG generation
+  _traceOverlays = [];
+
   const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%">
       <rect width="${W}" height="${H}" fill="white" rx="4" />
@@ -113,13 +128,37 @@ export default function WorksheetPreview({ config, data }: Props) {
     </svg>
   `;
 
+  const overlays = [..._traceOverlays];
+
   return (
     <div
       id="worksheet-preview"
       className="bg-card rounded-xl shadow-lg border border-border overflow-hidden"
-      style={{ aspectRatio: '210/297', maxHeight: '85vh' }}
-      dangerouslySetInnerHTML={{ __html: svgContent }}
-    />
+      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', containerType: 'size' } as React.CSSProperties}
+    >
+      <div dangerouslySetInnerHTML={{ __html: svgContent }} style={{ width: '100%', height: '100%' }} />
+      {overlays.map((o, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${o.xPct}%`,
+            top: `${o.yPct}%`,
+            width: `${o.widthPct}%`,
+            fontFamily: "'KG Primary Dots', 'Edu NSW ACT Foundation', sans-serif",
+            fontSize: `${(o.fontPx / H) * 100}cqh`,
+            color: '#aaaaaa',
+            lineHeight: 1,
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            zIndex: 10,
+          } as React.CSSProperties}
+        >
+          {o.text}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -955,16 +994,17 @@ function renderFourLineSet(
   return svg;
 }
 
-// Trace font: Edu NSW ACT Foundation — a real handwriting education font
-const TRACE_FONT = "'Edu NSW ACT Foundation', 'Patrick Hand', cursive";
-
-// Render trace text as foreignObject with CSS text-stroke for clean dotted outlines
-function renderTraceForeignObject(
-  text: string, x: number, y: number, width: number, height: number, fontPx: number, opacity: number = 1
-): string {
-  const ghostDiv = `<div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Edu NSW ACT Foundation', cursive; font-size: ${fontPx}px; color: transparent; -webkit-text-stroke: 2px rgba(203,213,225,0.35); line-height: 1; letter-spacing: 0.05em; white-space: nowrap; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-end;">${escapeXml(text)}</div>`;
-  const dashedDiv = `<div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Edu NSW ACT Foundation', cursive; font-size: ${fontPx}px; color: transparent; background-image: repeating-linear-gradient(90deg, #999 0px, #999 3px, transparent 3px, transparent 7px); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 0px; line-height: 1; letter-spacing: 0.05em; white-space: nowrap; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-end;">${escapeXml(text)}</div>`;
-  return `<foreignObject x="${x}" y="${y}" width="${width}" height="${height}" style="opacity:${opacity}"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;">${ghostDiv}${dashedDiv}</div></foreignObject>`;
+// Add a trace overlay (rendered as HTML div, not SVG)
+function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number) {
+  // Convert SVG viewBox coordinates to percentages
+  const topY = baselineY - fontPx * 0.85; // approximate ascender offset
+  _traceOverlays.push({
+    text,
+    xPct: (x / W) * 100,
+    yPct: (topY / H) * 100,
+    fontPx,
+    widthPct: (contentW / W) * 100,
+  });
 }
 
 // Render text on tri-lines — text y = baselineY exactly
@@ -977,11 +1017,8 @@ function renderTextOnTriline(
   let svg = '';
 
   if (isDottedTrace) {
-    // Use foreignObject CSS approach for clean dotted trace
-    const text = chars.join('');
-    const foHeight = fontPx * 1.3;
-    const foY = baselineY - fontPx * 0.95;
-    svg += renderTraceForeignObject(text, x + 4, foY, contentW, foHeight, fontPx);
+    // Use dotted font rendered as HTML overlay
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
@@ -1029,11 +1066,9 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using Edu NSW ACT Foundation font via CSS
-    const refText = allChars.join('');
-    const refFoHeight = refFontPx * 1.3;
-    const refFoY = groupY + refTextH * 0.85 - refFontPx * 0.95;
-    svg += renderTraceForeignObject(refText, MARGIN + 4, refFoY, contentW, refFoHeight, refFontPx);
+    // Row 1: Reference text as dotted trace using KG Primary Dots font overlay
+    const refBaselineY = groupY + refTextH * 0.85;
+    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW);
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
@@ -1076,7 +1111,7 @@ function renderGridBoxRows(
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
         if (isDotted) {
-          svg += renderTraceForeignObject(ch, bx + 2, baseY + boxSize * 0.1, boxSize - 4, boxSize * 0.85, charFontPx);
+          addTraceOverlay(ch, bx + boxSize * 0.15, baseY + boxSize * 0.72, charFontPx, boxSize * 0.7);
         } else {
           svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${fontFamily}" font-size="${charFontPx}" font-weight="400" fill="${ghostColor}">${escapeXml(ch)}</text>`;
         }
@@ -1133,8 +1168,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label as dotted trace using CSS approach
-    svg += renderTraceForeignObject(word.trim(), colX, blockY - 2, colW, 18, 13);
+    // 1. Word label as dotted trace using font overlay
+    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW);
 
     let nextY = blockY + labelH;
 
