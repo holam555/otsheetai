@@ -1206,7 +1206,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label as dotted trace using font overlay
-    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW);
+    addTraceOverlay(word.trim(), colX, blockY + 12, 13, colW, 0.25);
 
     let nextY = blockY + labelH;
 
