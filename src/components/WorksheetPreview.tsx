@@ -182,7 +182,7 @@ export default function WorksheetPreview({ config, data }: Props) {
               left: o.x,
               top: o.y,
               width: o.width,
-              fontFamily: "'Edu AU VIC WA NT Dots', cursive",
+              fontFamily: "Arial, Helvetica, sans-serif",
               fontSize: o.fontPx,
               color: '#aaaaaa',
               opacity: o.opacity,
