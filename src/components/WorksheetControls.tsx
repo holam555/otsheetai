@@ -799,6 +799,35 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
+        {/* Name/Date Header Font Size */}
+        <div className="space-y-2">
+          <Label className="font-display font-semibold text-sm">Name/Date Size</Label>
+          <div className="flex items-center gap-2">
+            <div className="grid grid-cols-3 gap-1 flex-1">
+              {HEADER_SIZES.map(s => (
+                <Button
+                  key={s.value}
+                  variant={config.nameDateFontSize === s.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ nameDateFontSize: s.value })}
+                  className="font-display text-xs"
+                >
+                  {s.label}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant={config.headerBold ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => update({ headerBold: !config.headerBold })}
+              className="px-2.5"
+              title="Bold name"
+            >
+              <Bold className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
         {/* Exercises per sheet — VP modes only */}
         {!isHandwritingMode(config.mode) && (
           <div className="space-y-2">
@@ -818,8 +847,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
             </div>
           </div>
         )}
-
-        {/* Name/Date Header Font Size */}
 
         {/* Custom Instruction */}
         <div className="space-y-2">
