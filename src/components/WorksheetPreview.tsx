@@ -1096,15 +1096,20 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using KG Primary Dots font overlay
+    // Row 1: Reference text in Patrick Hand (solid, dark grey)
     const refBaselineY = groupY + refTextH * 0.85;
-    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW);
+    const refCharW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
+    for (let c = 0; c < allChars.length; c++) {
+      const cx = MARGIN + 4 + c * refCharW + refCharW / 2;
+      if (cx > MARGIN + contentW) break;
+      svg += `<text x="${cx}" y="${refBaselineY}" text-anchor="middle" font-family="'Patrick Hand', cursive" font-size="${refFontPx}" font-weight="400" fill="#333333">${escapeXml(allChars[c])}</text>`;
+    }
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
     const traceBaselineY = groupY + refTextH + zoneH;
     svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
-    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
+    svg += renderTraceTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, config.handwritingShowStartEnd);
 
     // Row 3: Blank colored tri-lines for independent writing
     const blankBaselineY = traceBaselineY + grassH + setGap + zoneH;
