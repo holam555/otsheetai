@@ -799,29 +799,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        {/* Age */}
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Age</Label>
-          <Input
-            type="number"
-            min={2}
-            max={12}
-            value={config.childAge ?? ''}
-            onChange={(e) => {
-              const val = e.target.value ? parseInt(e.target.value) : null;
-              const age = val !== null ? Math.min(12, Math.max(2, val)) : null;
-              const partial: Partial<WorksheetConfig> = { childAge: age };
-              if (age !== null) {
-                if (age <= 3) partial.difficulty = 'easy';
-                else if (age <= 5 && config.difficulty === 'hard') partial.difficulty = 'medium';
-              }
-              update(partial);
-            }}
-            placeholder="2-12"
-            className="w-20"
-          />
-        </div>
-
         {/* Name/Date Header Font Size */}
         <div className="space-y-2">
           <Label className="font-display font-semibold text-sm">Name/Date Size</Label>
