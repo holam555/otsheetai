@@ -116,6 +116,9 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderPixelArtMode(config, data);
   }
 
+  // Collect trace overlays during SVG generation
+  _traceOverlays = [];
+
   const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%">
       <rect width="${W}" height="${H}" fill="white" rx="4" />
@@ -125,13 +128,37 @@ export default function WorksheetPreview({ config, data }: Props) {
     </svg>
   `;
 
+  const overlays = [..._traceOverlays];
+
   return (
     <div
       id="worksheet-preview"
       className="bg-card rounded-xl shadow-lg border border-border overflow-hidden"
-      style={{ aspectRatio: '210/297', maxHeight: '85vh' }}
-      dangerouslySetInnerHTML={{ __html: svgContent }}
-    />
+      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative' }}
+    >
+      <div dangerouslySetInnerHTML={{ __html: svgContent }} style={{ width: '100%', height: '100%' }} />
+      {overlays.map((o, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${o.xPct}%`,
+            top: `${o.yPct}%`,
+            width: `${o.widthPct}%`,
+            fontFamily: "'KG Primary Dots', 'Edu NSW ACT Foundation', sans-serif",
+            fontSize: `${o.fontPx / H * 100}vh`,
+            color: '#aaaaaa',
+            lineHeight: 1,
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            zIndex: 10,
+          }}
+        >
+          {o.text}
+        </div>
+      ))}
+    </div>
   );
 }
 
