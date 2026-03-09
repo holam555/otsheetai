@@ -157,22 +157,6 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </Button>
         </div>
 
-        {/* Handwriting sub-mode selector */}
-        {isHandwritingMode(config.mode) && (
-          <div className="grid grid-cols-2 gap-2">
-            {HANDWRITING_MODES.map(m => (
-              <Button
-                key={m.value}
-                variant={config.mode === m.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => update({ mode: m.value })}
-                className="font-display text-xs gap-1"
-              >
-                {m.icon} {m.label}
-              </Button>
-            ))}
-          </div>
-        )}
 
         {/* Visual Perception sub-mode grid */}
         {!isHandwritingMode(config.mode) && (
