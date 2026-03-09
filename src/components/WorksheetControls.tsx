@@ -39,6 +39,11 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'scissorSkills', label: 'Scissor Skills', icon: '✂️' },
   { value: 'colorByNumber', label: 'Color by Number', icon: '🎨' },
   { value: 'gridDesigns', label: 'Grid Designs', icon: '📐' },
+  { value: 'dotArt', label: 'Dot Art', icon: '⚫' },
+  { value: 'shapeTracing', label: 'Shape Tracing', icon: '🔷' },
+  { value: 'spotDifference', label: 'Spot Difference', icon: '🔎' },
+  { value: 'visualScanning', label: 'Visual Scanning', icon: '👀' },
+  { value: 'pixelArt', label: 'Pixel Art', icon: '🟩' },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
