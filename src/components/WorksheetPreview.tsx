@@ -775,11 +775,16 @@ function renderFigureGroundMode(
   const refX = (W - totalRefW) / 2;
   const boxW = totalRefW / boxCount;
 
+  const fgEmojiMap = (puzzle as any)._emojiMap;
   targetShapes.forEach((shape, i) => {
     const bx = refX + i * boxW + 4;
     const bw = boxW - 8;
     svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
-    svg += getShapeSVG(shape, bx + bw / 2, refY + 24, 32, getFill(shape), getStroke(shape), getStrokeW());
+    if (fgEmojiMap && fgEmojiMap[shape]) {
+      svg += getEmojiSVG(fgEmojiMap[shape], bx + bw / 2, refY + 24, 32);
+    } else {
+      svg += getShapeSVG(shape, bx + bw / 2, refY + 24, 32, getFill(shape), getStroke(shape), getStrokeW());
+    }
     svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
   });
 
@@ -797,9 +802,14 @@ function renderFigureGroundMode(
     const cx = areaX + s.cx * scaleX;
     const cy = areaTop + s.cy * scaleY;
     const r = s.r * Math.min(scaleX, scaleY);
-    const raw = getShapeRawSVG(s.shape, cx, cy, r);
-    const transform = s.rotation ? ` transform="rotate(${s.rotation}, ${cx}, ${cy})"` : '';
-    svg += raw.replace('/>', ` fill="none" stroke="${getStroke(s.shape)}" stroke-width="2.5"${transform} />`);
+    if ((s as any).emoji) {
+      // Render emoji with reduced opacity for overlapping effect
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${r * 0.7}" opacity="0.6" style="font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${(s as any).emoji}</text>`;
+    } else {
+      const raw = getShapeRawSVG(s.shape, cx, cy, r);
+      const transform = s.rotation ? ` transform="rotate(${s.rotation}, ${cx}, ${cy})"` : '';
+      svg += raw.replace('/>', ` fill="none" stroke="${getStroke(s.shape)}" stroke-width="2.5"${transform} />`);
+    }
   });
 
   if (config.showAnswerKey) {
