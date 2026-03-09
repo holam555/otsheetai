@@ -48,6 +48,18 @@ export type HandwritingHighlightColor = 'blue' | 'yellow' | 'green' | 'pink' | '
 export type HandwritingLineMode = '3-line' | '4-line';
 export type WordBoxDisplayMode = 'boxOnly' | 'trilineOnly' | 'both';
 export type InstructionFontSize = 'small' | 'medium' | 'large';
+export type EmojiTheme = 'animals' | 'food' | 'transport' | 'nature' | 'faces';
+
+export const EMOJI_THEMES: Record<EmojiTheme, { icon: string; label: string; emojis: string[] }> = {
+  animals: { icon: '🐶', label: 'Animals', emojis: ['🐶', '🐱', '🐸', '🐰', '🦊', '🐻', '🐼', '🦁', '🐨', '🐯'] },
+  food: { icon: '🍎', label: 'Food', emojis: ['🍎', '🍌', '🍓', '🍕', '🍦', '🥕', '🍩', '🍇', '🌽', '🧁'] },
+  transport: { icon: '🚗', label: 'Transport', emojis: ['🚗', '🚌', '🚂', '✈️', '🚲', '🚀', '🛸', '🚁', '⛵', '🚒'] },
+  nature: { icon: '⭐', label: 'Nature', emojis: ['🌸', '🌻', '🌈', '⭐', '🌙', '☀️', '🍀', '🌊', '🌵', '🦋'] },
+  faces: { icon: '😀', label: 'Faces', emojis: ['😀', '😢', '😡', '😴', '🤔', '😎', '🥳', '😱', '🤗', '😅'] },
+};
+
+// Modes that support emoji
+export const EMOJI_ELIGIBLE_MODES: WorksheetMode[] = ['find', 'missing', 'oddOneOut', 'count', 'sequence', 'figureGround', 'closure'];
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
