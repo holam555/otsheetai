@@ -1107,9 +1107,9 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text as dotted trace using KG Primary Dots font overlay
-    const refBaselineY = groupY + refTextH * 0.85;
-    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW);
+    // Row 1: Reference text — solid dark, baseline aligned to bottom of ref zone
+    const refBaselineY = groupY + refTextH;
+    addTraceOverlay(allChars.join(''), MARGIN + 4, refBaselineY, refFontPx, contentW, 1, '#333333', false);
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
