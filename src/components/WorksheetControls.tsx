@@ -33,6 +33,8 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'mirror', label: 'Mirror Image', icon: '🪞' },
   { value: 'figureGround', label: 'Figure Ground', icon: '🌫️' },
   { value: 'closure', label: 'Visual Closure', icon: '👁️' },
+  { value: 'maze', label: 'Maze', icon: '🏁' },
+  { value: 'connectDots', label: 'Connect the Dots', icon: '🔗' },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting' || mode === 'traceName';
