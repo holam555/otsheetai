@@ -52,8 +52,9 @@ export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
 export type HandwritingFontSize = 'large' | 'medium' | 'small';
 export type HandwritingFont = 'print' | 'cursive' | 'manuscript' | 'dotted';
 export type HandwritingSubMode = 'sentence' | 'wordBoxes';
-export type HandwritingLineColor = 'red' | 'blue' | 'green' | 'purple' | 'black';
+export type HandwritingLineColor = 'red' | 'blue' | 'green' | 'black';
 export type HandwritingHighlightColor = 'blue' | 'yellow' | 'green' | 'pink' | 'none';
+export type HandwritingLineMode = '3-line' | '4-line';
 
 export interface WorksheetConfig {
   mode: WorksheetMode;
