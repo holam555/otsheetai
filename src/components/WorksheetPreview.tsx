@@ -44,6 +44,27 @@ export default function WorksheetPreview({ config, data }: Props) {
 
   const shapeScale = config.difficulty === 'easy' ? 1.15 : config.difficulty === 'medium' ? 1.0 : 0.85;
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [overlayScale, setOverlayScale] = useState({ x: 1, y: 1 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateScale = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setOverlayScale({ x: rect.width / W, y: rect.height / H });
+      }
+    };
+
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, []);
+
   // Header font sizes
   const nameFontSize = config.nameDateFontSize === 'small' ? 12 : config.nameDateFontSize === 'large' ? 20 : 16;
   const dateFontSize = config.nameDateFontSize === 'small' ? 9 : config.nameDateFontSize === 'large' ? 14 : 11;
