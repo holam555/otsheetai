@@ -54,7 +54,7 @@ export default function Index() {
 
   useEffect(() => {
     setWorksheetData(generateWorksheet(config));
-  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.mazeSize, config.mazeShape, config.connectDotsShape]);
+  }, [config.mode, config.gridSize, config.difficulty, config.exerciseCount, config.selectedShapes, config.oddOneOutType, config.childName, config.handwritingText, config.handwritingRows, config.handwritingPaperStyle, config.handwritingFontSize, config.handwritingFontSizeMm, config.handwritingFont, config.handwritingSubMode, config.handwritingWords, config.handwritingShowHighlight, config.handwritingShowColoredLines, config.handwritingLineColor, config.handwritingHighlightColor, config.mazeSize, config.mazeShape, config.connectDotsShape, config.tracingStrokeType, config.tracingRows, config.tracingThickness, config.scissorLineType, config.scissorLineCount, config.colorByNumberTheme, config.colorByNumberColors, config.colorByNumberBW, config.gridDesignSize, config.gridDesignPattern]);
 
   const handleGenerate = useCallback(() => {
     setWorksheetData(generateWorksheet(config));
