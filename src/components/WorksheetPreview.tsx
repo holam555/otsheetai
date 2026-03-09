@@ -1127,7 +1127,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
       const traceFontPx = zoneH / 0.72;
       const traceBaselineY = nextY + zoneH;
       svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-      svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true);
+      svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
       nextY = traceBaselineY + grassH + gapBetweenParts;
     }
 
