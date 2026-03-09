@@ -7,17 +7,7 @@ interface Props {
   data: WorksheetData;
 }
 
-// Trace overlay data: collected during SVG generation, rendered as HTML divs
-interface TraceOverlay {
-  text: string;
-  x: number;
-  y: number;
-  fontPx: number;
-  width: number;
-  opacity: number;
-}
-
-let _traceOverlays: TraceOverlay[] = [];
+// No trace overlays needed anymore
 
 const W = 595;
 const H = 842;
