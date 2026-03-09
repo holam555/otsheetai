@@ -994,16 +994,17 @@ function renderFourLineSet(
   return svg;
 }
 
-// Trace font: Edu NSW ACT Foundation — a real handwriting education font
-const TRACE_FONT = "'Edu NSW ACT Foundation', 'Patrick Hand', cursive";
-
-// Render trace text as foreignObject with CSS text-stroke for clean dotted outlines
-function renderTraceForeignObject(
-  text: string, x: number, y: number, width: number, height: number, fontPx: number, opacity: number = 1
-): string {
-  const ghostDiv = `<div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Edu NSW ACT Foundation', cursive; font-size: ${fontPx}px; color: transparent; -webkit-text-stroke: 2px rgba(203,213,225,0.35); line-height: 1; letter-spacing: 0.05em; white-space: nowrap; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-end;">${escapeXml(text)}</div>`;
-  const dashedDiv = `<div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Edu NSW ACT Foundation', cursive; font-size: ${fontPx}px; color: transparent; background-image: repeating-linear-gradient(90deg, #999 0px, #999 3px, transparent 3px, transparent 7px); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 0px; line-height: 1; letter-spacing: 0.05em; white-space: nowrap; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-end;">${escapeXml(text)}</div>`;
-  return `<foreignObject x="${x}" y="${y}" width="${width}" height="${height}" style="opacity:${opacity}"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;">${ghostDiv}${dashedDiv}</div></foreignObject>`;
+// Add a trace overlay (rendered as HTML div, not SVG)
+function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number) {
+  // Convert SVG viewBox coordinates to percentages
+  const topY = baselineY - fontPx * 0.85; // approximate ascender offset
+  _traceOverlays.push({
+    text,
+    xPct: (x / W) * 100,
+    yPct: (topY / H) * 100,
+    fontPx,
+    widthPct: (contentW / W) * 100,
+  });
 }
 
 // Render text on tri-lines — text y = baselineY exactly
@@ -1016,11 +1017,8 @@ function renderTextOnTriline(
   let svg = '';
 
   if (isDottedTrace) {
-    // Use foreignObject CSS approach for clean dotted trace
-    const text = chars.join('');
-    const foHeight = fontPx * 1.3;
-    const foY = baselineY - fontPx * 0.95;
-    svg += renderTraceForeignObject(text, x + 4, foY, contentW, foHeight, fontPx);
+    // Use dotted font rendered as HTML overlay
+    addTraceOverlay(chars.join(''), x + 4, baselineY, fontPx, contentW);
   } else {
     for (let c = 0; c < chars.length; c++) {
       const cx = x + 4 + c * charW + charW / 2;
