@@ -609,7 +609,7 @@ function renderSequenceMode(
       const cx = seqStartX + i * (cellSz + 8) + cellSz / 2;
       const cy = seqY + cellSz / 2;
       svg += `<rect x="${cx - cellSz / 2}" y="${cy - cellSz / 2}" width="${cellSz}" height="${cellSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1)} />`;
-      svg += getShapeSVG(puzzle.sequence[i].shape, cx, cy, cellSz * shapeScale, getFill(puzzle.sequence[i].shape), getStroke(puzzle.sequence[i].shape), getStrokeW(), puzzle.sequence[i].rotation);
+      svg += getCellSVG(puzzle.sequence[i], cx, cy, cellSz * shapeScale, getFill(puzzle.sequence[i].shape), getStroke(puzzle.sequence[i].shape), getStrokeW());
     }
 
     const qx = seqStartX + 4 * (cellSz + 8) + cellSz / 2;
