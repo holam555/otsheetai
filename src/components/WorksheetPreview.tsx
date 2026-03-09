@@ -1052,7 +1052,10 @@ function renderFourLineSet(
 
 // Add a trace overlay (rendered as HTML div, not SVG)
 function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1, color: string = '#aaaaaa', isTrace: boolean = false) {
-  const topY = baselineY - fontPx * 0.85;
+  // Position the div so CSS baseline aligns with baselineY.
+  // For most fonts, the baseline sits at roughly 80% of the em-square from the top of the text box.
+  // So div top = baselineY - fontPx * 0.80
+  const topY = baselineY - fontPx * 0.78;
   _traceOverlays.push({
     text,
     x,
