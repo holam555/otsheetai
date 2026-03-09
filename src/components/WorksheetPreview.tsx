@@ -472,11 +472,16 @@ function renderCountMode(
   const refX = (W - totalRefW) / 2;
   const boxW = totalRefW / boxCount;
 
+  const countEmojiMap = (puzzle as any)._emojiMap;
   targetShapes.forEach((shape, i) => {
     const bx = refX + i * boxW + 4;
     const bw = boxW - 8;
     svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
-    svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
+    if (countEmojiMap && countEmojiMap[shape]) {
+      svg += getEmojiSVG(countEmojiMap[shape], bx + bw / 2, refY + 26, 36 * shapeScale);
+    } else {
+      svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
+    }
     svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
   });
 
