@@ -134,7 +134,7 @@ export default function WorksheetPreview({ config, data }: Props) {
     <div
       id="worksheet-preview"
       className="bg-card rounded-xl shadow-lg border border-border overflow-hidden"
-      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative' }}
+      style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', containerType: 'size' } as React.CSSProperties}
     >
       <div dangerouslySetInnerHTML={{ __html: svgContent }} style={{ width: '100%', height: '100%' }} />
       {overlays.map((o, i) => (
@@ -146,14 +146,14 @@ export default function WorksheetPreview({ config, data }: Props) {
             top: `${o.yPct}%`,
             width: `${o.widthPct}%`,
             fontFamily: "'KG Primary Dots', 'Edu NSW ACT Foundation', sans-serif",
-            fontSize: `${(o.fontPx / H) * 100}%`,
+            fontSize: `${(o.fontPx / H) * 100}cqh`,
             color: '#aaaaaa',
             lineHeight: 1,
             letterSpacing: '0.05em',
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
             zIndex: 10,
-          }}
+          } as React.CSSProperties}
         >
           {o.text}
         </div>
