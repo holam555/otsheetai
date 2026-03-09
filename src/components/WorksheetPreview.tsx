@@ -182,7 +182,8 @@ export default function WorksheetPreview({ config, data }: Props) {
               left: o.x,
               top: o.y,
               width: o.width,
-              fontFamily: "'Edu AU VIC WA NT Dots', cursive",
+              fontFamily: "'Edu AU VIC WA NT Dots', sans-serif",
+              fontStyle: 'normal',
               fontSize: o.fontPx,
               color: '#aaaaaa',
               opacity: o.opacity,
@@ -1033,7 +1034,7 @@ function renderFourLineSet(
 
 // Add a trace overlay (rendered as HTML div, not SVG)
 function addTraceOverlay(text: string, x: number, baselineY: number, fontPx: number, contentW: number, opacity: number = 1) {
-  const topY = baselineY - fontPx * 0.85;
+  const topY = baselineY - fontPx * 0.72;
   _traceOverlays.push({
     text,
     x,
