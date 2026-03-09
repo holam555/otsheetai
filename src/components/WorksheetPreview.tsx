@@ -33,17 +33,21 @@ export default function WorksheetPreview({ config, data }: Props) {
   const shapeScale = config.difficulty === 'easy' ? 1.15 : config.difficulty === 'medium' ? 1.0 : 0.85;
 
   // Header font sizes
-  const nameFontSize = config.headerFontSize === 'small' ? 14 : config.headerFontSize === 'large' ? 24 : 18;
+  const nameFontSize = config.nameDateFontSize === 'small' ? 12 : config.nameDateFontSize === 'large' ? 20 : 16;
+  const dateFontSize = config.nameDateFontSize === 'small' ? 9 : config.nameDateFontSize === 'large' ? 14 : 11;
   const nameWeight = config.headerBold ? '800' : '600';
   const ageStr = config.childAge !== null ? ` (Age ${config.childAge})` : '';
   const nameStr = config.childName ? config.childName + ageStr : '___________________';
+
+  const instrFontSize = config.instructionFontSize === 'small' ? 11 : config.instructionFontSize === 'large' ? 18 : 14;
+  const instrWeight = config.instructionBold ? '800' : '700';
 
   const headerSVG = `
     <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="#0D9488">OTsheet.ai</text>
     <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="#E2E8F0" stroke-width="1" />
     <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${nameStr}</text>
-    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#94A3B8">Date: ____/____/________</text>
-    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="700" fill="#1E293B">${data.instructions}</text>
+    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="${dateFontSize}" fill="#94A3B8">Date: ____/____/________</text>
+    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${instrFontSize}" font-weight="${instrWeight}" fill="#1E293B">${data.instructions}</text>
   `;
 
   const footerSVG = `
@@ -74,9 +78,7 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderFigureGroundMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'closure') {
     bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
-  } else if (data.mode === 'traceName') {
-    bodySVG = renderTraceNameMode(config, data);
-  } else if (data.mode === 'handwriting') {
+  } else if (data.mode === 'handwriting' || data.mode === 'traceName') {
     bodySVG = renderHandwritingMode(config, data);
   } else if (data.mode === 'maze') {
     bodySVG = renderMazeMode(config, data);
@@ -956,7 +958,7 @@ function renderFourLineSet(
 // Render text on tri-lines — text y = baselineY exactly
 function renderTextOnTriline(
   chars: string[], x: number, baselineY: number, fontPx: number, contentW: number,
-  fontFamily: string, color: string, isDottedTrace: boolean
+  fontFamily: string, color: string, isDottedTrace: boolean, showStartEnd: boolean = false
 ): string {
   if (chars.length === 0) return '';
   const charW = Math.min(fontPx * 0.62, contentW / Math.max(chars.length, 1));
@@ -968,6 +970,14 @@ function renderTextOnTriline(
       svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(chars[c])}</text>`;
     } else {
       svg += `<text x="${cx}" y="${baselineY}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontPx}" font-weight="500" fill="${color}">${escapeXml(chars[c])}</text>`;
+    }
+    // Start/end dots per letter
+    if (showStartEnd && isDottedTrace) {
+      const dotR = Math.max(2.5, fontPx * 0.06);
+      // Green start dot at top-left of character
+      svg += `<circle cx="${cx - charW * 0.3}" cy="${baselineY - fontPx * 0.55}" r="${dotR}" fill="#22C55E" />`;
+      // Red end dot at bottom-right of character
+      svg += `<circle cx="${cx + charW * 0.3}" cy="${baselineY}" r="${dotR}" fill="#EF4444" />`;
     }
   }
   return svg;
@@ -998,19 +1008,19 @@ function renderSentenceTrilineMode(
   for (let g = 0; g < maxGroups; g++) {
     const groupY = startY + g * groupH;
 
-    // Row 1: Reference text in solid black above the tri-line
+    // Row 1: Reference text as dotted trace (stroke-dasharray outline only)
     const charW = Math.min(refFontPx * 0.62, contentW / Math.max(allChars.length, 1));
     for (let c = 0; c < allChars.length; c++) {
       const cx = MARGIN + 4 + c * charW + charW / 2;
       if (cx > W - MARGIN) break;
-      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="600" fill="#1E293B">${escapeXml(allChars[c])}</text>`;
+      svg += `<text x="${cx}" y="${groupY + refTextH * 0.85}" text-anchor="middle" font-family="${fontFamily}" font-size="${refFontPx}" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(allChars[c])}</text>`;
     }
 
     // Row 2: Dotted trace on colored tri-lines
     // baseline = botY of the tri-line set; topY = baselineY - zoneH
     const traceBaselineY = groupY + refTextH + zoneH;
     svg += renderColoredTrilineSet(MARGIN, traceBaselineY, fontPx, contentW, config);
-    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, fontFamily, '#94A3B8', true);
+    svg += renderTextOnTriline(allChars, MARGIN, traceBaselineY, traceFontPx, contentW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
 
     // Row 3: Blank colored tri-lines for independent writing
     const blankBaselineY = traceBaselineY + grassH + setGap + zoneH;
@@ -1067,8 +1077,6 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
   const fontFamilyMap: Record<string, string> = {
     print: "Arial, Helvetica, sans-serif",
     cursive: "'Segoe Script', 'Comic Sans MS', cursive",
-    manuscript: "'Courier New', Courier, monospace",
-    dotted: "Arial, sans-serif",
   };
   const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
 
@@ -1081,12 +1089,17 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
   // Sizing
   const tallH = Math.max(25 * mmToPx, lineH);
   const medH = Math.max(18 * mmToPx, lineH * 0.72);
-  const descH = tallH; // same height but with extra below baseline
-  const descExtra = 7 * mmToPx; // extra space below baseline for descenders
-  const labelH = 16; // label text height
-  const trilineSetH = lineH; // tri-line trace height
+  const descH = tallH;
+  const descExtra = 7 * mmToPx;
+  const labelH = 16;
+  const trilineSetH = lineH;
   const gapBetweenParts = 6 * mmToPx;
-  const wordBlockH = labelH + trilineSetH + gapBetweenParts + tallH + descExtra + gapBetweenParts;
+
+  const displayMode = config.wordBoxDisplayMode || 'boxOnly';
+  const showTriline = displayMode === 'trilineOnly' || displayMode === 'both';
+  const showBoxes = displayMode === 'boxOnly' || displayMode === 'both';
+
+  const wordBlockH = labelH + (showTriline ? trilineSetH + gapBetweenParts : 0) + (showBoxes ? tallH + descExtra + gapBetweenParts : 0) + gapBetweenParts;
   const maxPerCol = Math.min(4, Math.floor(availableH / wordBlockH));
 
   let svg = '';
@@ -1101,48 +1114,53 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     const chars = Array.from(word.trim());
     if (chars.length === 0) return;
 
-    // 1. Word label in black
-    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${fontFamily}" font-size="13" font-weight="700" fill="#1E293B">${escapeXml(word.trim())}</text>`;
+    // 1. Word label as dotted trace
+    svg += `<text x="${colX}" y="${blockY + 12}" font-family="${fontFamily}" font-size="13" font-weight="400" fill="none" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2.5 2">${escapeXml(word.trim())}</text>`;
 
-    // 2. Tri-line trace with colored lines — baseline-anchored
-    const fontPxTrace = lineH;
-    const zoneH = fontPxTrace * 0.7;
-    const grassH = zoneH * 0.15;
-    const traceFontPx = zoneH / 0.72; // auto-size so ascenders fill zone
-    const traceBaselineY = blockY + labelH + zoneH;
-    svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
-    svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true);
+    let nextY = blockY + labelH;
 
-    // 3. Adaptive word boxes
-    const boxesY = traceBaselineY + grassH + gapBetweenParts;
-    const boxW = Math.min(colW / chars.length, tallH * 0.8); // uniform width
-    const baseline = boxesY + tallH; // shared baseline
+    // 2. Tri-line trace (if enabled)
+    if (showTriline) {
+      const fontPxTrace = lineH;
+      const zoneH = fontPxTrace * 0.7;
+      const grassH = zoneH * 0.15;
+      const traceFontPx = zoneH / 0.72;
+      const traceBaselineY = nextY + zoneH;
+      svg += renderColoredTrilineSet(colX, traceBaselineY, fontPxTrace, colW, config);
+      svg += renderTextOnTriline(chars, colX, traceBaselineY, traceFontPx, colW, fontFamily, '#94A3B8', true, config.handwritingShowStartEnd);
+      nextY = traceBaselineY + grassH + gapBetweenParts;
+    }
 
-    chars.forEach((ch, cIdx) => {
-      const bx = colX + cIdx * boxW;
-      const type = getLetterType(ch);
-      let boxTop: number;
-      let boxHeight: number;
+    // 3. Adaptive word boxes (if enabled)
+    if (showBoxes) {
+      const boxesY = nextY;
+      const boxW = Math.min(colW / chars.length, tallH * 0.8);
+      const baseline = boxesY + tallH;
 
-      if (type === 'tall') {
-        boxTop = boxesY;
-        boxHeight = tallH;
-      } else if (type === 'descender') {
-        boxTop = baseline - medH;
-        boxHeight = medH + descExtra;
-      } else {
-        boxTop = baseline - medH;
-        boxHeight = medH;
-      }
+      chars.forEach((ch, cIdx) => {
+        const bx = colX + cIdx * boxW;
+        const type = getLetterType(ch);
+        let boxTop: number;
+        let boxHeight: number;
 
-      // Thick black border box
-      svg += `<rect x="${bx}" y="${boxTop}" width="${boxW}" height="${boxHeight}" fill="none" stroke="#1E293B" stroke-width="1.8" rx="2" />`;
+        if (type === 'tall') {
+          boxTop = boxesY;
+          boxHeight = tallH;
+        } else if (type === 'descender') {
+          boxTop = baseline - medH;
+          boxHeight = medH + descExtra;
+        } else {
+          boxTop = baseline - medH;
+          boxHeight = medH;
+        }
 
-      // Baseline indicator (thin line across all boxes)
-      if (cIdx === 0) {
-        svg += `<line x1="${colX}" y1="${baseline}" x2="${colX + chars.length * boxW}" y2="${baseline}" stroke="#DC2626" stroke-width="0.6" stroke-dasharray="3 2" />`;
-      }
-    });
+        svg += `<rect x="${bx}" y="${boxTop}" width="${boxW}" height="${boxHeight}" fill="none" stroke="#1E293B" stroke-width="1.8" rx="2" />`;
+
+        if (cIdx === 0) {
+          svg += `<line x1="${colX}" y1="${baseline}" x2="${colX + chars.length * boxW}" y2="${baseline}" stroke="#DC2626" stroke-width="0.6" stroke-dasharray="3 2" />`;
+        }
+      });
+    }
   });
 
   return svg;
@@ -1168,12 +1186,10 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
   const fontFamilyMap: Record<string, string> = {
     print: "Arial, Helvetica, sans-serif",
     cursive: "'Segoe Script', 'Comic Sans MS', cursive",
-    manuscript: "'Courier New', Courier, monospace",
-    dotted: "Arial, sans-serif",
   };
   const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
   const ghostColor = '#C8CDD3';
-  const isDotted = font === 'dotted';
+  const isDotted = false;
   const allChars = Array.from(text);
 
   let svg = '';
