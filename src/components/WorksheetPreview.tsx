@@ -90,6 +90,16 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderColorByNumberMode(config, data);
   } else if (data.mode === 'gridDesigns') {
     bodySVG = renderGridDesignsMode(config, data);
+  } else if (data.mode === 'dotArt') {
+    bodySVG = renderDotArtMode(config, data);
+  } else if (data.mode === 'shapeTracing') {
+    bodySVG = renderShapeTracingMode(config, data);
+  } else if (data.mode === 'spotDifference') {
+    bodySVG = renderSpotDifferenceMode(config, data);
+  } else if (data.mode === 'visualScanning') {
+    bodySVG = renderVisualScanningMode(config, data);
+  } else if (data.mode === 'pixelArt') {
+    bodySVG = renderPixelArtMode(config, data);
   }
 
   const svgContent = `
