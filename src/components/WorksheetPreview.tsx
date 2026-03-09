@@ -1168,12 +1168,10 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
   const fontFamilyMap: Record<string, string> = {
     print: "Arial, Helvetica, sans-serif",
     cursive: "'Segoe Script', 'Comic Sans MS', cursive",
-    manuscript: "'Courier New', Courier, monospace",
-    dotted: "Arial, sans-serif",
   };
   const fontFamily = fontFamilyMap[font] || fontFamilyMap.print;
   const ghostColor = '#C8CDD3';
-  const isDotted = font === 'dotted';
+  const isDotted = false;
   const allChars = Array.from(text);
 
   let svg = '';
