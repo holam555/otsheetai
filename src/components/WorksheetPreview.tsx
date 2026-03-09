@@ -177,23 +177,44 @@ export default function WorksheetPreview({ config, data }: Props) {
         }}
       >
         {overlays.map((o, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: o.x,
-              top: o.y,
-              width: o.width,
-              fontFamily: "'Edu AU VIC WA NT Dots', cursive",
-              fontSize: o.fontPx,
-              color: '#aaaaaa',
-              opacity: o.opacity,
-              lineHeight: 1,
-              letterSpacing: '0.05em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {o.text}
+          <div key={i} style={{ position: 'absolute', left: o.x, top: o.y, width: o.width }}>
+            {/* Ghost layer for trace text */}
+            {o.isTrace && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  fontFamily: "'Edu AU VIC WA NT Dots', cursive",
+                  fontSize: o.fontPx,
+                  color: '#cccccc',
+                  opacity: 0.15,
+                  lineHeight: 1,
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  WebkitTextStroke: '1px #cccccc',
+                }}
+              >
+                {o.text}
+              </div>
+            )}
+            <div
+              style={{
+                position: 'relative',
+                fontFamily: o.isTrace ? "'Edu AU VIC WA NT Dots', cursive" : "'Patrick Hand', cursive",
+                fontSize: o.fontPx,
+                color: o.color,
+                opacity: o.opacity,
+                lineHeight: 1,
+                letterSpacing: '0.05em',
+                whiteSpace: 'nowrap',
+                ...(o.isTrace ? {
+                  WebkitTextStroke: `2.5px ${o.color}`,
+                  paintOrder: 'stroke fill',
+                } : {}),
+              }}
+            >
+              {o.text}
+            </div>
           </div>
         ))}
       </div>
