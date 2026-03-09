@@ -36,6 +36,16 @@ const defaultConfig: WorksheetConfig = {
   mazeShape: 'square',
   mazeShowSolution: false,
   connectDotsShape: 'star',
+  tracingStrokeType: 'mixed',
+  tracingRows: 4,
+  tracingThickness: 'medium',
+  scissorLineType: 'mixed',
+  scissorLineCount: 6,
+  colorByNumberTheme: 'shapes',
+  colorByNumberColors: 4,
+  colorByNumberBW: true,
+  gridDesignSize: 3,
+  gridDesignPattern: 'shapes',
 };
 
 export default function Index() {
