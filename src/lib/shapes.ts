@@ -98,6 +98,25 @@ export interface WorksheetConfig {
   colorByNumberBW: boolean;
   gridDesignSize: GridDesignSize;
   gridDesignPattern: GridDesignPattern;
+  dotArtTheme: DotArtTheme;
+  dotArtDotSize: DotArtDotSize;
+  dotArtSpacing: DotArtSpacing;
+  dotArtColorMode: DotArtColorMode;
+  shapeTracingShape: ShapeTracingShape;
+  shapeTracingSize: ShapeTracingSize;
+  shapeTracingRows: number;
+  shapeTracingShowStart: boolean;
+  spotDiffTheme: SpotDiffTheme;
+  spotDiffCount: SpotDiffCount;
+  spotDiffShowAnswers: boolean;
+  visualScanTarget: string;
+  visualScanDensity: VisualScanDensity;
+  visualScanFontStyle: VisualScanFontStyle;
+  visualScanCharSize: VisualScanCharSize;
+  visualScanTargetCount: 'few' | 'many';
+  pixelArtTheme: PixelArtTheme;
+  pixelArtGridSize: PixelArtGridSize;
+  pixelArtBW: boolean;
 }
 
 export interface CellData {
