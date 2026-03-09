@@ -129,16 +129,63 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-5">
-        {/* Mode */}
-        <div className="space-y-2">
-          <Label className="font-display font-semibold text-sm">Mode</Label>
-          <Select value={config.mode} onValueChange={(v) => update({ mode: v as WorksheetMode })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {MODES.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        {/* Top-level Mode Toggle */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={isHandwritingMode(config.mode) ? 'default' : 'outline'}
+            className="h-12 font-display font-bold text-sm gap-1.5"
+            onClick={() => { if (!isHandwritingMode(config.mode)) update({ mode: 'handwriting' }); }}
+          >
+            ✏️ Handwriting
+          </Button>
+          <Button
+            variant={!isHandwritingMode(config.mode) ? 'default' : 'outline'}
+            className="h-12 font-display font-bold text-sm gap-1.5"
+            onClick={() => { if (isHandwritingMode(config.mode)) update({ mode: 'find' }); }}
+          >
+            👁️ Visual Perception
+          </Button>
         </div>
+
+        {/* Handwriting sub-mode selector */}
+        {isHandwritingMode(config.mode) && (
+          <div className="grid grid-cols-2 gap-2">
+            {HANDWRITING_MODES.map(m => (
+              <Button
+                key={m.value}
+                variant={config.mode === m.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => update({ mode: m.value })}
+                className="font-display text-xs gap-1"
+              >
+                {m.icon} {m.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Visual Perception sub-mode grid */}
+        {!isHandwritingMode(config.mode) && (
+          <div className="space-y-2">
+            <Label className="font-display font-semibold text-sm">Worksheet Type</Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {VP_MODES.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => update({ mode: m.value })}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                    config.mode === m.value
+                      ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                      : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                  }`}
+                >
+                  <span className="text-base leading-none">{m.icon}</span>
+                  <span className="font-display">{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Odd One Out Type */}
         {config.mode === 'oddOneOut' && (
