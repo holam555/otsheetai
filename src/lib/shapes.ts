@@ -138,6 +138,28 @@ export interface ClosurePuzzle {
   correctIndex: number;
 }
 
+export interface MazeCell {
+  top: boolean;
+  right: boolean;
+  bottom: boolean;
+  left: boolean;
+  visited: boolean;
+}
+
+export interface MazeData {
+  grid: MazeCell[][];
+  rows: number;
+  cols: number;
+  shape: MazeShape;
+  solution: [number, number][];
+}
+
+export interface ConnectDotsData {
+  dots: { x: number; y: number; index: number }[];
+  shapeName: ConnectDotsShape;
+  completedPath: string;
+}
+
 export interface WorksheetData {
   mode: WorksheetMode;
   instructions: string;
@@ -156,6 +178,8 @@ export interface WorksheetData {
   closurePuzzles?: ClosurePuzzle[];
   traceNameData?: TraceNameData;
   handwritingData?: HandwritingData;
+  mazeData?: MazeData;
+  connectDotsData?: ConnectDotsData;
 }
 
 export interface HandwritingData {
