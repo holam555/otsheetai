@@ -19,7 +19,6 @@ interface Props {
 
 const HANDWRITING_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'handwriting', label: 'Practice', icon: '📝' },
-  { value: 'traceName', label: 'Trace Name', icon: '✍️' },
 ];
 
 const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
