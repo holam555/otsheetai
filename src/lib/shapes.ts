@@ -48,14 +48,22 @@ export type HandwritingLineMode = '3-line' | '4-line';
 export type WordBoxDisplayMode = 'boxOnly' | 'trilineOnly' | 'both';
 export type HandwritingLayout = 'triline' | 'fourline' | 'wordbox' | 'gridbox' | 'triline-wordbox' | 'fourline-wordbox';
 export type InstructionFontSize = 'small' | 'medium' | 'large';
-export type EmojiTheme = 'animals' | 'food' | 'transport' | 'nature' | 'faces';
+export type EmojiTheme = 'animals' | 'food' | 'transport' | 'nature' | 'faces' | 'dinosaurs' | 'space' | 'ocean' | 'cars' | 'halloween' | 'christmas';
 
 export const EMOJI_THEMES: Record<EmojiTheme, { icon: string; label: string; emojis: string[] }> = {
-  animals: { icon: '🐶', label: 'Animals', emojis: ['🐶', '🐱', '🐸', '🐰', '🦊', '🐻', '🐼', '🦁', '🐨', '🐯'] },
-  food: { icon: '🍎', label: 'Food', emojis: ['🍎', '🍌', '🍓', '🍕', '🍦', '🥕', '🍩', '🍇', '🌽', '🧁'] },
-  transport: { icon: '🚗', label: 'Transport', emojis: ['🚗', '🚌', '🚂', '✈️', '🚲', '🚀', '🛸', '🚁', '⛵', '🚒'] },
-  nature: { icon: '⭐', label: 'Nature', emojis: ['🌸', '🌻', '🌈', '⭐', '🌙', '☀️', '🍀', '🌊', '🌵', '🦋'] },
-  faces: { icon: '😀', label: 'Faces', emojis: ['😀', '😢', '😡', '😴', '🤔', '😎', '🥳', '😱', '🤗', '😅'] },
+  // Curated packs (print-optimised, 6 emoji each)
+  animals:   { icon: '🐶', label: 'Animals',   emojis: ['🐶', '🐱', '🐸', '🐼', '🐨', '🦊'] },
+  food:      { icon: '🍕', label: 'Food',       emojis: ['🍕', '🍔', '🍦', '🍓', '🍩', '🌮'] },
+  dinosaurs: { icon: '🦕', label: 'Dinosaurs',  emojis: ['🦕', '🦖', '🥚', '🦴', '🌋', '🪨'] },
+  space:     { icon: '🚀', label: 'Space',      emojis: ['🚀', '⭐', '🪐', '🌙', '👨‍🚀', '☄️'] },
+  ocean:     { icon: '🐠', label: 'Ocean',      emojis: ['🐠', '🐙', '🦀', '🐚', '🐋', '🦈'] },
+  cars:      { icon: '🚗', label: 'Cars',       emojis: ['🚗', '🚕', '🚙', '🏎️', '🚓', '🚑'] },
+  halloween: { icon: '🎃', label: 'Halloween',  emojis: ['🎃', '👻', '🕷️', '🦇', '🧟', '🕯️'] },
+  christmas: { icon: '🎄', label: 'Christmas',  emojis: ['🎄', '🎅', '⭐', '🎁', '🦌', '❄️'] },
+  // Generic themes (accessible via Custom picker)
+  transport: { icon: '🚌', label: 'Transport',  emojis: ['🚗', '🚌', '🚂', '✈️', '🚲', '🚀', '🛸', '🚁', '⛵', '🚒'] },
+  nature:    { icon: '🌸', label: 'Nature',     emojis: ['🌸', '🌻', '🌈', '⭐', '🌙', '☀️', '🍀', '🌊', '🌵', '🦋'] },
+  faces:     { icon: '😀', label: 'Faces',      emojis: ['😀', '😢', '😡', '😴', '🤔', '😎', '🥳', '😱', '🤗', '😅'] },
 };
 
 // Modes that support emoji
@@ -343,7 +351,7 @@ function generateFindMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'find',
-    instructions: `Find and circle all the ${targetShape}s!`,
+    instructions: `Find every ${targetShape} and put a tick on each one!`,
     skillLabel: 'Visual Discrimination',
     targetShape,
     grid,
@@ -413,7 +421,7 @@ function generatePatternMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'pattern',
-    instructions: 'Draw a line from each pattern to its match!',
+    instructions: 'Circle the letter (A, B or C) that matches each pattern!',
     skillLabel: 'Pattern Recognition',
     patternPuzzles: puzzles,
   };
@@ -459,7 +467,7 @@ function generateCountMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'count',
-    instructions: 'Count how many of each shape you can find!',
+    instructions: 'Count how many of each shape you can find. Write the number in the box!',
     skillLabel: 'Visual Scanning · Figure-Ground',
     countPuzzle: {
       grid,
@@ -493,7 +501,7 @@ function generateCopyMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'copy',
-    instructions: 'Copy each pattern into the empty grid!',
+    instructions: 'Look at each pattern and copy it exactly into the empty grid on the right!',
     skillLabel: 'Visual Motor Integration · Spatial Relations',
     copyPuzzles: puzzles,
   };
@@ -543,7 +551,7 @@ function generateSequenceMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'sequence',
-    instructions: 'What comes next? Circle the correct shape!',
+    instructions: 'What comes next? Circle the letter (A, B or C) of the correct answer!',
     skillLabel: 'Visual Sequential Memory · Pattern Recognition',
     sequencePuzzles: puzzles,
   };
@@ -790,7 +798,7 @@ function generateFigureGroundMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'figureGround',
-    instructions: 'Find and count each shape in the overlapping picture!',
+    instructions: 'Find each shape in the picture. Count them and write the number in each box!',
     skillLabel: 'Figure-Ground Perception',
     figureGroundPuzzle: {
       shapes: placed,
@@ -825,7 +833,7 @@ function generateClosureMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'closure',
-    instructions: 'What shape is it? Circle the correct answer!',
+    instructions: 'What shape is it? Circle the letter A, B or C!',
     skillLabel: 'Visual Closure',
     closurePuzzles: puzzles,
   };
@@ -853,7 +861,7 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
   const text = config.handwritingText || config.childName || 'Hello';
   return {
     mode: 'handwriting',
-    instructions: 'Practise your handwriting! Trace the grey letters, then write on your own.',
+    instructions: 'Practise your handwriting! Trace the dotted letters, then write by yourself.',
     skillLabel: 'Handwriting · Fine Motor',
     handwritingData: {
       text,
@@ -1487,7 +1495,7 @@ function generateVisualScanningMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'visualScanning',
-    instructions: `Circle every '${target}' you see!`,
+    instructions: `Circle every '${target}' you can find, then count how many there are!`,
     skillLabel: 'Visual Scanning · Visual Discrimination · Reversal Recognition',
     visualScanData: { grid, target, targetPositions, rows, cols },
   };

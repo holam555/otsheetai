@@ -100,6 +100,21 @@ function getAgeKey(age: number | null): keyof typeof AGE_DEFAULTS | null {
   if (age >= 3) return String(age) as keyof typeof AGE_DEFAULTS;
   return null;
 }
+// ─── Emoji Theme Packs ───────────────────────────────────────────────────────
+const THEME_PACKS: Array<{ key: EmojiTheme; name: string; cover: string[]; description: string }> = [
+  { key: 'dinosaurs', name: 'Dinosaurs',      cover: ['🦕','🦖','🥚','🦴'], description: 'Dinos & fossils' },
+  { key: 'space',     name: 'Space',          cover: ['🚀','⭐','🪐','🌙'], description: 'Rockets & planets' },
+  { key: 'ocean',     name: 'Ocean',          cover: ['🐠','🐙','🦀','🐚'], description: 'Sea creatures' },
+  { key: 'cars',      name: 'Cars & Transport',cover: ['🚗','🚕','🚙','🏎️'], description: 'Vehicles' },
+  { key: 'animals',   name: 'Animals',        cover: ['🐶','🐱','🐸','🐼'], description: 'Cute animals' },
+  { key: 'food',      name: 'Food',           cover: ['🍕','🍔','🍦','🍓'], description: 'Yummy food' },
+  { key: 'halloween', name: 'Halloween',      cover: ['🎃','👻','🕷️','🦇'], description: 'Spooky fun' },
+  { key: 'christmas', name: 'Christmas',      cover: ['🎄','🎅','⭐','🎁'], description: 'Festive season' },
+];
+const PACK_THEME_KEYS = new Set<EmojiTheme>(THEME_PACKS.map(p => p.key));
+const CUSTOM_ONLY_THEMES: EmojiTheme[] = ['transport', 'nature', 'faces'];
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Feature 2: OT skill explanations ────────────────────────────────────────
 const MODE_EXPLANATIONS: Partial<Record<WorksheetMode, { plain: string; otSkill: string }>> = {
   find:          { plain: "Trains the brain to spot a specific shape among distractions — the same skill children need to find letters on a busy page.", otSkill: "Visual discrimination" },
@@ -251,6 +266,9 @@ function BorderPreview({ style, selected, onClick }: { style: BorderStyle; selec
 
 export default function WorksheetControls({ config, onChange, onGenerate, onPrint, onDownload, onReset }: Props) {
   const [celebrating, setCelebrating] = useState(false);
+  const [showCustomPicker, setShowCustomPicker] = useState(
+    () => !PACK_THEME_KEYS.has(config.emojiTheme)
+  );
 
   const handlePrint = () => {
     setCelebrating(true);
@@ -1014,26 +1032,69 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                   </Button>
                 </div>
                 {config.useEmoji ? (
-                  <div className="space-y-1.5">
-                    <Label className="font-display font-semibold text-sm">Theme</Label>
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {(Object.entries(EMOJI_THEMES) as [EmojiTheme, typeof EMOJI_THEMES[EmojiTheme]][]).map(([key, theme]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => update({ emojiTheme: key })}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left ${
-                            config.emojiTheme === key
-                              ? 'border-primary bg-primary/10'
-                              : 'border-border bg-background hover:border-muted-foreground/40'
-                          }`}
-                        >
-                          <span className="text-lg">{theme.icon}</span>
-                          <span className="font-display font-semibold text-sm">{theme.label}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{theme.emojis.slice(0, 5).join(' ')}</span>
-                        </button>
-                      ))}
+                  <div className="space-y-2">
+                    <Label className="font-display font-semibold text-sm">Theme Pack</Label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {THEME_PACKS.map(pack => {
+                        const isSelected = !showCustomPicker && config.emojiTheme === pack.key;
+                        return (
+                          <button
+                            key={pack.key}
+                            type="button"
+                            onClick={() => { setShowCustomPicker(false); update({ emojiTheme: pack.key }); }}
+                            className={`flex flex-col gap-1 p-2.5 rounded-lg border-2 transition-all text-left ${
+                              isSelected
+                                ? 'border-[#1D9E75] bg-[#E1F5EE]'
+                                : 'border-border bg-background hover:border-muted-foreground/40'
+                            }`}
+                            style={{ minHeight: '44px' }}
+                          >
+                            <div className="flex gap-px leading-none">
+                              {pack.cover.map((e, i) => <span key={i} style={{ fontSize: '17px' }}>{e}</span>)}
+                            </div>
+                            <p className="font-display font-bold leading-tight" style={{ fontSize: '13px' }}>{pack.name}</p>
+                            <p className="text-muted-foreground leading-none" style={{ fontSize: '11px' }}>{pack.description}</p>
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomPicker(true)}
+                        className={`flex flex-col gap-1 p-2.5 rounded-lg border-2 transition-all text-left ${
+                          showCustomPicker
+                            ? 'border-[#1D9E75] bg-[#E1F5EE]'
+                            : 'border-border bg-background hover:border-muted-foreground/40'
+                        }`}
+                        style={{ minHeight: '44px' }}
+                      >
+                        <div className="leading-none" style={{ fontSize: '17px' }}>✏️</div>
+                        <p className="font-display font-bold leading-tight" style={{ fontSize: '13px' }}>Custom</p>
+                        <p className="text-muted-foreground leading-none" style={{ fontSize: '11px' }}>Pick your own</p>
+                      </button>
                     </div>
+                    {showCustomPicker && (
+                      <div className="grid grid-cols-1 gap-1.5 pt-1">
+                        {([...THEME_PACKS.map(p => p.key), ...CUSTOM_ONLY_THEMES] as EmojiTheme[]).map(key => {
+                          const theme = EMOJI_THEMES[key];
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => update({ emojiTheme: key })}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left ${
+                                config.emojiTheme === key
+                                  ? 'border-primary bg-primary/10'
+                                  : 'border-border bg-background hover:border-muted-foreground/40'
+                              }`}
+                            >
+                              <span className="text-base">{theme.icon}</span>
+                              <span className="font-display font-semibold text-sm">{theme.label}</span>
+                              <span className="text-xs text-muted-foreground ml-auto">{theme.emojis.slice(0, 4).join(' ')}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
