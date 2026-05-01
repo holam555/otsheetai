@@ -100,6 +100,25 @@ function getAgeKey(age: number | null): keyof typeof AGE_DEFAULTS | null {
   if (age >= 3) return String(age) as keyof typeof AGE_DEFAULTS;
   return null;
 }
+// ─── Feature 2: OT skill explanations ────────────────────────────────────────
+const MODE_EXPLANATIONS: Partial<Record<WorksheetMode, { plain: string; otSkill: string }>> = {
+  find:          { plain: "Trains the brain to spot a specific shape among distractions — the same skill children need to find letters on a busy page.", otSkill: "Visual discrimination" },
+  oddOneOut:     { plain: "Teaches the child to notice what makes things different, which builds the foundation for letter and number recognition.", otSkill: "Visual discrimination · Categorisation" },
+  maze:          { plain: "Builds the ability to plan a path and control the pencil to follow it — both critical for writing fluency.", otSkill: "Visual motor integration · Planning" },
+  tracingPaths:  { plain: "Practises the exact pencil strokes used in handwriting, from straight lines to curves and loops, in a low-pressure format.", otSkill: "Pre-writing strokes · Fine motor" },
+  pattern:       { plain: "Challenges the child to hold a pattern in mind and find its twin — the same skill used when copying from a board or book.", otSkill: "Visual memory · Pattern recognition" },
+  count:         { plain: "Trains the child to find a shape hidden inside a busy overlapping scene — directly linked to reading comprehension and visual attention.", otSkill: "Figure-ground perception · Counting" },
+  copy:          { plain: "Child looks at a pattern and recreates it from memory — builds the visual memory and hand control needed for copying written work.", otSkill: "Visual motor integration · Spatial relations" },
+  sequence:      { plain: "Builds pattern thinking — the foundation for maths, reading sequences, and understanding how the world is organised.", otSkill: "Visual sequential memory · Pattern recognition" },
+  mirror:        { plain: "Child draws the reflection of a pattern — directly trains the spatial awareness needed to stop reversing letters like b and d.", otSkill: "Visual spatial relations · Form constancy" },
+  figureGround:  { plain: "Child finds and counts overlapping outlined shapes — the hardest visual skill, and the one most directly linked to reading difficulty.", otSkill: "Figure-ground perception" },
+  closure:       { plain: "Child identifies an object even when part of it is hidden — trains the brain to complete incomplete information, essential for reading.", otSkill: "Visual closure · Form constancy" },
+  visualScanning:{ plain: "Child scans a dense grid to find a target letter — the most direct exercise for children who reverse b, d, p, and q.", otSkill: "Visual scanning · Reversal recognition" },
+  connectDots:   { plain: "Following numbered dots in sequence builds number recognition, pencil control, and the reward of revealing a picture at the end.", otSkill: "Visual sequential memory · Fine motor" },
+  scissorSkills: { plain: "Cutting along lines trains both hands to work together — one of the most important milestones in early fine motor development.", otSkill: "Bilateral coordination · Hand strength" },
+  pixelArt:      { plain: "Colouring each cell by its number key builds colour matching, scanning, and sustained focus — disguised as pure fun.", otSkill: "Fine motor · Visual scanning · Colour matching" },
+  handwriting:   { plain: "Structured line guides help children practise letter formation at the right size, with trace-then-copy building independence gradually.", otSkill: "Letter formation · Fine motor" },
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting';
@@ -297,10 +316,28 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant={isHandwritingMode(config.mode) ? 'default' : 'outline'}
-            className="h-12 font-display font-bold text-sm gap-1.5"
+            className="h-12 font-display font-bold text-sm gap-1.5 relative"
             onClick={() => { if (!isHandwritingMode(config.mode)) update({ mode: 'handwriting' }); }}
           >
             ✏️ Handwriting
+            {MODE_EXPLANATIONS.handwriting && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    onClick={(e) => e.stopPropagation()}
+                    className="opacity-50 hover:opacity-100 cursor-help"
+                    style={{ fontSize: '11px' }}
+                  >ⓘ</span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  style={{ background: '#fff', border: '1px solid #E7E5E4', borderRadius: '8px', padding: '10px 12px', maxWidth: '260px', fontSize: '12px', zIndex: 50 }}
+                >
+                  <p className="text-foreground leading-snug">{MODE_EXPLANATIONS.handwriting!.plain}</p>
+                  <p className="text-muted-foreground mt-1.5" style={{ fontSize: '11px' }}>{MODE_EXPLANATIONS.handwriting!.otSkill}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </Button>
           <Button
             variant={!isHandwritingMode(config.mode) ? 'default' : 'outline'}
@@ -336,7 +373,35 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                     >
                       <span className="text-base leading-none flex-shrink-0 mt-0.5">{m.icon}</span>
                       <div className="min-w-0 flex-1">
-                        <span className="font-display block leading-tight">{m.label}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-display leading-tight">{m.label}</span>
+                          {MODE_EXPLANATIONS[m.value] && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-shrink-0 text-muted-foreground/60 hover:text-muted-foreground cursor-help leading-none"
+                                  style={{ fontSize: '11px' }}
+                                >ⓘ</span>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="right"
+                                style={{
+                                  background: '#fff',
+                                  border: '1px solid #E7E5E4',
+                                  borderRadius: '8px',
+                                  padding: '10px 12px',
+                                  maxWidth: '260px',
+                                  fontSize: '12px',
+                                  zIndex: 50,
+                                }}
+                              >
+                                <p className="text-foreground leading-snug">{MODE_EXPLANATIONS[m.value]!.plain}</p>
+                                <p className="text-muted-foreground mt-1.5" style={{ fontSize: '11px' }}>{MODE_EXPLANATIONS[m.value]!.otSkill}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
                         {isRecommended && (
                           <span className="text-[9px] font-bold tracking-wide block mt-0.5" style={{ color: '#1D9E75' }}>
                             ✓ Recommended
