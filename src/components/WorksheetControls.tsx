@@ -119,6 +119,39 @@ const MODE_EXPLANATIONS: Partial<Record<WorksheetMode, { plain: string; otSkill:
   pixelArt:      { plain: "Colouring each cell by its number key builds colour matching, scanning, and sustained focus — disguised as pure fun.", otSkill: "Fine motor · Visual scanning · Colour matching" },
   handwriting:   { plain: "Structured line guides help children practise letter formation at the right size, with trace-then-copy building independence gradually.", otSkill: "Letter formation · Fine motor" },
 };
+// ─── Feature 3: Neurodivergent-friendly chips ─────────────────────────────────
+type NdColor = 'blue' | 'teal' | 'purple' | 'amber';
+
+const ND_CHIP_COLORS: Record<NdColor, { bg: string; text: string }> = {
+  blue:   { bg: '#E6F1FB', text: '#0C447C' },
+  teal:   { bg: '#E1F5EE', text: '#085041' },
+  purple: { bg: '#EEEDFE', text: '#3C3489' },
+  amber:  { bg: '#FAEEDA', text: '#854F0B' },
+};
+
+const MODE_ND_TAGS: Partial<Record<WorksheetMode, Array<{ label: string; color: NdColor; reason: string }>>> = {
+  pixelArt: [
+    { label: "ADHD-friendly",   color: "blue",   reason: "Short repeatable steps with visible progress. Each cell completed gives immediate reward." },
+    { label: "Autism-friendly", color: "teal",   reason: "Predictable structured task with clear rules. No ambiguity about what to do next." },
+  ],
+  connectDots: [
+    { label: "ADHD-friendly",   color: "blue",   reason: "Clear sequential goal with a reveal at the end. Sustains attention through curiosity." },
+  ],
+  tracingPaths: [
+    { label: "ADHD-friendly",   color: "blue",   reason: "Short tasks with clear start and end. Low frustration threshold." },
+    { label: "Sensory-friendly", color: "purple", reason: "Repetitive motor movement can be calming. Especially effective with thicker pencils or markers." },
+  ],
+  visualScanning: [
+    { label: "ADHD-friendly",   color: "blue",   reason: "Structured left-to-right scanning builds the sustained attention needed for reading." },
+    { label: "Dyslexia support", color: "amber",  reason: "Specifically targets b/d/p/q reversal — the most common visual difficulty in dyslexia." },
+  ],
+  scissorSkills: [
+    { label: "Sensory-friendly", color: "purple", reason: "The physical resistance of cutting provides proprioceptive feedback that helps regulate attention." },
+  ],
+  find: [
+    { label: "Autism-friendly", color: "teal",   reason: "Clear single rule task with no social or interpretive demands. Visually predictable layout." },
+  ],
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting';
@@ -361,6 +394,7 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                 <div className="grid grid-cols-2 gap-1.5">
                   {group.modes.map(m => {
                     const isRecommended = recommendedModeValues.includes(m.value);
+                    const ndChips = (MODE_ND_TAGS[m.value] ?? []).slice(0, 2);
                     return (
                     <button
                       key={m.value}
@@ -406,6 +440,32 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                           <span className="text-[9px] font-bold tracking-wide block mt-0.5" style={{ color: '#1D9E75' }}>
                             ✓ Recommended
                           </span>
+                        )}
+                        {ndChips.length > 0 && (
+                          <div className="flex flex-wrap gap-0.5 mt-1">
+                            {ndChips.map(chip => {
+                              const colors = ND_CHIP_COLORS[chip.color];
+                              return (
+                                <Tooltip key={chip.label}>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="inline-block rounded px-1 py-px font-semibold cursor-help leading-tight"
+                                      style={{ background: colors.bg, color: colors.text, fontSize: '9px' }}
+                                    >
+                                      {chip.label}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="right"
+                                    style={{ background: '#fff', border: '1px solid #E7E5E4', borderRadius: '8px', padding: '10px 12px', maxWidth: '220px', fontSize: '12px', zIndex: 50 }}
+                                  >
+                                    <p className="text-foreground leading-snug">{chip.reason}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
                     </button>
