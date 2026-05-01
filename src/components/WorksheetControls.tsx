@@ -115,6 +115,31 @@ const PACK_THEME_KEYS = new Set<EmojiTheme>(THEME_PACKS.map(p => p.key));
 const CUSTOM_ONLY_THEMES: EmojiTheme[] = ['transport', 'nature', 'faces'];
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Help me choose: guided flow ─────────────────────────────────────────────
+const GUIDE_AGES = ['3', '4', '5', '6', '7+'] as const;
+type GuideAge = typeof GUIDE_AGES[number];
+
+const GUIDE_CHALLENGES: Array<{ label: string; icon: string; mode: WorksheetMode }> = [
+  { label: 'Holding a pencil',          icon: '✏️', mode: 'tracingPaths'   },
+  { label: 'Copying from a board',      icon: '📋', mode: 'copy'           },
+  { label: 'Staying focused',           icon: '🎯', mode: 'pixelArt'       },
+  { label: 'Using scissors',            icon: '✂️', mode: 'scissorSkills'  },
+  { label: 'Confusing b / d / p / q',   icon: '🔤', mode: 'visualScanning' },
+  { label: 'Finding things on busy pages', icon: '🔍', mode: 'figureGround' },
+  { label: 'Spotting patterns',         icon: '🔲', mode: 'pattern'        },
+];
+
+const GUIDE_INTERESTS: Array<{ label: string; icon: string; emojiTheme: EmojiTheme | null }> = [
+  { label: 'Animals',     icon: '🐶', emojiTheme: 'animals'   },
+  { label: 'Dinosaurs',   icon: '🦕', emojiTheme: 'dinosaurs' },
+  { label: 'Space',       icon: '🚀', emojiTheme: 'space'     },
+  { label: 'Ocean',       icon: '🐠', emojiTheme: 'ocean'     },
+  { label: 'Cars',        icon: '🚗', emojiTheme: 'cars'      },
+  { label: 'Food',        icon: '🍕', emojiTheme: 'food'      },
+  { label: 'Just shapes', icon: '🔷', emojiTheme: null        },
+];
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Feature 2: OT skill explanations ────────────────────────────────────────
 const MODE_EXPLANATIONS: Partial<Record<WorksheetMode, { plain: string; otSkill: string }>> = {
   find:          { plain: "Trains the brain to spot a specific shape among distractions — the same skill children need to find letters on a busy page.", otSkill: "Visual discrimination" },
@@ -270,6 +295,64 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
     () => !PACK_THEME_KEYS.has(config.emojiTheme)
   );
 
+  // Help me choose — guided flow state
+  const [guideStep, setGuideStep] = useState<0 | 1 | 2 | 3>(0);
+  const [guideAge, setGuideAge] = useState<GuideAge | null>(null);
+  const [guideChallenge, setGuideChallenge] = useState<typeof GUIDE_CHALLENGES[number] | null>(null);
+  const [guideInterest, setGuideInterest] = useState<typeof GUIDE_INTERESTS[number] | null>(null);
+  const [guideApplied, setGuideApplied] = useState<{ mode: string; age: string | null; theme: string } | null>(null);
+
+  const openGuide = () => {
+    setGuideAge(null);
+    setGuideChallenge(null);
+    setGuideInterest(null);
+    // Skip age step if age already known
+    setGuideStep(config.childAge !== null ? 2 : 1);
+  };
+
+  const dismissGuide = () => {
+    setGuideStep(0);
+    setGuideAge(null);
+    setGuideChallenge(null);
+    setGuideInterest(null);
+  };
+
+  const applyGuide = () => {
+    if (!guideChallenge || !guideInterest) return;
+    const partial: Partial<WorksheetConfig> = { mode: guideChallenge.mode };
+
+    // Resolve age: guided selection OR existing child age
+    const resolvedAgeKey = guideAge ?? (config.childAge !== null ? getAgeKey(config.childAge) : null);
+    if (resolvedAgeKey) {
+      const d = AGE_DEFAULTS[resolvedAgeKey];
+      partial.difficulty    = d.difficulty;
+      partial.gridSize      = d.gridSize;
+      partial.exerciseCount = snapToExerciseCount(d.exercises);
+      partial.handwritingFontSizeMm = d.fontSize;
+      if (guideAge) partial.childAge = parseInt(resolvedAgeKey === '7+' ? '7' : resolvedAgeKey);
+    }
+
+    if (guideInterest.emojiTheme) {
+      const isEligible = (EMOJI_ELIGIBLE_MODES as readonly WorksheetMode[]).includes(guideChallenge.mode);
+      partial.useEmoji   = isEligible;
+      partial.emojiTheme = guideInterest.emojiTheme;
+      if (isEligible) setShowCustomPicker(false);
+    } else {
+      partial.useEmoji = false;
+    }
+
+    update(partial);
+    setGuideApplied({
+      mode:  guideChallenge.label,
+      age:   resolvedAgeKey,
+      theme: guideInterest.label,
+    });
+    setGuideStep(0);
+    setGuideAge(null);
+    setGuideChallenge(null);
+    setGuideInterest(null);
+  };
+
   const handlePrint = () => {
     setCelebrating(true);
     setTimeout(() => {
@@ -362,6 +445,153 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
             </div>
           </div>
         </div>
+
+        {/* Help me choose */}
+        {guideStep === 0 && (
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={openGuide}
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all py-2 text-sm font-display font-semibold text-primary"
+            >
+              ✨ Help me choose
+            </button>
+            {guideApplied && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#E1F5EE] border border-[#A8DDD0]">
+                <span style={{ fontSize: '13px' }}>✓</span>
+                <p className="text-[11px] font-semibold text-[#085041] leading-tight flex-1">
+                  {guideApplied.mode}
+                  {guideApplied.age ? ` · age ${guideApplied.age}` : ''}
+                  {guideApplied.theme !== 'Just shapes' ? ` · ${guideApplied.theme}` : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setGuideApplied(null)}
+                  className="text-[#1D9E75] hover:text-[#085041] text-[11px] font-bold leading-none"
+                >✕</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {guideStep > 0 && (
+          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-3.5 space-y-3">
+            {/* Step dots */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3].map(s => {
+                  const skip1 = config.childAge !== null;
+                  if (skip1 && s === 3) return null;
+                  const activeStep = skip1 ? s + 1 : s;
+                  return (
+                    <div
+                      key={s}
+                      className="w-2 h-2 rounded-full transition-all"
+                      style={{ background: guideStep >= activeStep ? '#1D9E75' : '#CBD5E1' }}
+                    />
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={dismissGuide}
+                className="text-muted-foreground hover:text-foreground text-xs font-medium leading-none"
+              >✕ dismiss</button>
+            </div>
+
+            {/* Step 1 — Age */}
+            {guideStep === 1 && (
+              <div className="space-y-2">
+                <p className="font-display font-bold text-sm text-foreground">How old is your child?</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {GUIDE_AGES.map(age => (
+                    <button
+                      key={age}
+                      type="button"
+                      onClick={() => { setGuideAge(age); setGuideStep(2); }}
+                      className={`px-3 py-1.5 rounded-full border-2 text-sm font-display font-semibold transition-all ${
+                        guideAge === age
+                          ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]'
+                          : 'border-border bg-background text-foreground hover:border-[#1D9E75]/50'
+                      }`}
+                    >
+                      {age === '7+' ? '7+ yrs' : `${age} yrs`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2 — Challenge */}
+            {guideStep === 2 && (
+              <div className="space-y-2">
+                <p className="font-display font-bold text-sm text-foreground">What does your child find hard?</p>
+                <div className="grid grid-cols-1 gap-1">
+                  {GUIDE_CHALLENGES.map(ch => (
+                    <button
+                      key={ch.mode}
+                      type="button"
+                      onClick={() => { setGuideChallenge(ch); setGuideStep(3); }}
+                      className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border-2 text-left text-xs font-medium transition-all ${
+                        guideChallenge?.mode === ch.mode
+                          ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]'
+                          : 'border-border bg-background text-foreground hover:border-[#1D9E75]/50'
+                      }`}
+                    >
+                      <span style={{ fontSize: '16px' }}>{ch.icon}</span>
+                      <span className="font-display font-semibold">{ch.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {config.childAge === null && (
+                  <button
+                    type="button"
+                    onClick={() => setGuideStep(1)}
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium"
+                  >← Back</button>
+                )}
+              </div>
+            )}
+
+            {/* Step 3 — Interest + Apply */}
+            {guideStep === 3 && (
+              <div className="space-y-2">
+                <p className="font-display font-bold text-sm text-foreground">What does your child love?</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {GUIDE_INTERESTS.map(int => (
+                    <button
+                      key={int.label}
+                      type="button"
+                      onClick={() => setGuideInterest(int)}
+                      className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border-2 text-left text-xs font-medium transition-all ${
+                        guideInterest?.label === int.label
+                          ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]'
+                          : 'border-border bg-background text-foreground hover:border-[#1D9E75]/50'
+                      }`}
+                    >
+                      <span style={{ fontSize: '16px' }}>{int.icon}</span>
+                      <span className="font-display font-semibold">{int.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setGuideStep(2)}
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium"
+                  >← Back</button>
+                  <button
+                    type="button"
+                    disabled={!guideInterest}
+                    onClick={applyGuide}
+                    className="flex-1 py-2 rounded-lg text-sm font-display font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: guideInterest ? '#1D9E75' : undefined }}
+                  >Apply settings ✓</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Top-level Mode Toggle */}
         <div className="grid grid-cols-2 gap-2">
