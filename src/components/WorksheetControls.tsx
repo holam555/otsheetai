@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName, ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingPaperStyle, HandwritingFontSize, HandwritingFont, HandwritingSubMode, HandwritingLineColor, HandwritingLineMode, WordBoxDisplayMode, HandwritingLayout, InstructionFontSize, MazeSize, MazeShape, ConnectDotsShape, TracingStrokeType, TracingThickness, ScissorLineType, VisualScanDensity, VisualScanCharSize, PixelArtTheme, EMOJI_THEMES, EMOJI_ELIGIBLE_MODES, EmojiTheme } from '@/lib/shapes';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Printer, RefreshCw, Info, Bold } from 'lucide-react';
+import { Printer, RefreshCw, Info, Bold, Download, RotateCcw } from 'lucide-react';
 import { getShapeSVG } from '@/lib/shapes';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
   onChange: (config: WorksheetConfig) => void;
   onGenerate: () => void;
   onPrint: () => void;
+  onDownload: () => void;
+  onReset: () => void;
 }
 
 const HANDWRITING_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
@@ -37,6 +40,24 @@ const VP_MODES: { value: WorksheetMode; label: string; icon: string }[] = [
   { value: 'scissorSkills', label: 'Scissor Skills', icon: '✂️' },
   { value: 'visualScanning', label: 'Visual Scanning', icon: '👀' },
   { value: 'pixelArt', label: 'Pixel Art', icon: '🟩' },
+];
+
+const VP_MODE_GROUPS: { label: string; emoji: string; modes: typeof VP_MODES }[] = [
+  {
+    label: 'Popular',
+    emoji: '⭐',
+    modes: VP_MODES.filter(m => ['find', 'maze', 'tracingPaths', 'oddOneOut'].includes(m.value)),
+  },
+  {
+    label: 'Visual Skills',
+    emoji: '👁️',
+    modes: VP_MODES.filter(m => ['pattern', 'count', 'sequence', 'mirror', 'figureGround', 'closure', 'visualScanning', 'copy'].includes(m.value)),
+  },
+  {
+    label: 'Fine Motor',
+    emoji: '✋',
+    modes: VP_MODES.filter(m => ['scissorSkills', 'connectDots', 'pixelArt'].includes(m.value)),
+  },
 ];
 
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting';
@@ -134,7 +155,17 @@ function BorderPreview({ style, selected, onClick }: { style: BorderStyle; selec
   );
 }
 
-export default function WorksheetControls({ config, onChange, onGenerate, onPrint }: Props) {
+export default function WorksheetControls({ config, onChange, onGenerate, onPrint, onDownload, onReset }: Props) {
+  const [celebrating, setCelebrating] = useState(false);
+
+  const handlePrint = () => {
+    setCelebrating(true);
+    setTimeout(() => {
+      onPrint();
+      setTimeout(() => setCelebrating(false), 900);
+    }, 280);
+  };
+
   const update = (partial: Partial<WorksheetConfig>) => {
     const merged = { ...config, ...partial };
     // For Match Pattern: cap exerciseCount to the grid-size max
@@ -161,6 +192,39 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-5">
+
+        {/* About this child */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
+          <p className="font-display font-bold text-xs text-amber-800 uppercase tracking-wide">About this child</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-amber-700 font-medium">Name</Label>
+              <Input
+                value={config.childName}
+                onChange={(e) => update({ childName: e.target.value })}
+                placeholder="Optional"
+                className="h-8 text-sm bg-white border-amber-200 focus-visible:ring-amber-400"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-amber-700 font-medium">Age</Label>
+              <Select
+                value={config.childAge?.toString() ?? ''}
+                onValueChange={(v) => update({ childAge: v ? parseInt(v) : null })}
+              >
+                <SelectTrigger className="h-8 text-sm bg-white border-amber-200 focus:ring-amber-400">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 11 }, (_, i) => i + 2).map(age => (
+                    <SelectItem key={age} value={age.toString()}>{age} years</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
         {/* Top-level Mode Toggle */}
         <div className="grid grid-cols-2 gap-2">
           <Button
@@ -180,26 +244,33 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
         </div>
 
 
-        {/* Visual Perception sub-mode grid */}
+        {/* Visual Perception sub-mode grid — grouped by category */}
         {!isHandwritingMode(config.mode) && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="font-display font-semibold text-sm">Worksheet Type</Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {VP_MODES.map(m => (
-                <button
-                  key={m.value}
-                  onClick={() => update({ mode: m.value })}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
-                    config.mode === m.value
-                      ? 'border-primary bg-primary/10 text-foreground shadow-sm'
-                      : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
-                  }`}
-                >
-                  <span className="text-base leading-none">{m.icon}</span>
-                  <span className="font-display">{m.label}</span>
-                </button>
-              ))}
-            </div>
+            {VP_MODE_GROUPS.map(group => (
+              <div key={group.label} className="space-y-1.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-0.5">
+                  {group.emoji} {group.label}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {group.modes.map(m => (
+                    <button
+                      key={m.value}
+                      onClick={() => update({ mode: m.value })}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                        config.mode === m.value
+                          ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                          : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                      }`}
+                    >
+                      <span className="text-base leading-none">{m.icon}</span>
+                      <span className="font-display">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -663,6 +734,10 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
             {config.handwritingLayout !== 'wordbox' && config.handwritingLayout !== 'gridbox' && (
               <div className="space-y-3 border-t border-border pt-3">
                 <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Stroke guides</Label>
+                  <Switch checked={config.handwritingShowStartEnd} onCheckedChange={(v) => update({ handwritingShowStartEnd: v })} />
+                </div>
+                <div className="flex items-center justify-between">
                   <Label className="text-xs text-muted-foreground">Coloured lines</Label>
                   <Switch checked={config.handwritingShowColoredLines} onCheckedChange={(v) => update({ handwritingShowColoredLines: v })} />
                 </div>
@@ -933,15 +1008,42 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <Button onClick={onGenerate} className="font-display font-bold gap-2">
+        {/* Action buttons */}
+        <div className="space-y-2.5 pt-3 border-t border-border">
+          <Button
+            onClick={onGenerate}
+            className="w-full h-11 font-display font-bold gap-2 text-sm"
+          >
             <RefreshCw className="w-4 h-4" />
-            Generate
+            New Worksheet
           </Button>
-          <Button onClick={onPrint} variant="outline" className="font-display font-bold gap-2">
+          <button
+            onClick={handlePrint}
+            className={`w-full h-11 rounded-lg font-display font-bold text-sm gap-2 flex items-center justify-center text-white transition-all bg-amber-500 hover:bg-amber-600 active:scale-95 ${celebrating ? 'animate-celebrate' : ''}`}
+          >
             <Printer className="w-4 h-4" />
-            Print
-          </Button>
+            {celebrating ? '✨ Printing!' : 'Print Worksheet'}
+          </button>
+          <div className="flex items-center justify-between pt-0.5">
+            <Button
+              onClick={onDownload}
+              variant="ghost"
+              size="sm"
+              className="font-display text-xs text-muted-foreground hover:text-foreground gap-1.5 h-8"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Save SVG
+            </Button>
+            <Button
+              onClick={onReset}
+              variant="ghost"
+              size="sm"
+              className="font-display text-xs text-muted-foreground hover:text-destructive gap-1.5 h-8"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset
+            </Button>
+          </div>
         </div>
       </div>
     </TooltipProvider>

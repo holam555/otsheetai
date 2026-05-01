@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 34 28% 97%;
     --foreground: 220 25% 15%;
 
     --card: 0 0% 100%;
@@ -13,14 +13,14 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 15%;
 
-    --primary: 174 58% 40%;
+    --primary: 174 60% 37%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 90% 55%;
+    --secondary: 25 85% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 15% 93%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 34 18% 92%;
+    --muted-foreground: 220 10% 46%;
 
     --accent: 260 50% 60%;
     --accent-foreground: 0 0% 100%;
@@ -28,9 +28,9 @@
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 18% 88%;
-    --input: 210 18% 88%;
-    --ring: 174 58% 40%;
+    --border: 34 15% 87%;
+    --input: 34 15% 87%;
+    --ring: 174 60% 37%;
 
     --radius: 0.75rem;
 
@@ -90,14 +90,52 @@
     @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
+}
+
+/* Worksheet preview — warm desk surface */
+.worksheet-desk {
+  background: linear-gradient(145deg, hsl(28, 28%, 86%) 0%, hsl(24, 22%, 82%) 100%);
+  border-radius: 1.5rem;
+  padding: 2.5rem 2rem;
+}
+
+/* Entrance animation for worksheet paper */
+@keyframes worksheet-appear {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.975);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Realistic paper card */
+.worksheet-paper {
+  border-radius: 3px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 6px 16px rgba(0, 0, 0, 0.10),
+    0 24px 52px rgba(0, 0, 0, 0.15);
+  animation: worksheet-appear 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+}
+
+/* Stagger second page */
+.worksheet-paper:nth-child(2) {
+  animation-delay: 0.08s;
 }
 
 @media print {
