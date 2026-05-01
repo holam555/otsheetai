@@ -60,6 +60,48 @@ const VP_MODE_GROUPS: { label: string; emoji: string; modes: typeof VP_MODES }[]
   },
 ];
 
+// ─── Feature 1: Age-to-defaults ────────────────────────────────────────────
+const AGE_DEFAULTS = {
+  "3":  { difficulty: "easy"   as Difficulty, gridSize: 2 as GridSize, exercises: 3, fontSize: 35, recommendedTypes: ["tracing-paths", "pixel-art", "connect-the-dots"] },
+  "4":  { difficulty: "easy"   as Difficulty, gridSize: 2 as GridSize, exercises: 3, fontSize: 25, recommendedTypes: ["find-the-shape", "tracing-paths", "scissor-skills"] },
+  "5":  { difficulty: "easy"   as Difficulty, gridSize: 3 as GridSize, exercises: 5, fontSize: 20, recommendedTypes: ["find-the-shape", "odd-one-out", "what-comes-next"] },
+  "6":  { difficulty: "medium" as Difficulty, gridSize: 3 as GridSize, exercises: 5, fontSize: 15, recommendedTypes: ["match-pattern", "figure-ground", "visual-scanning"] },
+  "7+": { difficulty: "medium" as Difficulty, gridSize: 4 as GridSize, exercises: 8, fontSize: 12, recommendedTypes: ["visual-scanning", "mirror-image", "copy-the-pattern"] },
+} as const;
+
+const KEBAB_TO_MODE: Partial<Record<string, WorksheetMode>> = {
+  'find-the-shape':   'find',
+  'tracing-paths':    'tracingPaths',
+  'pixel-art':        'pixelArt',
+  'connect-the-dots': 'connectDots',
+  'odd-one-out':      'oddOneOut',
+  'match-pattern':    'pattern',
+  'find-and-count':   'count',
+  'copy-the-pattern': 'copy',
+  'what-comes-next':  'sequence',
+  'mirror-image':     'mirror',
+  'figure-ground':    'figureGround',
+  'visual-closure':   'closure',
+  'visual-scanning':  'visualScanning',
+  'scissor-skills':   'scissorSkills',
+  'maze':             'maze',
+  'handwriting':      'handwriting',
+};
+
+function snapToExerciseCount(n: number): number {
+  return EXERCISE_COUNTS.reduce((prev, curr) =>
+    Math.abs(curr - n) < Math.abs(prev - n) ? curr : prev
+  );
+}
+
+function getAgeKey(age: number | null): keyof typeof AGE_DEFAULTS | null {
+  if (age === null) return null;
+  if (age >= 7) return '7+';
+  if (age >= 3) return String(age) as keyof typeof AGE_DEFAULTS;
+  return null;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const isHandwritingMode = (mode: WorksheetMode) => mode === 'handwriting';
 
 function handwritingLayoutToConfig(layout: HandwritingLayout): Partial<WorksheetConfig> {
@@ -166,6 +208,15 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
     }, 280);
   };
 
+  // Feature 1: age-derived state
+  const ageKey = getAgeKey(config.childAge);
+  const ageDefaults = ageKey ? AGE_DEFAULTS[ageKey] : null;
+  const recommendedModeValues: WorksheetMode[] = ageDefaults
+    ? (ageDefaults.recommendedTypes as readonly string[])
+        .map(k => KEBAB_TO_MODE[k])
+        .filter((v): v is WorksheetMode => v !== undefined)
+    : [];
+
   const update = (partial: Partial<WorksheetConfig>) => {
     const merged = { ...config, ...partial };
     // For Match Pattern: cap exerciseCount to the grid-size max
@@ -210,7 +261,19 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
               <Label className="text-xs text-amber-700 font-medium">Age</Label>
               <Select
                 value={config.childAge?.toString() ?? ''}
-                onValueChange={(v) => update({ childAge: v ? parseInt(v) : null })}
+                onValueChange={(v) => {
+                  const age = v ? parseInt(v) : null;
+                  const key = getAgeKey(age);
+                  const defaults = key ? AGE_DEFAULTS[key] : null;
+                  const partial: Partial<WorksheetConfig> = { childAge: age };
+                  if (defaults) {
+                    partial.difficulty          = defaults.difficulty;
+                    partial.gridSize            = defaults.gridSize;
+                    partial.exerciseCount       = snapToExerciseCount(defaults.exercises);
+                    partial.handwritingFontSizeMm = defaults.fontSize;
+                  }
+                  update(partial);
+                }}
               >
                 <SelectTrigger className="h-8 text-sm bg-white border-amber-200 focus:ring-amber-400">
                   <SelectValue placeholder="Select" />
@@ -221,6 +284,11 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                   ))}
                 </SelectContent>
               </Select>
+              {config.childAge !== null && ageDefaults && (
+                <p className="text-[11px] font-semibold" style={{ color: '#1D9E75' }}>
+                  ✓ Adjusted for age {config.childAge}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -254,20 +322,30 @@ export default function WorksheetControls({ config, onChange, onGenerate, onPrin
                   {group.emoji} {group.label}
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {group.modes.map(m => (
+                  {group.modes.map(m => {
+                    const isRecommended = recommendedModeValues.includes(m.value);
+                    return (
                     <button
                       key={m.value}
                       onClick={() => update({ mode: m.value })}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
+                      className={`flex items-start gap-2 px-3 py-2.5 rounded-lg border-2 text-left transition-all text-xs font-medium ${
                         config.mode === m.value
                           ? 'border-primary bg-primary/10 text-foreground shadow-sm'
                           : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
-                      }`}
+                      }${isRecommended ? ' ring-2 ring-[#1D9E75] ring-offset-1' : ''}`}
                     >
-                      <span className="text-base leading-none">{m.icon}</span>
-                      <span className="font-display">{m.label}</span>
+                      <span className="text-base leading-none flex-shrink-0 mt-0.5">{m.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-display block leading-tight">{m.label}</span>
+                        {isRecommended && (
+                          <span className="text-[9px] font-bold tracking-wide block mt-0.5" style={{ color: '#1D9E75' }}>
+                            ✓ Recommended
+                          </span>
+                        )}
+                      </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
