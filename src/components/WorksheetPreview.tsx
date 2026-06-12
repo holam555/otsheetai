@@ -5,6 +5,12 @@ import { LETTER_PATHS, StrokePoint } from '@/lib/letterPaths';
 interface Props {
   config: WorksheetConfig;
   data: WorksheetData;
+  /**
+   * 'full' (default) = the live editor preview: styled card, #worksheet-preview
+   * id for print, and all pages. 'thumb' = a gallery thumbnail: no id, lighter
+   * chrome, page 1 only, non-interactive.
+   */
+  variant?: 'full' | 'thumb';
 }
 
 // No trace overlays needed anymore
@@ -40,7 +46,7 @@ function getCellBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', wi
   return `fill="none" stroke="${strokeColor}" stroke-width="${width}"${dash}${rx}`;
 }
 
-export default function WorksheetPreview({ config, data }: Props) {
+export default function WorksheetPreview({ config, data, variant = 'full' }: Props) {
   const getFill = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_FILL;
   const getStroke = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_STROKE;
   const getStrokeW = () => config.useColor ? 1.5 : 2.5;
@@ -98,7 +104,9 @@ export default function WorksheetPreview({ config, data }: Props) {
     bodySVG = renderFigureGroundMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
   } else if (data.mode === 'closure') {
     bodySVG = renderClosureMode(config, data, shapeScale, getFill, getStroke, getStrokeW);
-  } else if (data.mode === 'handwriting' || data.mode === 'traceName') {
+  } else if (data.mode === 'traceName') {
+    bodySVG = renderTraceNameMode(config, data);
+  } else if (data.mode === 'handwriting') {
     bodySVG = renderHandwritingMode(config, data);
   } else if (data.mode === 'maze') {
     bodySVG = renderMazeMode(config, data);
@@ -132,6 +140,18 @@ export default function WorksheetPreview({ config, data }: Props) {
       ${footerSVG}
     </svg>
   ` : null;
+
+  if (variant === 'thumb') {
+    return (
+      <div
+        className="bg-card overflow-hidden"
+        style={{ aspectRatio: '210/297', position: 'relative', pointerEvents: 'none' }}
+        aria-hidden="true"
+      >
+        <div dangerouslySetInnerHTML={{ __html: page1Svg }} style={{ width: '100%', height: '100%' }} />
+      </div>
+    );
+  }
 
   return (
     <div id="worksheet-preview" ref={containerRef} className="space-y-4">
@@ -1073,7 +1093,9 @@ function renderGridBoxRows(
 function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): string {
   if (!data.handwritingData) return '';
   const { words, fontSizeMm, font } = data.handwritingData;
-  if (words.length === 0) return '';
+  if (words.length === 0) {
+    return `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="16" fill="#94A3B8">Add words (one per line) to build the worksheet</text>`;
+  }
 
   const mmToPx = 2.833;
   const fontFamilyMap: Record<string, string> = {
@@ -1202,26 +1224,6 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
   if (paperStyle === 'gridbox') {
     const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config);
     svg += result.svg;
-  } else if (paperStyle === 'both') {
-    if (allChinese) {
-      const result = renderGridBoxRows(allChars, rows, startY, availableH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
-      svg += result.svg;
-    } else if (containsChinese) {
-      const engChars = allChars.filter(ch => !isChinese(ch));
-      const chnChars = allChars.filter(isChinese);
-      const halfH = availableH * 0.48;
-      // English tri-line (colored) at top
-      svg += renderSentenceTrilineMode(engChars.join(''), Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, contentW, fontFamily, config);
-      const gridStartY = startY + availableH * 0.52;
-      const gridResult = renderGridBoxRows(chnChars, Math.max(1, Math.ceil(rows / 2)), gridStartY, halfH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
-      svg += gridResult.svg;
-    } else {
-      const halfH = availableH * 0.48;
-      svg += renderSentenceTrilineMode(text, Math.max(1, Math.floor(rows / 2)), startY, halfH, lineH, contentW, fontFamily, config);
-      const gridStartY = startY + availableH * 0.52;
-      const gridResult = renderGridBoxRows(allChars, Math.max(1, Math.ceil(rows / 2)), gridStartY, halfH, boxSize, gapBetweenSets, contentW, fontFamily, isDotted, ghostColor, config, 'Grid Box Paper (方格紙)');
-      svg += gridResult.svg;
-    }
   } else {
     // Tri-line mode — now uses colored HWT-style lines with sentence groups
     if (allChinese) {
