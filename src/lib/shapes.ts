@@ -32,13 +32,12 @@ export type VisualScanDensity = 'small' | 'medium' | 'large';
 export type VisualScanFontStyle = 'standard' | 'dyslexia';
 export type VisualScanCharSize = 'large' | 'medium' | 'small';
 export type PixelArtTheme = 'heart' | 'smiley' | 'star' | 'catFace' | 'fish' | 'house' | 'sun' | 'flower' | 'rainbow' | 'rocket';
-export type PixelArtGridSize = 'simple' | 'medium' | 'complex';
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type BorderStyle = 'plain' | 'dotted' | 'rounded';
 export type HeaderFontSize = 'small' | 'medium' | 'large';
-export type HandwritingPaperStyle = 'triline' | 'gridbox' | 'both';
+export type HandwritingPaperStyle = 'triline' | 'gridbox';
 export type HandwritingFontSize = 'large' | 'medium' | 'small';
 export type HandwritingFont = 'print' | 'cursive';
 export type HandwritingSubMode = 'sentence' | 'wordBoxes';
@@ -121,7 +120,6 @@ export interface WorksheetConfig {
   visualScanCharSize: VisualScanCharSize;
   visualScanTargetCount: 'few' | 'many';
   pixelArtTheme: PixelArtTheme;
-  pixelArtGridSize: PixelArtGridSize;
   pixelArtBW: boolean;
   useEmoji: boolean;
   emojiTheme: EmojiTheme;
@@ -1202,99 +1200,6 @@ function generateTracingPathsMode(config: WorksheetConfig): WorksheetData {
   const areaW = 460;
   const rowH = isEasy ? 100 : isMedium ? 80 : 60;
 
-  const rows: TracingPathsData['rows'] = [];
-  for (let i = 0; i < rowCount; i++) {
-    const type = config.tracingStrokeType === 'mixed' ? strokeTypes[i % strokeTypes.length] : config.tracingStrokeType;
-    const y = i * rowH + rowH / 2;
-    const margin = 20;
-    let pathD = '';
-    let startX = margin, startY = y, endX = areaW - margin, endY = y;
-
-    switch (type) {
-      case 'vertical':
-        startX = areaW / 2; endX = areaW / 2;
-        startY = 10; endY = rowH - 10;
-        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
-        break;
-      case 'horizontal':
-        startY = rowH / 2; endY = rowH / 2;
-        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
-        break;
-      case 'diagonal':
-        startY = 10; endY = rowH - 10;
-        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
-        break;
-      case 'curved':
-        startY = rowH / 2; endY = rowH / 2;
-        pathD = `M ${startX} ${startY} Q ${areaW / 2} ${10} ${endX} ${endY}`;
-        break;
-      case 'waves': {
-        const amp = isEasy ? rowH * 0.3 : rowH * 0.35;
-        const segments = isEasy ? 3 : isMedium ? 4 : 5;
-        const segW = (areaW - 2 * margin) / segments;
-        startY = rowH / 2; endY = rowH / 2;
-        pathD = `M ${startX} ${startY}`;
-        for (let s = 0; s < segments; s++) {
-          const cx1 = startX + s * segW + segW * 0.25;
-          const cx2 = startX + s * segW + segW * 0.75;
-          const ex = startX + (s + 1) * segW;
-          const dir = s % 2 === 0 ? -1 : 1;
-          pathD += ` C ${cx1} ${startY + dir * amp} ${cx2} ${startY + dir * amp} ${ex} ${startY}`;
-        }
-        endX = startX + segments * segW;
-        break;
-      }
-      case 'zigzag': {
-        const points = isEasy ? 4 : isMedium ? 6 : 8;
-        const segW = (areaW - 2 * margin) / points;
-        const amp = isEasy ? rowH * 0.3 : rowH * 0.35;
-        startY = rowH / 2; endY = rowH / 2;
-        pathD = `M ${startX} ${startY}`;
-        for (let p = 1; p <= points; p++) {
-          const px = startX + p * segW;
-          const py = startY + (p % 2 === 1 ? -amp : amp);
-          pathD += ` L ${px} ${py}`;
-          if (p === points) { endX = px; endY = py; }
-        }
-        break;
-      }
-      case 'spiral': {
-        const cx = areaW / 2, cy = rowH / 2;
-        const maxR = Math.min(rowH * 0.4, areaW * 0.2);
-        const turns = isEasy ? 2 : 3;
-        const steps = turns * 20;
-        pathD = `M ${cx + maxR} ${cy}`;
-        startX = cx + maxR; startY = cy;
-        for (let s = 1; s <= steps; s++) {
-          const angle = (s / steps) * turns * Math.PI * 2;
-          const r = maxR * (1 - s / steps);
-          const px = cx + Math.cos(angle) * r;
-          const py = cy + Math.sin(angle) * r;
-          pathD += ` L ${px} ${py}`;
-          if (s === steps) { endX = px; endY = py; }
-        }
-        break;
-      }
-      case 'loops': {
-        const loopCount = isEasy ? 3 : isMedium ? 4 : 5;
-        const loopW = (areaW - 2 * margin) / loopCount;
-        const loopR = Math.min(loopW * 0.4, rowH * 0.35);
-        startY = rowH / 2; endY = rowH / 2;
-        pathD = `M ${startX} ${startY}`;
-        for (let l = 0; l < loopCount; l++) {
-          const lx = startX + l * loopW + loopW / 2;
-          pathD += ` Q ${lx - loopR} ${startY - loopR * 2} ${lx} ${startY}`;
-          pathD += ` Q ${lx + loopR} ${startY + loopR * 2} ${lx + loopW / 2} ${startY}`;
-        }
-        endX = startX + loopCount * loopW;
-        break;
-      }
-    }
-
-    rows.push({ pathD, startX, startY: startY + i * rowH, endX, endY: endY + i * rowH, strokeType: type });
-  }
-
-  // Recalculate with absolute positioning
   const absoluteRows: TracingPathsData['rows'] = [];
   for (let i = 0; i < rowCount; i++) {
     const type = config.tracingStrokeType === 'mixed' ? strokeTypes[i % strokeTypes.length] : config.tracingStrokeType;
