@@ -156,14 +156,14 @@ export default function WorksheetPreview({ config, data, variant = 'full' }: Pro
   return (
     <div id="worksheet-preview" ref={containerRef} className="space-y-4">
       <div
-        className="bg-card rounded-xl shadow-lg border border-border"
+        className="worksheet-paper"
         style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
       >
         <div dangerouslySetInnerHTML={{ __html: page1Svg }} style={{ width: '100%', height: '100%' }} />
       </div>
       {page2SvgContent && (
         <div
-          className="bg-card rounded-xl shadow-lg border border-border"
+          className="worksheet-paper"
           style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}
         >
           <div dangerouslySetInnerHTML={{ __html: page2SvgContent }} style={{ width: '100%', height: '100%' }} />
@@ -381,9 +381,9 @@ function renderCountMode(
   let svg = '';
 
   const refY = MARGIN + 85;
-  const refH = 62;
+  const refH = 78;
   const boxCount = targetShapes.length;
-  const totalRefW = Math.min(boxCount * 100, W - MARGIN * 2);
+  const totalRefW = Math.min(boxCount * 110, W - MARGIN * 2);
   const refX = (W - totalRefW) / 2;
   const boxW = totalRefW / boxCount;
 
@@ -397,7 +397,15 @@ function renderCountMode(
     } else {
       svg += getShapeSVG(shape, bx + bw / 2, refY + 26, 36 * shapeScale, getFill(shape), getStroke(shape), getStrokeW());
     }
-    svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
+    // Answer write-in box
+    const ansBoxY = refY + refH - 26;
+    const ansBoxW = Math.min(bw * 0.55, 40);
+    const ansBoxX = bx + (bw - ansBoxW) / 2;
+    svg += `<text x="${bx + bw / 2}" y="${ansBoxY - 2}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="8" font-weight="600" fill="#94A3B8">Count:</text>`;
+    svg += `<rect x="${ansBoxX}" y="${ansBoxY + 2}" width="${ansBoxW}" height="18" rx="3" fill="white" stroke="#94A3B8" stroke-width="1.2" />`;
+    if (config.showAnswerKey) {
+      svg += `<text x="${ansBoxX + ansBoxW / 2}" y="${ansBoxY + 14}" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#16A34A">${puzzle.counts[shape]}</text>`;
+    }
   });
 
   const gridTop = refY + refH + 18;
@@ -465,6 +473,7 @@ function renderCopyMode(
     const rightX = MARGIN + pairW * 0.55;
 
     svg += `<text x="${MARGIN}" y="${rowY + gridSz / 2 + 4}" font-family="Nunito, sans-serif" font-size="13" font-weight="700" fill="#64748B">${pIdx + 1}.</text>`;
+    svg += `<text x="${leftX + gridSz / 2}" y="${rowY - 5}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="9" font-weight="700" fill="#94A3B8">Look at this</text>`;
 
     svg += `<rect x="${leftX}" y="${rowY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
     if (config.showGridLines) {
@@ -486,7 +495,8 @@ function renderCopyMode(
     svg += `<line x1="${arrowX}" y1="${arrowY2}" x2="${arrowX + 16}" y2="${arrowY2}" stroke="#94A3B8" stroke-width="1.5" />`;
     svg += `<polygon points="${arrowX + 16},${arrowY2 - 4} ${arrowX + 24},${arrowY2} ${arrowX + 16},${arrowY2 + 4}" fill="#94A3B8" />`;
 
-    svg += `<rect x="${rightX}" y="${rowY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
+    svg += `<rect x="${rightX}" y="${rowY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#94A3B8', 1.5)} />`;
+    svg += `<text x="${rightX + gridSz / 2}" y="${rowY - 5}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="9" font-weight="700" fill="#94A3B8">✏ Copy here</text>`;
     for (let i = 1; i < gridSize; i++) {
       svg += `<line x1="${rightX + i * cellSz}" y1="${rowY}" x2="${rightX + i * cellSz}" y2="${rowY + gridSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
       svg += `<line x1="${rightX}" y1="${rowY + i * cellSz}" x2="${rightX + gridSz}" y2="${rowY + i * cellSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
@@ -648,7 +658,8 @@ function renderMirrorMode(
       });
     });
 
-    svg += `<rect x="${rightX}" y="${pairY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#CBD5E1', 1.5)} />`;
+    svg += `<rect x="${rightX}" y="${pairY}" width="${gridSz}" height="${gridSz}" ${getCellBorderAttrs(config, '#94A3B8', 1.5)} />`;
+    svg += `<text x="${rightX + gridSz / 2}" y="${pairY - 5}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="9" font-weight="700" fill="#94A3B8">✏ Draw here</text>`;
     for (let i = 1; i < gridSize; i++) {
       svg += `<line x1="${rightX + i * cellSz}" y1="${pairY}" x2="${rightX + i * cellSz}" y2="${pairY + gridSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
       svg += `<line x1="${rightX}" y1="${pairY + i * cellSz}" x2="${rightX + gridSz}" y2="${pairY + i * cellSz}" stroke="#E2E8F0" stroke-width="0.8" />`;
@@ -684,9 +695,9 @@ function renderFigureGroundMode(
   let svg = '';
 
   const refY = MARGIN + 85;
-  const refH = 56;
+  const refH = 72;
   const boxCount = targetShapes.length;
-  const totalRefW = Math.min(boxCount * 90, W - MARGIN * 2);
+  const totalRefW = Math.min(boxCount * 100, W - MARGIN * 2);
   const refX = (W - totalRefW) / 2;
   const boxW = totalRefW / boxCount;
 
@@ -696,11 +707,19 @@ function renderFigureGroundMode(
     const bw = boxW - 8;
     svg += `<rect x="${bx}" y="${refY}" width="${bw}" height="${refH}" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />`;
     if (fgEmojiMap && fgEmojiMap[shape]) {
-      svg += getEmojiSVG(fgEmojiMap[shape], bx + bw / 2, refY + 24, 32);
+      svg += getEmojiSVG(fgEmojiMap[shape], bx + bw / 2, refY + 22, 28);
     } else {
-      svg += getShapeSVG(shape, bx + bw / 2, refY + 24, 32, getFill(shape), getStroke(shape), getStrokeW());
+      svg += getShapeSVG(shape, bx + bw / 2, refY + 22, 28, getFill(shape), getStroke(shape), getStrokeW());
     }
-    svg += `<line x1="${bx + bw * 0.25}" y1="${refY + refH - 10}" x2="${bx + bw * 0.75}" y2="${refY + refH - 10}" stroke="#94A3B8" stroke-width="1.5" />`;
+    // Answer write-in box
+    const ansBoxY = refY + refH - 26;
+    const ansBoxW = Math.min(bw * 0.55, 36);
+    const ansBoxX = bx + (bw - ansBoxW) / 2;
+    svg += `<text x="${bx + bw / 2}" y="${ansBoxY - 2}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="7.5" font-weight="600" fill="#94A3B8">Count:</text>`;
+    svg += `<rect x="${ansBoxX}" y="${ansBoxY + 2}" width="${ansBoxW}" height="17" rx="3" fill="white" stroke="#94A3B8" stroke-width="1.2" />`;
+    if (config.showAnswerKey) {
+      svg += `<text x="${ansBoxX + ansBoxW / 2}" y="${ansBoxY + 13}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#16A34A">${puzzle.counts[shape]}</text>`;
+    }
   });
 
   const areaTop = refY + refH + 18;
@@ -993,16 +1012,23 @@ function renderFourLineSet(
   return svg;
 }
 
-// Render text using KG Primary Penmanship (solid or dotted).
+// Render text using KG Primary Penmanship (solid or dotted), or a custom font for cursive mode.
 // baselineY = SVG y baseline = bottom red line.
 // fontPx is sized so cap-height fills the zone exactly (caps touch top red line).
 function renderPenmanshipText(
-  text: string, x: number, baselineY: number, fontPx: number, _contentW: number, dotted: boolean
+  text: string, x: number, baselineY: number, fontPx: number, _contentW: number, dotted: boolean,
+  overrideFontFamily?: string
 ): string {
   if (!text) return '';
-  const fontFamily = dotted
-    ? "'KG Primary Dots', sans-serif"
-    : "'KG Primary Penmanship 2', sans-serif";
+  let fontFamily: string;
+  if (overrideFontFamily) {
+    // Cursive or custom font — use as-is (no dotted variant available)
+    fontFamily = overrideFontFamily;
+  } else {
+    fontFamily = dotted
+      ? "'KG Primary Dots', sans-serif"
+      : "'KG Primary Penmanship 2', sans-serif";
+  }
   return `<text x="${x + 2}" y="${baselineY}" dominant-baseline="auto" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="#333333">${escapeXml(text)}</text>`;
 }
 
@@ -1026,6 +1052,7 @@ function renderSentenceTrilineMode(
   // KG Primary Penmanship cap-height ≈ 0.72 × font-size
   // → font-size = zoneH / 0.72 makes capitals exactly touch the top red line
   const kgFontPx = zoneH / 0.72;
+  const isCursive = fontFamily.includes('Segoe Script') || fontFamily.includes('Comic Sans');
 
   let currentY = startY;
   let svg = '';
@@ -1034,15 +1061,28 @@ function renderSentenceTrilineMode(
   if (currentY + zoneH <= startY + availableH) {
     const baselineY = currentY + zoneH;
     svg += renderColoredTrilineSet(MARGIN, baselineY, fontPx, contentW, config);
-    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, false);
+    // Use custom font for cursive mode, KG Penmanship for print
+    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, false, isCursive ? fontFamily : undefined);
     currentY += rowH;
   }
 
-  // Row 2: dotted trace text
+  // Row 2: dotted trace text (cursive uses solid font again — no dotted cursive font available)
   if (currentY + zoneH <= startY + availableH) {
     const baselineY = currentY + zoneH;
     svg += renderColoredTrilineSet(MARGIN, baselineY, fontPx, contentW, config);
-    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, true);
+    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, !isCursive, isCursive ? fontFamily : undefined);
+
+    // Stroke guide: green "Start →" indicator above the trace row
+    if (config.handwritingShowStartEnd && text) {
+      const dotX = MARGIN + 2;
+      const dotY = baselineY - zoneH - 8;
+      svg += `<circle cx="${dotX + 5}" cy="${dotY}" r="5.5" fill="#22C55E" />`;
+      svg += `<text x="${dotX + 5}" y="${dotY + 3.5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="800" fill="white">1</text>`;
+      svg += `<line x1="${dotX + 12}" y1="${dotY}" x2="${dotX + 28}" y2="${dotY}" stroke="#22C55E" stroke-width="1.5" />`;
+      svg += `<polygon points="${dotX + 28},${dotY} ${dotX + 23},${dotY - 3} ${dotX + 23},${dotY + 3}" fill="#22C55E" />`;
+      svg += `<text x="${dotX + 32}" y="${dotY + 3.5}" font-family="Nunito, sans-serif" font-size="8" font-weight="700" fill="#22C55E">Trace here</text>`;
+    }
+
     currentY += rowH;
   }
 
@@ -1328,8 +1368,8 @@ function renderMazeMode(config: WorksheetConfig, data: WorksheetData): string {
     svg += `</g>`;
   }
 
-  // Solution path
-  if (config.difficulty === 'easy' && config.mazeShowSolution && solution.length > 1) {
+  // Solution path — available at all difficulty levels when enabled
+  if (config.mazeShowSolution && solution.length > 1) {
     const pathD = solution.map((p, i) => {
       const px = mazeX + p[1] * cellSize + cellSize / 2;
       const py = mazeY + p[0] * cellSize + cellSize / 2;
@@ -1394,14 +1434,22 @@ function renderConnectDotsMode(config: WorksheetConfig, data: WorksheetData): st
   dotList.forEach((dot) => {
     const x = offsetX + dot.x * scale;
     const y = offsetY + dot.y * scale;
-    svg += `<circle cx="${x}" cy="${y}" r="${dotRadius}" fill="#1E293B" />`;
+    const isStart = dot.index === 1;
+    const dotFill = isStart ? '#22C55E' : '#1E293B';
+    const r = isStart ? dotRadius + 2 : dotRadius;
+    svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${dotFill}" />`;
+
+    // "START" label above dot 1
+    if (isStart) {
+      svg += `<text x="${x}" y="${y - r - 4}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="8" font-weight="800" fill="#22C55E">START</text>`;
+    }
 
     // Number label - offset to avoid overlap
     const angle = Math.atan2(dot.y - 200, dot.x - 200);
-    const labelDist = dotRadius + fontSize * 0.8;
+    const labelDist = r + fontSize * 0.8;
     const lx = x + Math.cos(angle) * labelDist;
     const ly = y + Math.sin(angle) * labelDist + fontSize * 0.35;
-    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="600" fill="#64748B">${dot.index}</text>`;
+    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="${isStart ? '800' : '600'}" fill="${isStart ? '#22C55E' : '#64748B'}">${dot.index}</text>`;
   });
 
   // Coloring area label
@@ -1505,6 +1553,9 @@ function renderScissorSkillsMode(config: WorksheetConfig, data: WorksheetData): 
 
   let svg = '';
 
+  // Safety reminder at top of sheet
+  svg += `<text x="${W / 2}" y="${startY - 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="9" fill="#94A3B8">✂ Use safety scissors with an adult's supervision</text>`;
+
   scissors.lines.forEach((line, i) => {
     const y = startY + i * lineSpacing + lineSpacing / 2;
 
@@ -1563,7 +1614,7 @@ function renderVisualScanningMode(config: WorksheetConfig, data: WorksheetData):
       const isHighlighted = config.showAnswerKey && isTarget;
 
       if (isHighlighted) {
-        svg += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="#DCFCE7" rx="3" />`;
+        svg += `<circle cx="${x + cellW / 2}" cy="${y + cellH / 2}" r="${Math.min(cellW, cellH) / 2 - 1}" fill="none" stroke="#16A34A" stroke-width="1.8" />`;
       }
 
       const fontFamily = config.visualScanFontStyle === 'dyslexia' ? 'OpenDyslexic, sans-serif' : 'Inter, sans-serif';
