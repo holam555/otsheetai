@@ -22,8 +22,6 @@ export const GOALS: { value: Goal; label: string }[] = [
 
 export const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'en', label: 'English worksheets' },
-  { value: 'zh', label: '中文 worksheets' },
-  { value: 'bilingual', label: 'Bilingual' },
 ];
 
 export interface Template {
@@ -305,5 +303,4 @@ export const ageBandLabel: Record<AgeBand, string> = {
   '3-4': 'Ages 3–4',
   '5-6': 'Ages 5–6',
   '7-8': 'Ages 7–8',
-  '9+': 'Ages 9+',
 };

@@ -62,13 +62,12 @@ export const defaultConfig: WorksheetConfig = {
   emojiTheme: 'animals',
 };
 
-export type AgeBand = '3-4' | '5-6' | '7-8' | '9+';
+export type AgeBand = '3-4' | '5-6' | '7-8';
 
 export const AGE_BANDS: { value: AgeBand; label: string }[] = [
   { value: '3-4', label: 'Ages 3–4' },
   { value: '5-6', label: 'Ages 5–6' },
   { value: '7-8', label: 'Ages 7–8' },
-  { value: '9+', label: 'Ages 9+' },
 ];
 
 /**
@@ -85,8 +84,6 @@ export function ageBandConfig(band: AgeBand): Partial<WorksheetConfig> {
       return { childAge: 6, difficulty: 'medium' };
     case '7-8':
       return { childAge: 8, difficulty: 'medium' };
-    case '9+':
-      return { childAge: 10, difficulty: 'hard' };
   }
 }
 
@@ -95,6 +92,5 @@ export function childAgeToBand(age: number | null): AgeBand {
   if (age === null) return '5-6';
   if (age <= 4) return '3-4';
   if (age <= 6) return '5-6';
-  if (age <= 8) return '7-8';
-  return '9+';
+  return '7-8';
 }

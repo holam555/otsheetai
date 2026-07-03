@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# OTsheet.ai
 
-## Project info
+A client-side worksheet generator for pediatric occupational therapy. Parents and OTs pick a template, tweak it, and print a therapy-grade worksheet — no signup, no backend, no server round-trip.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**Live demo:** [otsheetai.vercel.app](https://otsheetai.vercel.app/)
 
-## How can I edit this code?
+## What it does
 
-There are several ways of editing your application.
+OTsheet.ai generates print-ready A4 worksheets across three OT domains:
 
-**Use Lovable**
+- **Visual perception** — figure-ground search, pattern matching, odd-one-out, mirror image, visual closure, mazes, connect-the-dots, visual scanning, pixel art, and more
+- **Fine motor** — tracing paths, scissor-cutting lines, dot-to-dot
+- **Handwriting** — triline and grid-box letter/word practice with configurable stroke guides
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+The app ships two experiences on top of the same engine: a **Gallery** of 20+ curated templates (filterable by age band, therapy goal, language, and worksheet type) for anyone who wants a worksheet fast, and a full **Editor** for OTs who want to hand-tune every parameter — grid size, difficulty, shapes, emoji themes, fonts, answer keys, and more.
 
-Changes made via Lovable will be committed automatically to this repo.
+Everything renders to SVG in the browser and prints via `window.print()`, so there's no PDF service, no file upload, and no user data ever leaves the device.
 
-**Use your preferred IDE**
+## Why this project is interesting from an engineering standpoint
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+**A config-driven generation engine, not a template library.** [`src/lib/shapes.ts`](src/lib/shapes.ts) (~1,750 lines) is a single `generateWorksheet(config)` function that fans out into 17 distinct puzzle generators based on a discriminated `WorksheetMode` union. Every mode — from maze carving to figure-ground occlusion to letter-stroke tracing — shares one `WorksheetConfig` contract, so the Gallery, the Editor, and the test suite all speak the same typed language.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+**Deterministic output from a nondeterministic engine.** The generation engine uses `Math.random()` internally, which is fine for one-off worksheets but breaks stable gallery thumbnails and repeatable tests. Rather than rewire 17 generators to accept an injected RNG, [`seededGenerate.ts`](src/lib/seededGenerate.ts) swaps `Math.random` for a seeded `mulberry32` PRNG for the duration of a single call, then restores it — zero changes to the generation code, fully deterministic previews.
 
-Follow these steps:
+**A test suite that audits UI-to-output wiring, not just logic.** [`audit.test.tsx`](src/test/audit.test.tsx) is a "control-reflection audit": for every control the Editor exposes, it asserts the change actually reaches either the generated puzzle data or the rendered SVG, using a fixed seed so the only variable between two runs is the control under test. This catches the class of bug where a UI control is wired up but silently does nothing — which is invisible to type-checking and easy to miss in manual QA.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+**A taxonomy layer decoupled from the generator.** Templates in [`src/data/templates.ts`](src/data/templates.ts) attach a parent-friendly title, a clinical name (for OT-facing filtering), an age band, a therapy goal, and a language on top of plain `WorksheetConfig` overrides — so the same `find` mode generator backs both "Find the Hidden Shapes" (parent view) and "Figure-Ground / Visual Discrimination" (clinical view) without any duplication.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Tech stack
 
-# Step 3: Install the necessary dependencies.
-npm i
+| Layer | Choice |
+|---|---|
+| Framework | React 18 + TypeScript 5 |
+| Build | Vite 5 (SWC) |
+| Routing | React Router 6 |
+| UI | shadcn/ui (Radix primitives) + Tailwind CSS 3 |
+| Forms | React Hook Form + Zod |
+| Testing | Vitest + Testing Library, jsdom |
+| Rendering | Hand-rolled SVG generation (no canvas/PDF library) |
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Project structure
+
+```
+src/
+├── pages/
+│   ├── Gallery.tsx          # Browse/filter templates by age, goal, language, mode
+│   └── Editor.tsx           # Full manual control over one worksheet
+├── components/
+│   ├── gallery/              # TemplateCard, AboutStrip, filters
+│   ├── editor/                # EditorToolbar, CustomizeControls
+│   ├── WorksheetPreview.tsx  # SVG renderer for all 17 modes
+│   └── ui/                    # shadcn/ui primitives
+├── lib/
+│   ├── shapes.ts             # Generation engine: types + 17 mode generators
+│   ├── seededGenerate.ts     # Deterministic wrapper (mulberry32 PRNG swap)
+│   ├── defaultConfig.ts      # Shared default config + age-band presets
+│   └── letterPaths.ts        # Stroke path data for handwriting mode
+├── data/
+│   └── templates.ts          # Gallery taxonomy: goal / age / language / clinical name
+└── test/
+    └── audit.test.tsx        # Control-reflection audit (33 assertions)
 ```
 
-**Edit a file directly in GitHub**
+## Running locally
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run test     # run the Vitest suite
+npm run build    # type-check + production build
+npm run lint
+```
 
-**Use GitHub Codespaces**
+## Design notes
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Worksheets render at 595×842px (A4 portrait) with fixed margins; print styling hides everything but the SVG.
+- Difficulty scales visual complexity (shape size, rotation, distractor count), not just puzzle count.
+- Everything is client-side by design — no accounts, no server, no data persistence beyond the current session.

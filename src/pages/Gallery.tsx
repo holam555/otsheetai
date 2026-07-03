@@ -73,10 +73,11 @@ export default function Gallery() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         <div className="text-center pt-2 pb-1">
           <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
-            Printable worksheets in two clicks
+            Printable worksheets, made your way
           </h2>
           <p className="text-muted-foreground mt-1.5 text-sm sm:text-base">
-            Pick a worksheet, print it. No setup, no signup.
+            Print a template as-is, or customize every detail: shapes, difficulty, fonts, and more.
+            No setup, no signup.
           </p>
         </div>
 

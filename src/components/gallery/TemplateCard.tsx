@@ -30,7 +30,7 @@ export default function TemplateCard({ template }: { template: Template }) {
         </span>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary/5">
           <span className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-bold shadow-md">
-            Open & print →
+            Open & customize →
           </span>
         </div>
       </div>

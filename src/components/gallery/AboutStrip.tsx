@@ -9,12 +9,12 @@ export default function AboutStrip() {
       </div>
       <div>
         <p className="font-display font-bold text-foreground">
-          Built by a Hong Kong pediatric occupational therapist
+          Built by pediatric occupational therapists
         </p>
-        {/* TODO: replace with final About copy provided by the client. */}
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          Every worksheet is designed around real clinical goals — visual perception, handwriting,
-          scissor skills and more — so you can print something genuinely useful in seconds. Placeholder copy.
+          Every worksheet is designed around real clinical goals: visual perception, handwriting, and
+          scissor skills. Print a template as-is in seconds, or customize every detail (shapes,
+          difficulty, fonts, and more) to fit the child in front of you.
         </p>
       </div>
     </section>
