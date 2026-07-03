@@ -16,16 +16,6 @@ The app ships two experiences on top of the same engine: a **Gallery** of 20+ cu
 
 Everything renders to SVG in the browser and prints via `window.print()`, so there's no PDF service, no file upload, and no user data ever leaves the device.
 
-## Why this project is interesting from an engineering standpoint
-
-**A config-driven generation engine, not a template library.** [`src/lib/shapes.ts`](src/lib/shapes.ts) (~1,750 lines) is a single `generateWorksheet(config)` function that fans out into 17 distinct puzzle generators based on a discriminated `WorksheetMode` union. Every mode — from maze carving to figure-ground occlusion to letter-stroke tracing — shares one `WorksheetConfig` contract, so the Gallery, the Editor, and the test suite all speak the same typed language.
-
-**Deterministic output from a nondeterministic engine.** The generation engine uses `Math.random()` internally, which is fine for one-off worksheets but breaks stable gallery thumbnails and repeatable tests. Rather than rewire 17 generators to accept an injected RNG, [`seededGenerate.ts`](src/lib/seededGenerate.ts) swaps `Math.random` for a seeded `mulberry32` PRNG for the duration of a single call, then restores it — zero changes to the generation code, fully deterministic previews.
-
-**A test suite that audits UI-to-output wiring, not just logic.** [`audit.test.tsx`](src/test/audit.test.tsx) is a "control-reflection audit": for every control the Editor exposes, it asserts the change actually reaches either the generated puzzle data or the rendered SVG, using a fixed seed so the only variable between two runs is the control under test. This catches the class of bug where a UI control is wired up but silently does nothing — which is invisible to type-checking and easy to miss in manual QA.
-
-**A taxonomy layer decoupled from the generator.** Templates in [`src/data/templates.ts`](src/data/templates.ts) attach a parent-friendly title, a clinical name (for OT-facing filtering), an age band, a therapy goal, and a language on top of plain `WorksheetConfig` overrides — so the same `find` mode generator backs both "Find the Hidden Shapes" (parent view) and "Figure-Ground / Visual Discrimination" (clinical view) without any duplication.
-
 ## Tech stack
 
 | Layer | Choice |
