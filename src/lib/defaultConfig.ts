@@ -24,7 +24,7 @@ export const defaultConfig: WorksheetConfig = {
   oddOneOutType: 'shapes',
   oddOneOutCustomTarget: '',
   handwritingText: '',
-  handwritingRows: 3,
+  handwritingRows: 6,
   handwritingPaperStyle: 'triline',
   handwritingFontSize: 'large',
   handwritingFontSizeMm: 15,

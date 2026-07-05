@@ -45,13 +45,13 @@ export const LETTER_PATHS: Record<string, LetterStrokes> = {
     [[0.15, 0.5], [0.85, 0.5]],     // crossbar
   ],
   I: [
+    [[0.5, 0], [0.5, 1]],           // vertical first (primary stroke)
     [[0.3, 0], [0.7, 0]],           // top serif
-    [[0.5, 0], [0.5, 1]],           // vertical
     [[0.3, 1], [0.7, 1]],           // bottom serif
   ],
   J: [
+    [[0.6, 0], [0.6, 0.8], [0.5, 0.95], [0.35, 1], [0.2, 0.9]], // hook first (primary stroke)
     [[0.35, 0], [0.75, 0]],         // top serif
-    [[0.6, 0], [0.6, 0.8], [0.5, 0.95], [0.35, 1], [0.2, 0.9]],
   ],
   K: [
     [[0.15, 0], [0.15, 1]],         // vertical
@@ -63,15 +63,15 @@ export const LETTER_PATHS: Record<string, LetterStrokes> = {
     [[0.15, 1], [0.8, 1]],          // bottom
   ],
   M: [
-    [[0.1, 1], [0.1, 0]],           // left vertical
+    [[0.1, 0], [0.1, 1]],           // left vertical (top → bottom)
     [[0.1, 0], [0.5, 0.6]],         // left diagonal
     [[0.5, 0.6], [0.9, 0]],         // right diagonal
     [[0.9, 0], [0.9, 1]],           // right vertical
   ],
   N: [
-    [[0.15, 1], [0.15, 0]],         // left vertical
+    [[0.15, 0], [0.15, 1]],         // left vertical (top → bottom)
     [[0.15, 0], [0.85, 1]],         // diagonal
-    [[0.85, 1], [0.85, 0]],         // right vertical
+    [[0.85, 0], [0.85, 1]],         // right vertical (top → bottom)
   ],
   O: [
     [[0.5, 0], [0.25, 0.05], [0.1, 0.25], [0.1, 0.75], [0.25, 0.95], [0.5, 1], [0.75, 0.95], [0.9, 0.75], [0.9, 0.25], [0.75, 0.05], [0.5, 0]],

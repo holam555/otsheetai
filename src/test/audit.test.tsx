@@ -184,3 +184,69 @@ describe('render-only controls change the SVG', () => {
       .not.toBe(svg({ mode: 'handwriting', handwritingLineMode: '4-line' }, d));
   });
 });
+
+// ---------------------------------------------------------------------------
+// SOLVABILITY / CORRECTNESS — puzzles must have exactly one right answer and
+// the odd item must be visibly different. Regression tests for the 2026-07-05
+// therapeutic-correctness fixes.
+// ---------------------------------------------------------------------------
+describe('puzzles are solvable and unambiguous', () => {
+  it('closure: A/B/C options are always distinct, even with 2 selected shapes', () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const data = generateWorksheetSeeded(
+        { ...defaultConfig, mode: 'closure', selectedShapes: ['circle', 'square'], exerciseCount: 5 },
+        seed
+      );
+      for (const p of data.closurePuzzles ?? []) {
+        expect(new Set(p.options).size).toBe(3);
+        expect(p.options[p.correctIndex]).toBe(p.shape);
+      }
+    }
+  });
+
+  it('sequence: A/B/C options are always distinct shapes', () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const data = generateWorksheetSeeded(
+        { ...defaultConfig, mode: 'sequence', selectedShapes: ['circle', 'square'], exerciseCount: 5, difficulty: 'easy' },
+        seed
+      );
+      for (const p of data.sequencePuzzles ?? []) {
+        const shapes = p.options.map((o) => o.shape);
+        expect(new Set(shapes).size).toBe(3);
+      }
+    }
+  });
+
+  it('oddOneOut hard: the odd item is visibly different (no symmetric rotations)', () => {
+    // Rotations that leave the shape looking identical.
+    const symmetric: Record<string, (d: number) => boolean> = {
+      circle: () => true,
+      oval: (d) => d % 180 === 0,
+      square: (d) => d % 90 === 0,
+      rectangle: (d) => d % 180 === 0,
+      cross: (d) => d % 90 === 0,
+      diamond: (d) => d % 90 === 0,
+      hexagon: (d) => d % 60 === 0,
+    };
+    for (let seed = 0; seed < 80; seed++) {
+      const data = generateWorksheetSeeded(
+        { ...defaultConfig, mode: 'oddOneOut', difficulty: 'hard', childAge: 8, selectedShapes: ['circle', 'square', 'triangle', 'cross'], exerciseCount: 5 },
+        seed
+      );
+      for (const row of data.oddOneOutRows ?? []) {
+        const odd = row.items[row.oddIndex];
+        const base = row.items[(row.oddIndex + 1) % row.items.length];
+        if (odd.shape === base.shape) {
+          const delta = Math.abs((odd.rotation ?? 0) - (base.rotation ?? 0)) % 360;
+          const isSame = delta === 0 || (symmetric[odd.shape]?.(delta) ?? false);
+          expect(isSame).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('find + emoji: instruction no longer names an invisible shape', () => {
+    const data = gen({ mode: 'find', useEmoji: true, emojiTheme: 'animals' });
+    expect(data.instructions).not.toMatch(/circle|square|triangle|cross|diamond|star|rectangle|oval|heart|arrow|hexagon|pentagon/);
+  });
+});

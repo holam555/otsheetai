@@ -287,6 +287,25 @@ function getDifficultyRotation(difficulty: Difficulty): number {
   return 0;
 }
 
+// Rotation deltas that are VISIBLY different for each shape. Shapes with
+// rotational symmetry (circle: any angle; square/cross: 90°; oval/rectangle/
+// diamond: 90–180°) must not use symmetric angles or the odd-one-out row
+// becomes unsolvable — the "odd" item looks identical to the others.
+const VISIBLE_ROTATIONS: Record<ShapeName, number[]> = {
+  circle: [],
+  oval: [45, 90],
+  square: [15, 30, 45],
+  rectangle: [45, 90],
+  triangle: [15, 30, 45, 90, 180],
+  cross: [15, 30, 45],
+  diamond: [15, 30],
+  star: [15, 30, 45],
+  heart: [15, 30, 45, 90, 180],
+  arrow: [15, 30, 45, 90, 180],
+  hexagon: [15, 30, 45],
+  pentagon: [15, 30, 45],
+};
+
 const SIMILAR_SHAPES: Partial<Record<ShapeName, ShapeName[]>> = {
   circle: ['oval'],
   oval: ['circle'],
@@ -534,11 +553,17 @@ function generateSequenceMode(config: WorksheetConfig): WorksheetData {
       rotation: getDifficultyRotation(config.difficulty),
     };
 
-    const distractorShapes = shapes.filter(s => s !== answer.shape);
+    // Two distinct distractors, padded from the full shape set when fewer
+    // than 2 non-answer shapes are selected — options must never repeat.
+    let distractorShapes = pickN(shapes.filter(s => s !== answer.shape), 2);
+    if (distractorShapes.length < 2) {
+      const pad = shuffle(ALL_SHAPES.filter(s => s !== answer.shape && !distractorShapes.includes(s)));
+      distractorShapes = [...distractorShapes, ...pad].slice(0, 2);
+    }
     const options: CellData[] = [
       answer,
-      { shape: randomFrom(distractorShapes) },
-      { shape: randomFrom(distractorShapes.filter(s => s !== answer.shape)) },
+      { shape: distractorShapes[0] },
+      { shape: distractorShapes[1] },
     ];
     const indices = shuffle([0, 1, 2]);
     const shuffledOptions = indices.map(i => options[i]);
@@ -583,8 +608,21 @@ function generateOddOneOutShapes(config: WorksheetConfig): WorksheetData {
           const diffShape = similar.length > 0 ? randomFrom(similar) : randomFrom(shapes.filter(s => s !== baseShape));
           items.push({ shape: diffShape, rotation: baseRotation });
         } else {
-          const rotDiff = baseRotation === 0 ? randomFrom([15, 30, 45, 90, 180]) : 0;
-          items.push({ shape: baseShape, rotation: rotDiff });
+          // Hard: same shape, visibly different rotation. Shapes where no
+          // rotation is visible (e.g. circle) fall back to a similar-shape
+          // substitution so the row is always solvable.
+          const visibleRots = VISIBLE_ROTATIONS[baseShape];
+          if (baseRotation === 0 && visibleRots.length > 0) {
+            items.push({ shape: baseShape, rotation: randomFrom(visibleRots) });
+          } else if (baseRotation !== 0 && visibleRots.includes(baseRotation)) {
+            // Rotating back to 0 is visible only if the base rotation itself
+            // is a visible delta for this shape.
+            items.push({ shape: baseShape, rotation: 0 });
+          } else {
+            const similar = getSimilarDistractors(baseShape, shapes, 'hard');
+            const diffShape = similar.length > 0 ? randomFrom(similar) : randomFrom(shapes.filter(s => s !== baseShape));
+            items.push({ shape: diffShape, rotation: 0 });
+          }
         }
       } else {
         items.push({ shape: baseShape, rotation: baseRotation });
@@ -821,7 +859,12 @@ function generateClosureMode(config: WorksheetConfig): WorksheetData {
 
     const distractors = pickN(shapes.filter(s => s !== shape), Math.min(2, shapes.filter(s => s !== shape).length));
     const options = [shape, ...distractors];
-    while (options.length < 3) options.push(randomFrom(shapes));
+    // Options must be distinct: with only 2 selected shapes, pad from the full
+    // shape set so the correct answer never appears twice among A/B/C.
+    if (options.length < 3) {
+      const pad = shuffle(ALL_SHAPES.filter(s => !options.includes(s)));
+      while (options.length < 3 && pad.length > 0) options.push(pad.pop()!);
+    }
     const indices = shuffle([0, 1, 2]);
     const shuffledOptions = indices.map(i => options[i]);
     const correctIndex = indices.indexOf(0);
@@ -1642,6 +1685,18 @@ function applyEmojiToWorksheet(config: WorksheetConfig, result: WorksheetData) {
 
   // Also store on targetShape
   if (result.targetShape) (result as any)._targetEmoji = map.get(result.targetShape);
+
+  // Instructions reference shape names ("Find every square…") which is wrong
+  // when cells render as emoji — a parent reading the sheet aloud would name a
+  // shape the child cannot see. Swap in emoji-appropriate wording.
+  if (result.mode === 'find' && result.targetShape) {
+    const emoji = map.get(result.targetShape);
+    result.instructions = emoji
+      ? `Find every ${emoji} and put a tick on each one!`
+      : 'Find every one that matches the picture and put a tick on each one!';
+  } else if (result.mode === 'count') {
+    result.instructions = 'Count how many of each picture you can find. Write the number in the box!';
+  }
 }
 
 export function generateWorksheet(config: WorksheetConfig): WorksheetData {

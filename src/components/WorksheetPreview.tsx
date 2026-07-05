@@ -841,15 +841,20 @@ function renderTraceNameMode(
     const totalLetterW = section.length * (letterW + 12) - 12;
     const secStartX = (W - totalLetterW) / 2;
 
-    // 3 rows: reference, dot-trace, blank
-    const rowLabels = ['Reference', 'Trace', 'Write'];
+    // Reference row, then alternating Trace/Write rows repeated to fill the
+    // section — repetition is the point of name practice, and a mostly-blank
+    // page reads as a broken worksheet.
     const rowH = Math.min(sectionH / 3 - 4, letterH + 20);
+    const rowCapacity = Math.max(3, Math.floor(sectionH / rowH));
+    const rowLabels: string[] = ['Reference'];
+    for (let i = 1; i < rowCapacity; i++) rowLabels.push(i % 2 === 1 ? 'Trace' : 'Write');
 
-    for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
+    for (let rowIdx = 0; rowIdx < rowLabels.length; rowIdx++) {
       const rowY = secY + rowIdx * rowH;
+      const rowKind = rowLabels[rowIdx];
 
       // Row label
-      svg += `<text x="${MARGIN}" y="${rowY + rowH / 2 + 4}" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${rowLabels[rowIdx]}</text>`;
+      svg += `<text x="${MARGIN}" y="${rowY + rowH / 2 + 4}" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${rowKind}</text>`;
 
       // Baseline
       svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4}" stroke="#E2E8F0" stroke-width="1" />`;
@@ -864,7 +869,7 @@ function renderTraceNameMode(
         const strokes = LETTER_PATHS[letter];
         if (!strokes) return;
 
-        if (rowIdx === 0) {
+        if (rowKind === 'Reference') {
           // Reference: solid light grey letter
           strokes.forEach(stroke => {
             if (stroke.length < 2) return;
@@ -873,7 +878,7 @@ function renderTraceNameMode(
             ).join(' ');
             svg += `<polyline points="${points}" fill="none" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
           });
-        } else if (rowIdx === 1) {
+        } else if (rowKind === 'Trace') {
           // Dot-trace: dots along the stroke path
           strokes.forEach((stroke, strokeIdx) => {
             if (stroke.length < 2) return;
@@ -896,29 +901,29 @@ function renderTraceNameMode(
               }
             }
 
-            // Starting dot (large green) for first stroke
-            if (strokeIdx === 0) {
-              const [sx, sy] = stroke[0];
-              const startX = lx + sx * letterW;
-              const startY2 = ly + sy * letterH;
-              svg += `<circle cx="${startX}" cy="${startY2}" r="4.5" fill="#22C55E" />`;
+            // Numbered start dot on EVERY stroke — teaches stroke order, not
+            // just where the first stroke begins.
+            const [sx, sy] = stroke[0];
+            const startX = lx + sx * letterW;
+            const startY2 = ly + sy * letterH;
+            svg += `<circle cx="${startX}" cy="${startY2}" r="4.5" fill="#22C55E" />`;
+            svg += `<text x="${startX}" y="${startY2 + 2.5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="6" font-weight="800" fill="white">${strokeIdx + 1}</text>`;
 
-              // Arrow showing direction
-              if (stroke.length >= 2) {
-                const [nx, ny] = stroke[1];
-                const endX = lx + nx * letterW;
-                const endY = ly + ny * letterH;
-                const angle = Math.atan2(endY - startY2, endX - startX);
-                const arrowLen = 10;
-                const ax = startX + Math.cos(angle) * arrowLen;
-                const ay = startY2 + Math.sin(angle) * arrowLen;
-                svg += `<line x1="${startX}" y1="${startY2}" x2="${ax}" y2="${ay}" stroke="#22C55E" stroke-width="1.5" />`;
-                svg += `<polygon points="${ax},${ay} ${ax - 4 * Math.cos(angle - 0.5)},${ay - 4 * Math.sin(angle - 0.5)} ${ax - 4 * Math.cos(angle + 0.5)},${ay - 4 * Math.sin(angle + 0.5)}" fill="#22C55E" />`;
-              }
+            // Arrow showing direction (first stroke only, to avoid clutter)
+            if (strokeIdx === 0 && stroke.length >= 2) {
+              const [nx, ny] = stroke[1];
+              const endX = lx + nx * letterW;
+              const endY = ly + ny * letterH;
+              const angle = Math.atan2(endY - startY2, endX - startX);
+              const arrowLen = 10;
+              const ax = startX + Math.cos(angle) * arrowLen;
+              const ay = startY2 + Math.sin(angle) * arrowLen;
+              svg += `<line x1="${startX}" y1="${startY2}" x2="${ax}" y2="${ay}" stroke="#22C55E" stroke-width="1.5" />`;
+              svg += `<polygon points="${ax},${ay} ${ax - 4 * Math.cos(angle - 0.5)},${ay - 4 * Math.sin(angle - 0.5)} ${ax - 4 * Math.cos(angle + 0.5)},${ay - 4 * Math.sin(angle + 0.5)}" fill="#22C55E" />`;
             }
           });
         }
-        // rowIdx === 2: blank row, just the guidelines (already drawn above)
+        // 'Write' rows: blank, just the guidelines (already drawn above)
       });
     }
   });
