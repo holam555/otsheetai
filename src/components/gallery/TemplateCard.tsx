@@ -1,12 +1,10 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import WorksheetPreview from '@/components/WorksheetPreview';
 import { Template, templateConfig, ageBandLabel } from '@/data/templates';
 import { generateWorksheetSeeded, hashSeed } from '@/lib/seededGenerate';
 
 export default function TemplateCard({ template }: { template: Template }) {
-  const navigate = useNavigate();
-
   // Generate the preview once, with a stable seed, so the card never flickers
   // or re-randomizes on re-render. Reuses the real rendering engine.
   const { config, data } = useMemo(() => {
@@ -15,13 +13,12 @@ export default function TemplateCard({ template }: { template: Template }) {
     return { config, data };
   }, [template]);
 
-  const open = () => navigate(`/edit/${template.id}`);
-
   return (
-    <button
-      type="button"
-      onClick={open}
-      className="group text-left rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-lg hover:border-primary/40 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    // A real <a href> (not a button+navigate): crawlers discover the template
+    // pages from the homepage, and open-in-new-tab works.
+    <Link
+      to={`/edit/${template.id}`}
+      className="group block text-left rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-lg hover:border-primary/40 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <div className="relative bg-muted/40 border-b border-border overflow-hidden">
         <WorksheetPreview config={config} data={data} variant="thumb" />
@@ -38,6 +35,6 @@ export default function TemplateCard({ template }: { template: Template }) {
         <h3 className="font-display font-bold text-sm text-foreground leading-snug">{template.title}</h3>
         <p className="text-[11px] text-muted-foreground mt-1">{template.skillTag}</p>
       </div>
-    </button>
+    </Link>
   );
 }
