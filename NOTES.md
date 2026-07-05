@@ -1,6 +1,13 @@
 # OTsheet redesign — handoff notes
 
-_Last updated: 2026-06-11. This file is a handoff so a fresh Claude session (or you) can pick up where we left off. The app lives in `otsheetai/`._
+_Last updated: 2026-07-05. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+
+## 2026-07-05 — Deep strategy pass (Fable session)
+- **Engine correctness** (commit `f200934`): closure/sequence duplicate-option bugs fixed (closure printed the correct answer twice in 49% of 2-shape sheets); oddOneOut hard no longer produces unsolvable rotation rows (was 48%); emoji sheets no longer name invisible shapes; M/N/I/J stroke order corrected; trace-name fills the page with numbered per-stroke start dots; 4 solvability regression tests added.
+- **Editor stability + persistence**: cosmetic edits (name, instruction, colors) no longer re-roll the puzzle; per-template config + child-name profile persist in localStorage (`src/lib/persistence.ts`); Reset button added; user text XML-escaped before SVG injection.
+- **SEO**: accurate metadata + JSON-LD, sitemap.xml (22 routes), llms.txt, per-route titles, honest About copy. Prerendering decided + specced in ROADMAP Phase 2.
+- **Decisions recorded in ROADMAP.md**: stay Vite SPA + build-time prerender (no framework migration); profiles client-side until money; freemium via Supabase + Stripe when triggered; LLM = yes but only themed word lists (Haiku via serverless) + later progress notes; no LLM puzzle generation.
+- Repo now has git history + GitHub remote (`holam555/otsheetai`) — earlier "no git" notes below are stale.
 
 ## TL;DR
 Redesigned OTsheet from an "engineer's control panel" into a **gallery-first homepage + preview-first editor**, like Canva. All 17 worksheet modes stay functional; the worksheet generation engine and print output were **not** changed. **34/34 automated tests pass.**

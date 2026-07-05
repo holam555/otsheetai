@@ -136,21 +136,19 @@ Mode key: `handwriting`. Layout variants: `triline`, `fourline`, `wordBoxes`, `g
 
 ## Known Issues & Improvement Opportunities
 
-### High priority
-- **No data persistence** — settings are lost on page refresh; add `localStorage` save/load
-- **Effect dependency array in Index.tsx** is exhaustive (~50 individual fields); simplify to `[config]` or `useMemo`
-- **Missing features that are partially wired up:** `handwritingShowStartEnd` (start/end arrows on letter strokes) is parsed but never rendered
+**See [ROADMAP.md](ROADMAP.md)** — the maintained, phased backlog with decisions
+already made (therapeutic-quality items, prerendering/SEO, per-child profiles,
+monetization architecture, LLM word-list feature). NOTES.md holds the session
+history.
 
-### Medium priority
-- **Accessibility** — SVG worksheets have no ARIA labels; preview is not keyboard-navigable
-- **No tests** — the generation functions in `shapes.ts` have zero test coverage; add unit tests for `generateMazeMode`, `generatePatternMode`, etc.
-- **Mobile preview** — worksheet preview on small screens is hard to use; consider a zoom/pan control
-- **Unused dependencies** — `next-themes`, `TanStack React Query` are installed but not used
-
-### Low priority
-- Magic numbers in `WorksheetPreview.tsx` (cell sizes, margins, font sizes) should be extracted as named constants
-- Add word lists / phonics sentences for handwriting mode
-- Batch generation (multiple worksheet variants at once)
+Still true as of 2026-07-05:
+- Persistence exists (`src/lib/persistence.ts`, localStorage) — settings and
+  the child's name survive refresh; multi-child profiles are ROADMAP Phase 3.
+- Tests: `src/test/audit.test.tsx` (38 tests) covers control reflection and
+  puzzle solvability; deeper per-generator unit tests still welcome.
+- Accessibility (SVG ARIA labels) and mobile zoom/pan remain open (ROADMAP
+  Phase 6).
+- `next-themes` unused; `@tanstack/react-query` unused until ROADMAP Phase 4/5.
 
 ---
 
@@ -190,9 +188,12 @@ bun run test:ui      # Vitest UI
 
 ---
 
-## Out of Scope (not planned)
+## Out of Scope (for now — see ROADMAP.md for the decided future phases)
 
-- User accounts or cloud sync
-- Server-side rendering
 - Real-time collaboration
-- Direct PDF export (browser print covers this)
+- User accounts / cloud sync / payment — **decided and specified** in ROADMAP
+  Phase 4 (Supabase + Stripe, freemium), but only built when the usage trigger
+  is met
+- Build-time prerendering — planned (ROADMAP Phase 2); full SSR still out
+- Direct PDF export — free tier keeps browser print; PDF download is a Phase 4
+  Pro feature
