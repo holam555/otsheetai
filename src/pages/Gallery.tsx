@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import AboutStrip from '@/components/gallery/AboutStrip';
@@ -38,6 +39,7 @@ function FilterRow({ label, children }: { label: string; children: React.ReactNo
 }
 
 export default function Gallery() {
+  usePageMeta();
   const [age, setAge] = useState<AgeFilter>('all');
   const [goal, setGoal] = useState<GoalFilter>('all');
   const [lang, setLang] = useState<LangFilter>('all');

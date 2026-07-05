@@ -14,6 +14,8 @@ import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes'
 import { getTemplate, templateConfig } from '@/data/templates';
 import { defaultConfig } from '@/lib/defaultConfig';
 import { loadProfile, saveProfile, loadTemplateConfig, saveTemplateConfig, clearTemplateConfig } from '@/lib/persistence';
+import { usePageMeta } from '@/hooks/use-page-meta';
+import { ageBandLabel } from '@/data/templates';
 
 // Fields that only affect presentation — the renderer reads them from config
 // directly, so changing them must NOT re-roll the puzzle. A parent who found a
@@ -57,6 +59,11 @@ export default function Editor() {
     if (profile?.childName && !base.childName) return { ...base, childName: profile.childName };
     return base;
   }, [template, templateId]);
+
+  usePageMeta(
+    template ? `${template.title} — Free Printable Worksheet (${ageBandLabel[template.ageBand]})` : undefined,
+    template ? `Free printable ${template.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[template.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print — no signup.` : undefined
+  );
 
   const [config, setConfig] = useState<WorksheetConfig>(initialConfig);
   const [data, setData] = useState<WorksheetData>(() => generateWorksheet(initialConfig));

@@ -9,7 +9,7 @@ export default function AboutStrip() {
       </div>
       <div>
         <p className="font-display font-bold text-foreground">
-          Built by pediatric occupational therapists
+          Designed around real pediatric OT practice
         </p>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
           Every worksheet is designed around real clinical goals: visual perception, handwriting, and

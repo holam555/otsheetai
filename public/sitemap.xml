@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://otsheetai.vercel.app/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://otsheetai.vercel.app/edit/find-shapes</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/find-animals</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/match-pattern</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/count-shapes</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/copy-pattern</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/what-next</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/odd-one-out</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/letter-reversal-bd</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/mirror-image</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/figure-ground</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/visual-closure</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/trace-name</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/handwriting-en</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/handwriting-hk</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/handwriting-zh</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/maze</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/connect-dots</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/pre-writing-strokes</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/scissor-skills</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/letter-hunt</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/number-hunt</loc></url>
+  <url><loc>https://otsheetai.vercel.app/edit/pixel-art</loc></url>
+</urlset>
