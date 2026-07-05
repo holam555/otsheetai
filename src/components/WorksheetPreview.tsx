@@ -65,12 +65,17 @@ export default function WorksheetPreview({ config, data, variant = 'full' }: Pro
   const instrFontSize = config.instructionFontSize === 'small' ? 11 : config.instructionFontSize === 'large' ? 18 : 14;
   const instrWeight = config.instructionBold ? '800' : '700';
 
+  // Custom instruction is applied at render time (not only in the generator)
+  // so editing it never re-rolls the puzzle. User-typed text is escaped —
+  // this string is injected into the SVG via innerHTML.
+  const instructions = config.customInstruction.trim() || data.instructions;
+
   const headerSVG = `
     <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="#0D9488">OTsheet.ai</text>
     <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="#E2E8F0" stroke-width="1" />
-    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${nameStr}</text>
+    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${escapeXml(nameStr)}</text>
     <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="${dateFontSize}" fill="#94A3B8">Date: ____/____/________</text>
-    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${instrFontSize}" font-weight="${instrWeight}" fill="#1E293B">${data.instructions}</text>
+    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${instrFontSize}" font-weight="${instrWeight}" fill="#1E293B">${escapeXml(instructions)}</text>
   `;
 
   const footerSVG = `

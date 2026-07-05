@@ -13,6 +13,29 @@ import { usePrintCount } from '@/hooks/use-print-count';
 import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes';
 import { getTemplate, templateConfig } from '@/data/templates';
 import { defaultConfig } from '@/lib/defaultConfig';
+import { loadProfile, saveProfile, loadTemplateConfig, saveTemplateConfig, clearTemplateConfig } from '@/lib/persistence';
+
+// Fields that only affect presentation — the renderer reads them from config
+// directly, so changing them must NOT re-roll the puzzle. A parent who found a
+// worksheet they like should keep it while typing the child's name or toggling
+// the answer key.
+const COSMETIC_FIELDS: (keyof WorksheetConfig)[] = [
+  'childAge', 'customInstruction', 'borderStyle', 'headerFontSize', 'headerBold',
+  'instructionFontSize', 'instructionBold', 'nameDateFontSize', 'useColor',
+  'showAnswerKey', 'showGridLines', 'mazeShowSolution', 'pixelArtBW',
+  'handwritingShowColoredLines', 'handwritingLineColor', 'handwritingHighlightColor',
+  'handwritingShowHighlight', 'handwritingShowStartEnd', 'visualScanFontStyle',
+  'visualScanCharSize', 'wordBoxDisplayMode',
+];
+
+function generativeKey(config: WorksheetConfig): string {
+  const clone: Record<string, unknown> = { ...config };
+  for (const f of COSMETIC_FIELDS) delete clone[f];
+  // childName feeds generation only in the handwriting family (trace-name
+  // letters, handwriting fallback text); elsewhere it's header-only.
+  if (config.mode !== 'traceName' && config.mode !== 'handwriting') delete clone.childName;
+  return JSON.stringify(clone);
+}
 
 export default function Editor() {
   const { templateId } = useParams<{ templateId: string }>();
@@ -21,10 +44,19 @@ export default function Editor() {
   const { increment, shouldNudge } = usePrintCount();
 
   const template = templateId ? getTemplate(templateId) : undefined;
-  const initialConfig = useMemo<WorksheetConfig>(
-    () => (template ? templateConfig(template) : defaultConfig),
-    [template]
-  );
+  const initialConfig = useMemo<WorksheetConfig>(() => {
+    if (!template) return defaultConfig;
+    const base = templateConfig(template);
+    // Restore the last customization of this template (survives refresh);
+    // merge over fresh defaults so newly added config fields stay valid.
+    const saved = templateId ? loadTemplateConfig(templateId) : null;
+    if (saved) return { ...base, ...saved, mode: template.mode };
+    // First visit to this template: carry the child's name over from any
+    // other worksheet the family has used.
+    const profile = loadProfile();
+    if (profile?.childName && !base.childName) return { ...base, childName: profile.childName };
+    return base;
+  }, [template, templateId]);
 
   const [config, setConfig] = useState<WorksheetConfig>(initialConfig);
   const [data, setData] = useState<WorksheetData>(() => generateWorksheet(initialConfig));
@@ -36,15 +68,36 @@ export default function Editor() {
     setData(generateWorksheet(initialConfig));
   }, [initialConfig]);
 
-  // Regenerate the visible puzzle whenever config changes (excluding identity churn).
+  // Regenerate the visible puzzle only when a generative setting changes;
+  // cosmetic fields re-render via config without re-rolling the puzzle.
+  const genKey = generativeKey(config);
   useEffect(() => {
     setData(generateWorksheet(config));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(config)]);
+  }, [genKey]);
+
+  // Persist customizations (debounced) + remember the child's name globally.
+  useEffect(() => {
+    if (!templateId) return;
+    const t = setTimeout(() => {
+      saveTemplateConfig(templateId, config);
+      if (config.childName.trim()) saveProfile({ childName: config.childName.trim() });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [config, templateId]);
 
   const handleRegenerate = useCallback(() => {
     setData(generateWorksheet(config));
   }, [config]);
+
+  const handleReset = useCallback(() => {
+    if (!template || !templateId) return;
+    clearTemplateConfig(templateId);
+    const fresh = templateConfig(template);
+    setConfig(fresh);
+    setData(generateWorksheet(fresh));
+    toast('Reset to template defaults');
+  }, [template, templateId]);
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -110,9 +163,14 @@ export default function Editor() {
               <div className="bg-card rounded-xl border border-border p-5 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-display text-base font-bold">Customize</h3>
-                  <button onClick={() => setCustomizeOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close">
-                    <X className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={handleReset} className="text-xs font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2">
+                      Reset
+                    </button>
+                    <button onClick={() => setCustomizeOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 {controls}
               </div>
@@ -126,7 +184,12 @@ export default function Editor() {
         <Drawer open={customizeOpen} onOpenChange={setCustomizeOpen}>
           <DrawerContent className="no-print max-h-[85vh]">
             <div className="px-4 pb-8 pt-2 overflow-y-auto">
-              <h3 className="font-display text-base font-bold mb-3">Customize</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-base font-bold">Customize</h3>
+                <button onClick={handleReset} className="text-xs font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2">
+                  Reset
+                </button>
+              </div>
               {controls}
             </div>
           </DrawerContent>
