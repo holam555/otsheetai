@@ -351,3 +351,40 @@ describe('lowercase name tracing', () => {
     expect(svg({ mode: 'traceName', childName: 'EmMa' })).not.toBe(svg({ mode: 'traceName', childName: 'Emma' }));
   });
 });
+
+// ---------------------------------------------------------------------------
+// D2 — pixel-art difficulty tiers. See DEFER_TO_FABLE D2.
+// ---------------------------------------------------------------------------
+describe('pixel art difficulty tiers', () => {
+  const THEMES = ['heart', 'smiley', 'star', 'catFace', 'fish', 'house', 'sun', 'flower', 'rainbow', 'rocket'] as const;
+  const SIZE: Record<string, number> = { easy: 8, medium: 10, hard: 12 };
+
+  it('every theme × difficulty is a well-formed grid with a valid palette', () => {
+    for (const theme of THEMES) {
+      for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+        const data = gen({ mode: 'pixelArt', pixelArtTheme: theme, difficulty });
+        const pa = data.pixelArtData!;
+        expect(pa.grid.length, `${theme}/${difficulty} rows`).toBe(SIZE[difficulty]);
+        for (const row of pa.grid) {
+          expect(row.length, `${theme}/${difficulty} cols`).toBe(SIZE[difficulty]);
+          for (const cell of row) {
+            expect(cell, `${theme}/${difficulty} color index in palette`).toBeLessThan(pa.colorKey.length);
+            expect(cell).toBeGreaterThanOrEqual(0);
+          }
+        }
+        // A real picture uses at least one non-background color.
+        expect(pa.colorKey.length).toBeGreaterThanOrEqual(2);
+        expect(pa.grid.flat().some((c) => c > 0)).toBe(true);
+      }
+    }
+  });
+
+  it('difficulty tiers actually differ (grid + color count grows)', () => {
+    for (const theme of THEMES) {
+      const easy = gen({ mode: 'pixelArt', pixelArtTheme: theme, difficulty: 'easy' }).pixelArtData!;
+      const hard = gen({ mode: 'pixelArt', pixelArtTheme: theme, difficulty: 'hard' }).pixelArtData!;
+      expect(hard.grid.length).toBeGreaterThan(easy.grid.length);
+      expect(hard.colorKey.length, `${theme}: hard should have ≥ colors of easy`).toBeGreaterThanOrEqual(easy.colorKey.length);
+    }
+  });
+});

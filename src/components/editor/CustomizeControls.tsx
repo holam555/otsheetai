@@ -51,10 +51,10 @@ const GRID_MODES: WorksheetMode[] = ['find', 'copy', 'mirror'];
 // don't consume showAnswerKey; visualScanning does.)
 const ANSWER_KEY_MODES: WorksheetMode[] = ['find', 'pattern', 'count', 'sequence', 'oddOneOut', 'mirror', 'figureGround', 'closure', 'visualScanning'];
 // Modes whose generation ignores `difficulty`, so the override would be a
-// no-op. scissorSkills now consumes difficulty (curve amplitude/complexity),
-// so it's no longer dead. pixelArt uses fixed artwork; visualScanning uses its
-// own density/frequency controls instead.
-const DIFFICULTY_DEAD_MODES: WorksheetMode[] = ['pixelArt', 'visualScanning'];
+// no-op. scissorSkills consumes difficulty (curve amplitude/complexity) and
+// pixelArt now has per-difficulty artwork tiers (8×8 / 10×10 / 12×12);
+// visualScanning uses its own density/frequency controls instead.
+const DIFFICULTY_DEAD_MODES: WorksheetMode[] = ['visualScanning'];
 // Modes whose renderer draws inter-cell grid lines from `showGridLines`.
 const GRIDLINE_MODES: WorksheetMode[] = ['find', 'count', 'copy', 'pattern'];
 
