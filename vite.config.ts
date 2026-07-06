@@ -17,5 +17,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Ensure a single React instance — @vercel/analytics can otherwise pull a
+    // second copy in dev, causing "Invalid hook call / more than one copy of React".
+    dedupe: ["react", "react-dom"],
   },
 }));

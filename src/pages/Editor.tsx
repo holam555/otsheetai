@@ -21,6 +21,7 @@ import {
 import { useProfiles } from '@/hooks/use-profiles';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ageBandLabel } from '@/data/templates';
+import { track } from '@vercel/analytics';
 
 const randomSeed = () => (Math.random() * 0xffffffff) >>> 0;
 
@@ -180,6 +181,8 @@ export default function Editor() {
       seed: s,
       printedAt: new Date().toISOString(),
     });
+    // Usage metric only — template + mode, never a child's name or age.
+    track('worksheet_print', { template: templateId, mode: config.mode });
     setPrintTick((t) => t + 1);
   }, [templateId, effectiveProfileId, config, shareBase]);
 

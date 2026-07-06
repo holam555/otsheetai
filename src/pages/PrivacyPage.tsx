@@ -60,12 +60,22 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="font-display font-bold text-lg mb-1">No tracking of children</h2>
+            <h2 className="font-display font-bold text-lg mb-1">Usage analytics (no personal data)</h2>
             <p className="text-muted-foreground">
-              We do not use advertising cookies and we do not run third-party analytics that profile
-              children. Your browser does fetch fonts from Google Fonts and cdnfonts to display the
-              worksheets; those services receive standard web requests (such as your IP address) as part
-              of loading a page, as they would on most websites.
+              We use privacy-friendly analytics (Vercel Web Analytics) to count how many people visit and
+              which worksheets are popular. It sets no cookies and does not build advertising profiles. We
+              strip the details out of worksheet links before anything is recorded, so a child’s name is
+              never sent — we only see, for example, that the “Trace My Name” page was opened. We record
+              when a worksheet is printed together with its type, but never with any child’s name or age.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display font-bold text-lg mb-1">Fonts</h2>
+            <p className="text-muted-foreground">
+              Your browser fetches fonts from Google Fonts and cdnfonts to display the worksheets; those
+              services receive standard web requests (such as your IP address) as part of loading a page,
+              as they would on most websites.
             </p>
           </section>
 
