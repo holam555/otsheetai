@@ -445,3 +445,47 @@ describe('age-band grading presets', () => {
     expect(templateConfig(f).gridSize).toBe(4);
   });
 });
+
+// ---------------------------------------------------------------------------
+// CHALLENGE — the parent-facing nudge relative to age. Replaces the old
+// Advanced Easy/Medium/Hard override.
+// ---------------------------------------------------------------------------
+describe('challenge grading', () => {
+  it('resolves age + challenge into level: 5-6 easier/standard/harder = 3x3/4x4/5x5 find', async () => {
+    const { applyGrading } = await import('@/lib/grading');
+    expect(applyGrading('find', '5-6', 'easier').gridSize).toBe(3);
+    expect(applyGrading('find', '5-6', 'standard').gridSize).toBe(4);
+    expect(applyGrading('find', '5-6', 'harder').gridSize).toBe(5);
+  });
+
+  it('difficulty ladder follows the level but respects the 3-4 age cap', async () => {
+    const { applyGrading } = await import('@/lib/grading');
+    expect(applyGrading('find', '3-4', 'standard').difficulty).toBe('easy');
+    expect(applyGrading('find', '3-4', 'harder').difficulty).toBe('medium'); // capped, never hard
+    expect(applyGrading('find', '5-6', 'harder').difficulty).toBe('hard');
+    expect(applyGrading('find', '7-8', 'standard').difficulty).toBe('hard');
+    expect(applyGrading('find', '7-8', 'easier').difficulty).toBe('medium');
+  });
+
+  it('7-8 vs 5-6 now differ even for difficulty-only modes (pixelArt tier)', async () => {
+    const { ageBandConfig } = await import('@/lib/defaultConfig');
+    const grid = (band: '5-6' | '7-8') =>
+      gen({ mode: 'pixelArt', pixelArtTheme: 'heart', ...ageBandConfig(band) }).pixelArtData!.grid.length;
+    expect(grid('5-6')).toBe(10);
+    expect(grid('7-8')).toBe(12);
+  });
+
+  it('oddOneOut letters hard: case pairs are visually distinct (no c/C, o/O, s/S...)', () => {
+    const AMBIGUOUS = new Set('cosuvwxzkjy'.split(''));
+    for (let seed = 0; seed < 30; seed++) {
+      const data = generateWorksheetSeeded(
+        { ...defaultConfig, mode: 'oddOneOut', oddOneOutType: 'letters', difficulty: 'hard', childAge: 8, exerciseCount: 8 },
+        seed
+      );
+      for (const row of data.oddOneOutRows ?? []) {
+        const base = (row.textItems ?? []).find((t, i) => i !== row.oddIndex) ?? '';
+        expect(AMBIGUOUS.has(base.toLowerCase()), `ambiguous hard pair for base '${base}'`).toBe(false);
+      }
+    }
+  });
+});

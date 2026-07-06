@@ -1,11 +1,11 @@
 import {
-  WorksheetConfig, WorksheetMode, GridSize, Difficulty, BorderStyle, HeaderFontSize, ShapeName,
+  WorksheetConfig, WorksheetMode, GridSize, ChallengeLevel, BorderStyle, HeaderFontSize, ShapeName,
   ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingLineColor, HandwritingLayout, InstructionFontSize,
   MazeSize, MazeShape, ConnectDotsShape, TracingStrokeType, TracingThickness, ScissorLineType,
   VisualScanDensity, VisualScanCharSize, PixelArtTheme, EMOJI_THEMES, EMOJI_ELIGIBLE_MODES, EmojiTheme, getShapeSVG,
 } from '@/lib/shapes';
 import { AGE_BANDS, AgeBand, ageBandConfig, childAgeToBand } from '@/lib/defaultConfig';
-import { agePresetForMode } from '@/lib/grading';
+import { applyGrading } from '@/lib/grading';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,10 +23,13 @@ interface Props {
 const PATTERN_MAX_EXERCISES: Record<number, number> = { 2: 6, 3: 4, 4: 3, 5: 2 };
 const EXERCISE_COUNTS = [3, 5, 8, 10];
 const GRID_SIZES: GridSize[] = [2, 3, 4, 5];
-const DIFFICULTIES: { value: Difficulty; label: string }[] = [
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
+// Parent-facing nudge relative to the age default. Replaces the old abstract
+// Easy/Medium/Hard override, which competed with the Age buttons and left
+// parents unsure which control to trust.
+const CHALLENGES: { value: ChallengeLevel; label: string }[] = [
+  { value: 'easier', label: 'Easier' },
+  { value: 'standard', label: 'Just right' },
+  { value: 'harder', label: 'Harder' },
 ];
 const ODD_ONE_OUT_TYPES: { value: OddOneOutType; label: string }[] = [
   { value: 'shapes', label: 'Shapes' },
@@ -51,20 +54,8 @@ const GRID_MODES: WorksheetMode[] = ['find', 'copy', 'mirror'];
 // Modes whose renderer actually draws an answer key. (copy + the motor/path modes
 // don't consume showAnswerKey; visualScanning does.)
 const ANSWER_KEY_MODES: WorksheetMode[] = ['find', 'pattern', 'count', 'sequence', 'oddOneOut', 'mirror', 'figureGround', 'closure', 'visualScanning'];
-// Modes whose generation ignores `difficulty`, so the override would be a
-// no-op. scissorSkills consumes difficulty (curve amplitude/complexity) and
-// pixelArt now has per-difficulty artwork tiers (8×8 / 10×10 / 12×12);
-// visualScanning uses its own density/frequency controls instead.
-const DIFFICULTY_DEAD_MODES: WorksheetMode[] = ['visualScanning'];
 // Modes whose renderer draws inter-cell grid lines from `showGridLines`.
 const GRIDLINE_MODES: WorksheetMode[] = ['find', 'count', 'copy', 'pattern'];
-
-function getAvailableDifficulties(age: number | null) {
-  if (age === null) return { easy: true, medium: true, hard: true };
-  if (age <= 3) return { easy: true, medium: false, hard: false };
-  if (age <= 5) return { easy: true, medium: true, hard: false };
-  return { easy: true, medium: true, hard: true };
-}
 
 function handwritingLayoutToConfig(layout: HandwritingLayout): Partial<WorksheetConfig> {
   switch (layout) {
@@ -108,7 +99,6 @@ export default function CustomizeControls({ config, onChange }: Props) {
 
   const mode = config.mode;
   const isHandwritingFamily = mode === 'handwriting' || mode === 'traceName';
-  const available = getAvailableDifficulties(config.childAge);
   const exerciseIndex = EXERCISE_COUNTS.indexOf(config.exerciseCount);
 
   const toggleShape = (shape: ShapeName) => {
@@ -178,10 +168,9 @@ export default function CustomizeControls({ config, onChange }: Props) {
                 key={b.value}
                 variant={active ? 'default' : 'outline'}
                 size="sm"
-                // Age re-grades the whole task: difficulty (subtlety) AND the
-                // mode's scope preset (grid size, rows, line thickness…).
-                // Fine-tuning under Advanced still works afterwards.
-                onClick={() => update({ ...ageBandConfig(b.value), ...agePresetForMode(mode, b.value) })}
+                // Age re-grades the whole task (scope preset + difficulty),
+                // keeping the current Challenge nudge applied on top.
+                onClick={() => update({ ...ageBandConfig(b.value), ...applyGrading(mode, b.value, config.challenge) })}
                 className="font-display text-xs"
               >
                 {b.label}
@@ -189,7 +178,25 @@ export default function CustomizeControls({ config, onChange }: Props) {
             );
           })}
         </div>
-        <p className="text-[10px] text-muted-foreground">Sets the difficulty automatically. Fine-tune under Advanced.</p>
+      </div>
+
+      {/* ============ CORE: Challenge (relative to age) ============ */}
+      <div className="space-y-2">
+        <FieldLabel>Challenge</FieldLabel>
+        <div className="grid grid-cols-3 gap-2">
+          {CHALLENGES.map((ch) => (
+            <Button
+              key={ch.value}
+              variant={config.challenge === ch.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => update({ challenge: ch.value, ...applyGrading(mode, childAgeToBand(config.childAge), ch.value) })}
+              className="font-display text-xs"
+            >
+              {ch.label}
+            </Button>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground">Tuned to the age — nudge if it feels too easy or too hard.</p>
       </div>
 
       {/* ============ CORE: mode essentials ============ */}
@@ -413,24 +420,6 @@ export default function CustomizeControls({ config, onChange }: Props) {
         </div>
       )}
 
-      {/* Pattern — quick start (core) */}
-      {mode === 'pattern' && (
-        <div className="space-y-2">
-          <FieldLabel>Difficulty</FieldLabel>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: 'Easy', gridSize: 2 as GridSize, exerciseCount: 3 },
-              { label: 'Medium', gridSize: 3 as GridSize, exerciseCount: 3 },
-              { label: 'Hard', gridSize: 4 as GridSize, exerciseCount: 2 },
-            ].map((p) => (
-              <Button key={p.label} variant={config.gridSize === p.gridSize ? 'default' : 'outline'} size="sm" onClick={() => update({ gridSize: p.gridSize, exerciseCount: p.exerciseCount })} className="font-display text-xs">
-                {p.label}<span className="ml-1 text-muted-foreground">{p.gridSize}×{p.gridSize}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Count — own grid size (core) */}
       {mode === 'count' && (
         <div className="space-y-2">
@@ -472,17 +461,8 @@ export default function CustomizeControls({ config, onChange }: Props) {
           <AccordionTrigger className="font-display font-bold text-sm hover:no-underline">Advanced</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-5 pt-1">
-              {/* Difficulty override (non-pattern; hidden where generation ignores it) */}
-              {!isHandwritingFamily && mode !== 'pattern' && !DIFFICULTY_DEAD_MODES.includes(mode) && (
-                <div className="space-y-2">
-                  <FieldLabel>Difficulty</FieldLabel>
-                  <div className="grid grid-cols-3 gap-2">
-                    {DIFFICULTIES.map((d) => (
-                      <Button key={d.value} variant={config.difficulty === d.value ? 'default' : 'outline'} size="sm" onClick={() => update({ difficulty: d.value })} className="font-display" disabled={!available[d.value]}>{d.label}</Button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* The old Easy/Medium/Hard override lived here — replaced by the
+                  core Challenge control, which grades relative to the age. */}
 
               {/* Grid size override */}
               {GRID_MODES.includes(mode) && (

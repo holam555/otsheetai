@@ -47,6 +47,9 @@ function harderDifficulty(difficulty: Difficulty, childAge: number | null): Diff
 // worksheet they like should keep it while typing the child's name or toggling
 // the answer key.
 const COSMETIC_FIELDS: (keyof WorksheetConfig)[] = [
+  // challenge itself is UI provenance — its *effects* (difficulty, presets)
+  // are applied eagerly to other fields, which do trigger regeneration.
+  'challenge',
   'childAge', 'customInstruction', 'borderStyle', 'headerFontSize', 'headerBold',
   'instructionFontSize', 'instructionBold', 'nameDateFontSize', 'useColor',
   'showAnswerKey', 'showGridLines', 'mazeShowSolution', 'pixelArtBW',

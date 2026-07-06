@@ -11,6 +11,7 @@ export const defaultConfig: WorksheetConfig = {
   shapeSet: 'custom',
   selectedShapes: [...BASIC_SHAPES],
   difficulty: 'easy',
+  challenge: 'standard',
   childName: '',
   childAge: null,
   showGridLines: true,
@@ -72,9 +73,11 @@ export const AGE_BANDS: { value: AgeBand; label: string }[] = [
 
 /**
  * Age is the single most important input — it drives difficulty defaults.
- * Maps a parent-friendly age band to a concrete childAge + default difficulty
- * that is compatible with the engine's getAvailableDifficulties logic
- * (age<=3 → easy only, age<=5 → easy/medium, age>5 → all).
+ * The ladder is complete on purpose (easy → medium → HARD): when 5–6 and 7–8
+ * both defaulted to medium, the modes that grade through difficulty alone
+ * (connect-dots, figure-ground, pixel art, trace-name) produced identical
+ * sheets for both bands. Compatible with the age caps (age<=3 → easy only,
+ * age<=5 → easy/medium, age>5 → all).
  */
 export function ageBandConfig(band: AgeBand): Partial<WorksheetConfig> {
   switch (band) {
@@ -83,7 +86,7 @@ export function ageBandConfig(band: AgeBand): Partial<WorksheetConfig> {
     case '5-6':
       return { childAge: 6, difficulty: 'medium' };
     case '7-8':
-      return { childAge: 8, difficulty: 'medium' };
+      return { childAge: 8, difficulty: 'hard' };
   }
 }
 

@@ -35,6 +35,9 @@ export type PixelArtTheme = 'heart' | 'smiley' | 'star' | 'catFace' | 'fish' | '
 export type GridSize = 2 | 3 | 4 | 5;
 export type ShapeSet = 'basic' | 'extended' | 'custom';
 export type Difficulty = 'easy' | 'medium' | 'hard';
+/** Parent-facing nudge relative to the age default ("she's 5 but this is too
+ *  easy"). Resolved into difficulty + scope presets by lib/grading.ts. */
+export type ChallengeLevel = 'easier' | 'standard' | 'harder';
 export type BorderStyle = 'plain' | 'dotted' | 'rounded';
 export type HeaderFontSize = 'small' | 'medium' | 'large';
 export type HandwritingPaperStyle = 'triline' | 'gridbox';
@@ -74,6 +77,7 @@ export interface WorksheetConfig {
   shapeSet: ShapeSet;
   selectedShapes: ShapeName[];
   difficulty: Difficulty;
+  challenge: ChallengeLevel;
   childName: string;
   childAge: number | null;
   showGridLines: boolean;
@@ -666,7 +670,10 @@ function generateOddOneOutLetters(config: WorksheetConfig): WorksheetData {
     ['A', 'B'], ['C', 'M'], ['O', 'X'], ['P', 'W'], ['H', 'S'], ['D', 'K'], ['E', 'Z'], ['G', 'T'],
   ];
   const mediumBase = ['b', 'd', 'E', 'F', 'M', 'N', 'C', 'G'];
-  const hardBase = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  // Hard rows differ only by CASE — so only letters whose upper/lower forms
+  // are visually DISTINCT glyphs. c/C o/O s/S u/U v/V w/W x/X z/Z k/K j/J y/Y
+  // are near-identical at worksheet size and would make the row unsolvable.
+  const hardBase = 'abdefghilmnpqrt'.split('');
 
   const rows: OddOneOutRow[] = [];
   const rowCount = config.exerciseCount;

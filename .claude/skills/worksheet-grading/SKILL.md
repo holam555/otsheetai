@@ -11,6 +11,29 @@ which happens whenever the grading levers aren't connected to the parameters
 that actually make that task harder. This skill records the architecture, the
 decision process, and the traps, so future grading work stays coherent.
 
+## The control model (parent-facing)
+
+Parents get exactly TWO grading controls, both in the core panel:
+- **Age** (3–4 / 5–6 / 7–8) — who the child is.
+- **Challenge** (Easier / Just right / Harder) — a nudge relative to the age
+  ("she's 5 but this is too easy"). There is deliberately NO separate
+  Easy/Medium/Hard override anymore — it competed with Age and parents didn't
+  know which to trust. Both resolve through ONE function:
+  `applyGrading(mode, band, challenge)` in `grading.ts`:
+
+      level = clamp( ageBandIndex + challengeShift )   // 0 | 1 | 2
+
+  The level drives the scope preset (`presetForLevel`) AND the difficulty
+  ladder easy/medium/hard (capped: ages 3–4 never get 'hard'). The age ladder
+  is complete on purpose — 3–4→easy, 5–6→medium, 7–8→hard — because when two
+  bands shared a difficulty, the difficulty-only modes produced identical
+  sheets for them.
+
+`challenge` is a WorksheetConfig field, but only as UI provenance (which
+button is lit): its EFFECTS are applied eagerly to the other fields at click
+time, same pattern as `handwritingLayout`. It's listed in the Editor's
+COSMETIC_FIELDS so the field alone never re-rolls a puzzle.
+
 ## The two-layer architecture (do not collapse it)
 
 **Layer 1 — AGE = task SCOPE, at the config level** (`src/lib/grading.ts`,
@@ -24,8 +47,8 @@ how thick the lines, how large the letters. Applied by all three entry points:
   choice.
 
 Age also maps to a default difficulty via `ageBandConfig()` in
-`defaultConfig.ts` (3-4→easy, 5-6/7-8→medium) and caps what difficulties are
-selectable (`getAvailableDifficulties`: ≤3 easy only, ≤5 no hard).
+`defaultConfig.ts` (3-4→easy, 5-6→medium, 7-8→hard; `applyGrading` caps the
+ladder so ages 3–4 never receive 'hard').
 
 **Layer 2 — DIFFICULTY = task SUBTLETY, inside the generators** (`shapes.ts`):
 target-to-distractor ratio, rotation, distractor similarity
@@ -45,8 +68,8 @@ to catch).
    domain: search tasks → field size + distractor count/similarity; motor
    tasks → line length/amplitude/thickness; memory/copy tasks → grid size +
    palette size; handwriting → letter size + guide visibility. If you can't
-   name the lever, don't fake it with a no-op setting — either grade something
-   real or exclude the mode from the difficulty UI (`DIFFICULTY_DEAD_MODES`).
+   name the lever, don't fake it with a no-op setting — grade something real
+   (a Challenge click must always change the sheet).
 2. **Split the levers:** the *visible-at-arm's-length* lever (a parent holding
    two sheets should instantly see which is for the older kid) goes in the AGE
    preset; the *look-closer* levers (rotation, similarity, ratios) go in the
@@ -64,9 +87,10 @@ to catch).
 
 ## Verification recipe (all three, every time)
 
-1. **Data-level test** in `src/test/audit.test.tsx` (see the
-   `age-band grading presets` describe block): preset values differ across
-   bands, keys are real `WorksheetConfig` fields, template overrides still win.
+1. **Data-level test** in `src/test/audit.test.tsx` (see `age-band grading
+   presets` + `challenge grading` describe blocks): preset values differ
+   across bands AND challenge levels, the 3–4 hard-cap holds, keys are real
+   `WorksheetConfig` fields, template overrides still win.
 2. **Live button-path check:** in the preview browser, click Ages 3–4 → 5–6 →
    7–8 on a real template and confirm the rendered SVG changes structurally
    (e.g. count internal grid lines), not just re-rolls.
@@ -98,4 +122,11 @@ their generators already respond strongly.
 - Setting preset fields the mode's generator never reads (check the generator
   actually consumes the field before presetting it).
 - Forgetting the age→difficulty caps: never preset `difficulty: 'hard'` for a
-  band whose `childAge` disallows it.
+  band whose `childAge` disallows it (`applyGrading` clamps this — go through
+  it, don't set difficulty directly from UI code).
+- Raising a band's default difficulty can SURFACE latent generator bugs at
+  that difficulty. When 7–8 moved to default-hard, odd-one-out "letters, hard"
+  exposed near-identical case pairs (c/C, o/O, s/S…) that made rows
+  unsolvable — hardBase is now restricted to visually distinct pairs. If you
+  change a default, re-run the worksheet-audit checks at the newly-default
+  difficulty.
