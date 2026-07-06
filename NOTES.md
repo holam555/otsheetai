@@ -2,6 +2,50 @@
 
 _Last updated: 2026-07-05. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
 
+## 2026-07-05 (later) — Fable deferred-items session (D1–D3)
+
+### D3 font licensing decision + print QA
+**Licensing:** KG Primary Penmanship 2 / KG Primary Dots (Kimberly Geswein) are
+free for *personal use only* — self-hosting (redistribution) and commercial use
+require a paid license, and ROADMAP Phase 4 plans monetization. Decision:
+replaced with **Edu QLD Beginner** (SIL OFL 1.1, self-hosted at
+`public/fonts/EduQLDBeginner.woff2` + license file), an Australian school
+beginner-handwriting font. If KG is ever wanted back, buy her commercial/web
+license first.
+
+**Dotted trace row is now font-independent:** drawn with SVG paint
+(`fill:none` + `stroke-dasharray`) instead of a dotted font. The old failure
+mode — CDN down → trace row silently rendered SOLID — is impossible now, and
+the cursive option gets a dotted trace row too. Cap-height ratio measured via
+canvas TextMetrics: Edu QLD Beginner = 0.772 (was hardcoded 0.72 for KG;
+capitals now touch the top line exactly).
+
+**Print QA (all 22 templates × easy + hard, seed 12345):** automated ink-bbox
+check of every rendered page against the 595×842 A4 viewBox (tolerance 3px)
+via the live app — **0 clipping/overflow issues across all pages**, plus
+eyeball checks of tri-line handwriting (caps/baseline alignment, dashed trace),
+Chinese grid-box (CJK model chars fall back to a system font — Edu QLD has no
+CJK; same behavior as before, acceptable), word-box, trace-name (mixed case,
+descenders), pixel-art (8/10/12 grids + legends). Known cosmetic notes, not
+defects: dotted row is a dashed-outline style (hollow letters), and UI fonts
+(Nunito/Inter) still load from Google Fonts CDN — worksheet-critical fonts are
+the self-hosted ones.
+
+### D1 lowercase name tracing
+26 manuscript lowercase letterforms authored in `LOWERCASE_PATHS`
+(y∈[0,1.4]: 0=ascender line, 0.4=x-height, 1=baseline, 1.4=descender depth),
+teaching-correct stroke order/direction. Trace-name preserves mixed case,
+normalizes all-one-case to Capitalized form, renders descender-aware rows with
+a true x-height guideline. Verified letter-by-letter at high magnification.
+
+### D2 pixel-art difficulty
+Easy 8×8 (2–3 colors) and hard 12×12 (4–7 colors) artwork authored for all 10
+themes (medium = original 10×10); difficulty wired into generatePixelArtMode
+and the control un-hidden. All 20 variants eyeballed as recognizable (easy
+rocket reworked with a porthole after failing the first look).
+
+Remaining deferred item: **D4 (OG image)** — see DEFER_TO_FABLE.md.
+
 ## 2026-07-05 — Deep strategy pass (Fable session)
 - **Engine correctness** (commit `f200934`): closure/sequence duplicate-option bugs fixed (closure printed the correct answer twice in 49% of 2-shape sheets); oddOneOut hard no longer produces unsolvable rotation rows (was 48%); emoji sheets no longer name invisible shapes; M/N/I/J stroke order corrected; trace-name fills the page with numbered per-stroke start dots; 4 solvability regression tests added.
 - **Editor stability + persistence**: cosmetic edits (name, instruction, colors) no longer re-roll the puzzle; per-template config + child-name profile persist in localStorage (`src/lib/persistence.ts`); Reset button added; user text XML-escaped before SVG injection.

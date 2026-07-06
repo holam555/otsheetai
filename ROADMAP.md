@@ -28,12 +28,11 @@ trace-name page fill. Baseline: 38/38 tests, build green.
 
 ---
 
-> **Phase 1 progress (2026-07-05):** items 1.1 (copy/mirror/maze/scissor
-> difficulty), 1.3 (visual-scan case), and 1.4 (grid-line control) are DONE and
-> committed. Items **1.2** (lowercase letterforms), the **pixelArt** part of
-> 1.1, and **1.5** (font self-host + print QA) are deferred to a stronger model
-> — see [DEFER_TO_FABLE.md](DEFER_TO_FABLE.md) sections D1, D2, D3 for scope +
-> ready-to-run prompts.
+> **Phase 1 COMPLETE (2026-07-05):** 1.1 (all modes incl. pixelArt tiers),
+> 1.2 (lowercase name tracing), 1.3, 1.4, and 1.5 (OFL font self-hosted +
+> 22-template print QA, 0 overflow) are done — the D1/D2/D3 deferred items were
+> executed in a Fable session (see NOTES.md). Only D4 (OG image) remains in
+> [DEFER_TO_FABLE.md](DEFER_TO_FABLE.md).
 
 ## Phase 1 — Finish therapeutic quality (no architecture changes)
 

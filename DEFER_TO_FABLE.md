@@ -67,8 +67,7 @@ do B, and let Opus do A around them.
 
 ## D1 — Lowercase letterforms for name tracing (ROADMAP 1.2)
 
-**Status:** not started. Currently `generateTraceNameMode` uppercases every
-name because `LETTER_PATHS` only contains A–Z, so "Emma" prints as "EMMA".
+**Status: DONE (2026-07-05).** Implemented as scoped; see NOTES.md D1 entry.
 
 **Why deferred:** authoring 26 lowercase letters as normalized stroke-point
 arrays (`[x,y]` in a shared coordinate space, correct stroke *order* and
@@ -124,8 +123,7 @@ phase.
 
 ## D2 — Pixel-art difficulty levels (ROADMAP 1.1, pixelArt portion)
 
-**Status:** intentionally left hidden (`pixelArt` stays in
-`DIFFICULTY_DEAD_MODES` in `src/components/editor/CustomizeControls.tsx`).
+**Status: DONE (2026-07-05).** Implemented (8×8/10×10/12×12 tiers, control un-hidden); see NOTES.md D2 entry.
 
 **Why deferred:** the pictures are a fixed hand-designed set
 (`PIXEL_ART_PATTERNS` in `src/lib/shapes.ts`), each with a baked-in color count
@@ -160,10 +158,7 @@ ship a fake "difficulty" that changes nothing meaningful.
 
 ## D3 — Self-host fonts + full print QA across all 22 templates (ROADMAP 1.5)
 
-**Status:** not started. Handwriting tracing depends on two CDN fonts
-(`KG Primary Penmanship 2`, `KG Primary Dots`) loaded from cdnfonts.com in
-`index.html`. If that CDN is slow/down, the dotted trace row silently renders
-as solid text — a real reliability hole for the core handwriting feature.
+**Status: DONE (2026-07-05).** KG fonts replaced with self-hosted OFL Edu QLD Beginner; dotted trace row is now paint-based (font-independent); 22-template × easy/hard QA passed with 0 overflow. See NOTES.md D3 entry.
 
 **Why deferred:** two reasons. (1) **Licensing judgment** — these are
 third-party fonts; self-hosting requires confirming the license permits it

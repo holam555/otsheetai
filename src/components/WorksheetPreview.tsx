@@ -1030,29 +1030,31 @@ function renderFourLineSet(
   return svg;
 }
 
-// Render text using KG Primary Penmanship (solid or dotted), or a custom font for cursive mode.
-// baselineY = SVG y baseline = bottom red line.
-// fontPx is sized so cap-height fills the zone exactly (caps touch top red line).
+// Self-hosted beginner-handwriting font (SIL OFL, public/fonts). The cursive
+// fallbacks are visually distinct, so a loading failure is obvious — never a
+// silent look-alike.
+const PENMANSHIP_FONT = "'Edu QLD Beginner', 'Comic Sans MS', cursive";
+
+// Render model or trace text. baselineY = SVG y baseline = bottom line.
+// The TRACE row is drawn with paint, not a font: hollow letters with a dashed
+// stroke (fill:none + stroke-dasharray). Unlike the old KG Primary Dots CDN
+// font — which silently rendered SOLID when it failed to load, making the
+// trace row useless — this dotted look is deterministic and font-independent.
 function renderPenmanshipText(
   text: string, x: number, baselineY: number, fontPx: number, _contentW: number, dotted: boolean,
   overrideFontFamily?: string
 ): string {
   if (!text) return '';
-  let fontFamily: string;
-  if (overrideFontFamily) {
-    // Cursive or custom font — use as-is (no dotted variant available)
-    fontFamily = overrideFontFamily;
-  } else {
-    fontFamily = dotted
-      ? "'KG Primary Dots', sans-serif"
-      : "'KG Primary Penmanship 2', sans-serif";
-  }
-  return `<text x="${x + 2}" y="${baselineY}" dominant-baseline="auto" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" fill="#333333">${escapeXml(text)}</text>`;
+  const fontFamily = overrideFontFamily ?? PENMANSHIP_FONT;
+  const paint = dotted
+    ? `fill="none" stroke="#64748B" stroke-width="${Math.max(0.8, fontPx * 0.02)}" stroke-dasharray="${fontPx * 0.06} ${fontPx * 0.05}"`
+    : `fill="#333333"`;
+  return `<text x="${x + 2}" y="${baselineY}" dominant-baseline="auto" font-family="${fontFamily}" font-size="${fontPx}" font-weight="400" ${paint}>${escapeXml(text)}</text>`;
 }
 
 // Sentence mode:
-//   Row 1 — KG Primary Penmanship (solid) on trilines  → model text
-//   Row 2 — KG Primary Penmanship Dotted on trilines   → tracing
+//   Row 1 — solid model text on trilines
+//   Row 2 — dashed hollow trace text on trilines (paint-based, font-agnostic)
 //   Row 3 — Empty trilines                             → independent practice
 // Sizing: capitals touch top red line, baseline sits on bottom red line.
 function renderSentenceTrilineMode(
@@ -1067,9 +1069,9 @@ function renderSentenceTrilineMode(
   const setGap = 6 * mmToPx;
   const rowH = triSetH + setGap;
 
-  // KG Primary Penmanship cap-height ≈ 0.72 × font-size
-  // → font-size = zoneH / 0.72 makes capitals exactly touch the top red line
-  const kgFontPx = zoneH / 0.72;
+  // Edu QLD Beginner cap-height = 0.772 × font-size (measured via canvas
+  // TextMetrics) → font-size = zoneH / 0.772 makes capitals touch the top line
+  const kgFontPx = zoneH / 0.772;
   const isCursive = fontFamily.includes('Segoe Script') || fontFamily.includes('Comic Sans');
 
   let currentY = startY;
@@ -1084,11 +1086,12 @@ function renderSentenceTrilineMode(
     currentY += rowH;
   }
 
-  // Row 2: dotted trace text (cursive uses solid font again — no dotted cursive font available)
+  // Row 2: dotted trace text — paint-based dashes, so it works for ANY font
+  // (the old dotted FONT couldn't do cursive and failed silently offline).
   if (currentY + zoneH <= startY + availableH) {
     const baselineY = currentY + zoneH;
     svg += renderColoredTrilineSet(MARGIN, baselineY, fontPx, contentW, config);
-    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, !isCursive, isCursive ? fontFamily : undefined);
+    svg += renderPenmanshipText(text, MARGIN, baselineY, kgFontPx, contentW, true, isCursive ? fontFamily : undefined);
 
     // Stroke guide: green "Start →" indicator above the trace row
     if (config.handwritingShowStartEnd && text) {
@@ -1140,7 +1143,7 @@ function renderGridBoxRows(
       if (r === 0) {
         const ch = chars[c];
         const charFontPx = boxSize * 0.65;
-        svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="'KG Primary Penmanship 2', sans-serif" font-size="${charFontPx}" font-weight="400" fill="#333333">${escapeXml(ch)}</text>`;
+        svg += `<text x="${bx + boxSize / 2}" y="${baseY + boxSize * 0.72}" text-anchor="middle" font-family="${PENMANSHIP_FONT}" font-size="${charFontPx}" font-weight="400" fill="#333333">${escapeXml(ch)}</text>`;
       }
     }
   }
@@ -1198,7 +1201,7 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     if (chars.length === 0) return;
 
     // 1. Word label in Patrick Hand (solid, dark grey)
-    svg += `<text x="${colX}" y="${blockY + labelFontPx}" font-family="'KG Primary Penmanship 2', sans-serif" font-size="${labelFontPx}" font-weight="400" fill="#333333">${escapeXml(word.trim())}</text>`;
+    svg += `<text x="${colX}" y="${blockY + labelFontPx}" font-family="${PENMANSHIP_FONT}" font-size="${labelFontPx}" font-weight="400" fill="#333333">${escapeXml(word.trim())}</text>`;
 
     let nextY = blockY + labelH;
 

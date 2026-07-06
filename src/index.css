@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted handwriting font (SIL OFL 1.1 — see public/fonts/OFL-*.txt).
+   Replaces the CDN-loaded KG Primary fonts, whose personal-use license doesn't
+   permit self-hosting/commercial use. The dotted trace row no longer depends
+   on any font: it's drawn with SVG stroke-dasharray (see WorksheetPreview). */
+@font-face {
+  font-family: 'Edu QLD Beginner';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/EduQLDBeginner.woff2') format('woff2');
+}
+
 @layer base {
   :root {
     --background: 34 28% 97%;
