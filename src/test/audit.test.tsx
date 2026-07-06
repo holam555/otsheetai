@@ -388,3 +388,60 @@ describe('pixel art difficulty tiers', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// AGE-BAND GRADING — age must change the task's SCOPE (search field size,
+// item count, line thickness…), not just the hidden difficulty flag. This is
+// what makes the Age buttons / child profiles / template age bands meaningful.
+// ---------------------------------------------------------------------------
+describe('age-band grading presets', () => {
+  it('find: the search field grows with age (3x3 → 4x4 → 5x5)', async () => {
+    const { agePresetForMode } = await import('@/lib/grading');
+    expect(agePresetForMode('find', '3-4').gridSize).toBe(3);
+    expect(agePresetForMode('find', '5-6').gridSize).toBe(4);
+    expect(agePresetForMode('find', '7-8').gridSize).toBe(5);
+    // and it reaches the generated worksheet
+    const grid = (band: '3-4' | '5-6' | '7-8') =>
+      gen({ mode: 'find', ...agePresetForMode('find', band) }).grid!.length;
+    expect(grid('3-4')).toBe(3);
+    expect(grid('7-8')).toBe(5);
+  });
+
+  it('every mode with a preset produces different configs across age bands', async () => {
+    const { agePresetForMode } = await import('@/lib/grading');
+    const graded: import('@/lib/shapes').WorksheetMode[] = [
+      'find', 'count', 'copy', 'mirror', 'pattern', 'sequence', 'oddOneOut',
+      'closure', 'maze', 'tracingPaths', 'scissorSkills', 'visualScanning', 'handwriting',
+    ];
+    for (const mode of graded) {
+      const a = JSON.stringify(agePresetForMode(mode, '3-4'));
+      const c = JSON.stringify(agePresetForMode(mode, '7-8'));
+      expect(a, `${mode} should grade by age`).not.toBe(c);
+    }
+  });
+
+  it('preset keys are valid WorksheetConfig fields', async () => {
+    const { agePresetForMode } = await import('@/lib/grading');
+    const bands = ['3-4', '5-6', '7-8'] as const;
+    const modes: import('@/lib/shapes').WorksheetMode[] = [
+      'find', 'count', 'copy', 'sequence', 'oddOneOut', 'mirror', 'figureGround', 'closure',
+      'traceName', 'handwriting', 'maze', 'connectDots', 'tracingPaths', 'scissorSkills',
+      'visualScanning', 'pixelArt', 'pattern',
+    ];
+    for (const mode of modes) for (const band of bands) {
+      for (const key of Object.keys(agePresetForMode(mode, band))) {
+        expect(key in defaultConfig, `${mode}/${band}: unknown config key '${key}'`).toBe(true);
+      }
+    }
+  });
+
+  it('templateConfig: curated template overrides beat the age preset', async () => {
+    const { getTemplate, templateConfig } = await import('@/data/templates');
+    // match-pattern (7-8) explicitly sets gridSize 3; preset would say 4.
+    const t = getTemplate('match-pattern')!;
+    expect(templateConfig(t).gridSize).toBe(3);
+    // find-shapes has no gridSize override → the 5-6 preset (4) applies.
+    const f = getTemplate('find-shapes')!;
+    expect(templateConfig(f).gridSize).toBe(4);
+  });
+});

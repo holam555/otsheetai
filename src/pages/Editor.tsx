@@ -14,6 +14,7 @@ import { WorksheetConfig, WorksheetData, Difficulty, WorksheetMode } from '@/lib
 import { generateWorksheetSeeded } from '@/lib/seededGenerate';
 import { getTemplate, templateConfig } from '@/data/templates';
 import { defaultConfig, ageBandConfig } from '@/lib/defaultConfig';
+import { agePresetForMode } from '@/lib/grading';
 import {
   loadTemplateConfig, saveTemplateConfig, clearTemplateConfig,
   addHistory, countPrints, diffConfig, encodeConfig, decodeConfig,
@@ -86,13 +87,19 @@ export default function Editor() {
   }, [templateId]);
 
   // Profile-aware defaults for this template (no saved overrides yet): the
-  // active child's age drives difficulty, their name auto-fills, and their
-  // first interest sets the emoji theme where the template didn't fix one.
+  // active child's age drives difficulty AND the mode's grading preset (grid
+  // size, rows, …), their name auto-fills, and their first interest sets the
+  // emoji theme where the template didn't fix one.
   const profileBase = useMemo<WorksheetConfig>(() => {
     if (!template) return defaultConfig;
     let base = templateConfig(template);
     if (activeProfile) {
-      base = { ...base, ...ageBandConfig(activeProfile.ageBand), childName: activeProfile.name };
+      base = {
+        ...base,
+        ...ageBandConfig(activeProfile.ageBand),
+        ...agePresetForMode(template.mode, activeProfile.ageBand),
+        childName: activeProfile.name,
+      };
       if (activeProfile.interests.length && !('emojiTheme' in template.overrides)) {
         base = { ...base, emojiTheme: activeProfile.interests[0] };
       }

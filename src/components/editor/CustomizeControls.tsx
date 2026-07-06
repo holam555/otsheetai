@@ -5,6 +5,7 @@ import {
   VisualScanDensity, VisualScanCharSize, PixelArtTheme, EMOJI_THEMES, EMOJI_ELIGIBLE_MODES, EmojiTheme, getShapeSVG,
 } from '@/lib/shapes';
 import { AGE_BANDS, AgeBand, ageBandConfig, childAgeToBand } from '@/lib/defaultConfig';
+import { agePresetForMode } from '@/lib/grading';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -177,7 +178,10 @@ export default function CustomizeControls({ config, onChange }: Props) {
                 key={b.value}
                 variant={active ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => update(ageBandConfig(b.value))}
+                // Age re-grades the whole task: difficulty (subtlety) AND the
+                // mode's scope preset (grid size, rows, line thickness…).
+                // Fine-tuning under Advanced still works afterwards.
+                onClick={() => update({ ...ageBandConfig(b.value), ...agePresetForMode(mode, b.value) })}
                 className="font-display text-xs"
               >
                 {b.label}

@@ -1,5 +1,6 @@
 import { WorksheetConfig, WorksheetMode } from '@/lib/shapes';
 import { defaultConfig, ageBandConfig, AgeBand } from '@/lib/defaultConfig';
+import { agePresetForMode } from '@/lib/grading';
 
 export type Goal =
   | 'letter-reversals'
@@ -285,11 +286,15 @@ export const TEMPLATES: Template[] = [
   },
 ];
 
-/** Build a full WorksheetConfig for a template: defaults → age band → overrides. */
+/** Build a full WorksheetConfig for a template:
+ *  defaults → age band (difficulty) → age grading presets (scope) → overrides.
+ *  Template overrides come last on purpose — a curated template is a
+ *  deliberate choice that beats the generic age grading. */
 export function templateConfig(t: Template): WorksheetConfig {
   return {
     ...defaultConfig,
     ...ageBandConfig(t.ageBand),
+    ...agePresetForMode(t.mode, t.ageBand),
     ...t.overrides,
     mode: t.mode,
   };
