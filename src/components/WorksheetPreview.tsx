@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
-import { LETTER_PATHS, StrokePoint } from '@/lib/letterPaths';
+import { getLetterStrokes } from '@/lib/letterPaths';
 
 interface Props {
   config: WorksheetConfig;
@@ -839,8 +839,9 @@ function renderTraceNameMode(
   }
 
   let svg = '';
+  // Max cap height by difficulty; actual capH per section is fitted below so
+  // the full ascender-to-descender box stays inside each row.
   const letterH = config.difficulty === 'easy' ? 60 : config.difficulty === 'medium' ? 50 : 40;
-  const letterW = letterH * 0.7;
   const startY = MARGIN + 90;
   const availH = H - startY - MARGIN - 35;
 
@@ -850,82 +851,82 @@ function renderTraceNameMode(
 
   traceData.sections.forEach((section, sIdx) => {
     const secY = startY + sIdx * sectionH;
-    const totalLetterW = section.length * (letterW + 12) - 12;
-    const secStartX = (W - totalLetterW) / 2;
 
-    // Reference row, then alternating Trace/Write rows repeated to fill the
-    // section — repetition is the point of name practice, and a mostly-blank
-    // page reads as a broken worksheet.
-    const rowH = Math.min(sectionH / 3 - 4, letterH + 20);
+    // Row layout: each row hosts a full letter box of 1.4 × capH (ascender
+    // line down to descender depth), so g/j/p/q/y tails never collide with the
+    // next row. capH = cap/ascender height; stroke coords map y=0 → top line,
+    // y=0.4 → x-height, y=1 → baseline, y≤1.4 → descender.
+    const rowH = Math.min(sectionH / 3 - 4, letterH * 1.4 + 20);
+    const capH = Math.min(letterH, (rowH - 10) / 1.4);
+    const letterW = capH * 0.7;
     const rowCapacity = Math.max(3, Math.floor(sectionH / rowH));
     const rowLabels: string[] = ['Reference'];
     for (let i = 1; i < rowCapacity; i++) rowLabels.push(i % 2 === 1 ? 'Trace' : 'Write');
+
+    const totalLetterW = section.length * (letterW + 12) - 12;
+    const secStartX = (W - totalLetterW) / 2;
 
     for (let rowIdx = 0; rowIdx < rowLabels.length; rowIdx++) {
       const rowY = secY + rowIdx * rowH;
       const rowKind = rowLabels[rowIdx];
 
-      // Row label
-      svg += `<text x="${MARGIN}" y="${rowY + rowH / 2 + 4}" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${rowKind}</text>`;
+      const topY = rowY + (rowH - capH * 1.4) / 2; // ascender/cap line
+      const midY = topY + capH * 0.4;              // x-height line
+      const baseY = topY + capH;                   // baseline
 
-      // Baseline
-      svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4}" stroke="#E2E8F0" stroke-width="1" />`;
-      // Midline (dashed)
-      svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4 - letterH / 2}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4 - letterH / 2}" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4" />`;
-      // Topline
-      svg += `<line x1="${secStartX - 5}" y1="${rowY + rowH - 4 - letterH}" x2="${secStartX + totalLetterW + 5}" y2="${rowY + rowH - 4 - letterH}" stroke="#E2E8F0" stroke-width="0.5" />`;
+      // Row label
+      svg += `<text x="${MARGIN}" y="${(topY + baseY) / 2 + 3}" font-family="Inter, sans-serif" font-size="8" fill="#94A3B8">${rowKind}</text>`;
+
+      // Guidelines: top, x-height (dashed), baseline (strongest)
+      svg += `<line x1="${secStartX - 5}" y1="${topY}" x2="${secStartX + totalLetterW + 5}" y2="${topY}" stroke="#E2E8F0" stroke-width="0.5" />`;
+      svg += `<line x1="${secStartX - 5}" y1="${midY}" x2="${secStartX + totalLetterW + 5}" y2="${midY}" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4" />`;
+      svg += `<line x1="${secStartX - 5}" y1="${baseY}" x2="${secStartX + totalLetterW + 5}" y2="${baseY}" stroke="#CBD5E1" stroke-width="1" />`;
 
       section.forEach((letter, lIdx) => {
         const lx = secStartX + lIdx * (letterW + 12);
-        const ly = rowY + rowH - 4 - letterH; // top of letter area
-        const strokes = LETTER_PATHS[letter];
+        const px2x = (px: number) => lx + px * letterW;
+        const py2y = (py: number) => topY + py * capH;
+        const strokes = getLetterStrokes(letter);
         if (!strokes) return;
 
         if (rowKind === 'Reference') {
           // Reference: solid light grey letter
           strokes.forEach(stroke => {
             if (stroke.length < 2) return;
-            const points = stroke.map(([px, py]: StrokePoint) =>
-              `${lx + px * letterW},${ly + py * letterH}`
-            ).join(' ');
+            const points = stroke.map(([px, py]) => `${px2x(px)},${py2y(py)}`).join(' ');
             svg += `<polyline points="${points}" fill="none" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
           });
         } else if (rowKind === 'Trace') {
           // Dot-trace: dots along the stroke path
           strokes.forEach((stroke, strokeIdx) => {
             if (stroke.length < 2) return;
-            // Draw dots along the path
             const dotSpacing = config.difficulty === 'easy' ? 6 : config.difficulty === 'medium' ? 8 : 10;
             const dotR = config.difficulty === 'easy' ? 2.5 : 2;
 
-            // Interpolate points along each segment
+            // Interpolate dots along each segment (true pixel distance, so
+            // density is even on both tall strokes and wide crossbars).
             for (let si = 0; si < stroke.length - 1; si++) {
-              const [x1, y1] = stroke[si];
-              const [x2, y2] = stroke[si + 1];
-              const segLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * letterW;
+              const X1 = px2x(stroke[si][0]), Y1 = py2y(stroke[si][1]);
+              const X2 = px2x(stroke[si + 1][0]), Y2 = py2y(stroke[si + 1][1]);
+              const segLen = Math.hypot(X2 - X1, Y2 - Y1);
               const dots = Math.max(2, Math.ceil(segLen / dotSpacing));
-
               for (let d = 0; d <= dots; d++) {
                 const t = d / dots;
-                const dx = lx + (x1 + (x2 - x1) * t) * letterW;
-                const dy = ly + (y1 + (y2 - y1) * t) * letterH;
-                svg += `<circle cx="${dx}" cy="${dy}" r="${dotR}" fill="#94A3B8" />`;
+                svg += `<circle cx="${X1 + (X2 - X1) * t}" cy="${Y1 + (Y2 - Y1) * t}" r="${dotR}" fill="#94A3B8" />`;
               }
             }
 
             // Numbered start dot on EVERY stroke — teaches stroke order, not
             // just where the first stroke begins.
-            const [sx, sy] = stroke[0];
-            const startX = lx + sx * letterW;
-            const startY2 = ly + sy * letterH;
+            const startX = px2x(stroke[0][0]);
+            const startY2 = py2y(stroke[0][1]);
             svg += `<circle cx="${startX}" cy="${startY2}" r="4.5" fill="#22C55E" />`;
             svg += `<text x="${startX}" y="${startY2 + 2.5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="6" font-weight="800" fill="white">${strokeIdx + 1}</text>`;
 
             // Arrow showing direction (first stroke only, to avoid clutter)
             if (strokeIdx === 0 && stroke.length >= 2) {
-              const [nx, ny] = stroke[1];
-              const endX = lx + nx * letterW;
-              const endY = ly + ny * letterH;
+              const endX = px2x(stroke[1][0]);
+              const endY = py2y(stroke[1][1]);
               const angle = Math.atan2(endY - startY2, endX - startX);
               const arrowLen = 10;
               const ax = startX + Math.cos(angle) * arrowLen;

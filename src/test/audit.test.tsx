@@ -123,7 +123,8 @@ describe('data-level controls change the puzzle', () => {
   });
 
   it('traceName: childName drives the letters', () => {
-    expect(gen({ mode: 'traceName', childName: 'Alex' }).traceNameData?.letters).toEqual(['A', 'L', 'E', 'X']);
+    // Since D1, names render in their natural mixed case (not force-uppercased).
+    expect(gen({ mode: 'traceName', childName: 'Alex' }).traceNameData?.letters).toEqual(['A', 'l', 'e', 'x']);
     expect(J({ mode: 'traceName', childName: 'Alex' })).not.toBe(J({ mode: 'traceName', childName: 'Maya' }));
   });
 
@@ -297,5 +298,56 @@ describe('phase 1: difficulty is meaningful across modes', () => {
     const data = gen({ mode: 'visualScanning', visualScanTarget: 'B', visualScanDensity: 'small' });
     const chars = data.visualScanData!.grid.flat();
     expect(chars.every((c) => c === c.toUpperCase())).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// D1 — lowercase name tracing (letterforms + mixed case). See DEFER_TO_FABLE D1.
+// ---------------------------------------------------------------------------
+describe('lowercase name tracing', () => {
+  it('all 26 lowercase letters have stroke paths inside the letter box', async () => {
+    const { LOWERCASE_PATHS, hasDescender } = await import('@/lib/letterPaths');
+    for (const ch of 'abcdefghijklmnopqrstuvwxyz') {
+      const strokes = LOWERCASE_PATHS[ch];
+      expect(strokes, `missing path for '${ch}'`).toBeDefined();
+      expect(strokes.length).toBeGreaterThan(0);
+      let maxY = 0;
+      for (const stroke of strokes) {
+        expect(stroke.length).toBeGreaterThanOrEqual(2);
+        for (const [x, y] of stroke) {
+          expect(x, `'${ch}' x out of box`).toBeGreaterThanOrEqual(0);
+          expect(x, `'${ch}' x out of box`).toBeLessThanOrEqual(1);
+          expect(y, `'${ch}' y out of box`).toBeGreaterThanOrEqual(0);
+          expect(y, `'${ch}' y below descender line`).toBeLessThanOrEqual(1.4);
+          maxY = Math.max(maxY, y);
+        }
+      }
+      // Descenders (and only descenders) dip below the baseline.
+      if (hasDescender(ch)) expect(maxY, `'${ch}' should descend`).toBeGreaterThan(1);
+      else expect(maxY, `'${ch}' should NOT descend`).toBeLessThanOrEqual(1.001);
+    }
+  });
+
+  it('tall lowercase sticks are drawn top → bottom (teaching direction)', async () => {
+    const { LOWERCASE_PATHS } = await import('@/lib/letterPaths');
+    for (const ch of 'bhkl') {
+      const first = LOWERCASE_PATHS[ch][0];
+      expect(first[0][1], `'${ch}' first stroke should start at the top`).toBeLessThan(first[first.length - 1][1]);
+    }
+  });
+
+  it('traceName preserves mixed case and normalizes single-case input', () => {
+    const letters = (name: string) => gen({ mode: 'traceName', childName: name }).traceNameData!.letters;
+    expect(letters('emma')).toEqual(['E', 'm', 'm', 'a']);
+    expect(letters('EMMA')).toEqual(['E', 'm', 'm', 'a']);
+    expect(letters('Emma')).toEqual(['E', 'm', 'm', 'a']);
+    expect(letters('McKay')).toEqual(['M', 'c', 'K', 'a', 'y']);
+  });
+
+  it('lowercase and descender names render strokes (not empty)', () => {
+    const out = svg({ mode: 'traceName', childName: 'bpqgy' });
+    expect(out).toContain('polyline');
+    // Mixed-case renders differently from a different mixed-case name.
+    expect(svg({ mode: 'traceName', childName: 'EmMa' })).not.toBe(svg({ mode: 'traceName', childName: 'Emma' }));
   });
 });

@@ -897,7 +897,13 @@ function generateClosureMode(config: WorksheetConfig): WorksheetData {
 
 // ========== MODE 11: TRACE YOUR NAME ==========
 function generateTraceNameMode(config: WorksheetConfig): WorksheetData {
-  const name = (config.childName || 'NAME').toUpperCase().replace(/[^A-Z]/g, '');
+  // Keep the child's actual capitalization ("McKay" stays McKay). If the input
+  // is all one case (emma / EMMA), normalize to the clinically standard name
+  // form: capital first letter, lowercase rest.
+  let name = (config.childName || 'Name').replace(/[^A-Za-z]/g, '');
+  if (name && (name === name.toLowerCase() || name === name.toUpperCase())) {
+    name = name[0].toUpperCase() + name.slice(1).toLowerCase();
+  }
   const letters = name.split('');
   const sections: string[][] = [];
   for (let i = 0; i < letters.length; i += 5) {
