@@ -839,9 +839,14 @@ function renderTraceNameMode(
   }
 
   let svg = '';
-  // Max cap height by difficulty; actual capH per section is fitted below so
-  // the full ascender-to-descender box stays inside each row.
+  // Two age levers (see GRADING_AUDIT F2):
+  //  - cap height: bigger for younger. Smaller letters also let more
+  //    trace/write rows fit, so younger naturally gets fewer repetitions.
+  //  - support weight: a bold reference letter + strong guideline for the
+  //    youngest, fading to a faint model + light guides for the oldest.
   const letterH = config.difficulty === 'easy' ? 60 : config.difficulty === 'medium' ? 50 : 40;
+  const refStroke = config.difficulty === 'easy' ? 4.5 : config.difficulty === 'medium' ? 3 : 2;
+  const baseStroke = config.difficulty === 'easy' ? 1.6 : config.difficulty === 'medium' ? 1 : 0.7;
   const startY = MARGIN + 90;
   const availH = H - startY - MARGIN - 35;
 
@@ -880,7 +885,7 @@ function renderTraceNameMode(
       // Guidelines: top, x-height (dashed), baseline (strongest)
       svg += `<line x1="${secStartX - 5}" y1="${topY}" x2="${secStartX + totalLetterW + 5}" y2="${topY}" stroke="#E2E8F0" stroke-width="0.5" />`;
       svg += `<line x1="${secStartX - 5}" y1="${midY}" x2="${secStartX + totalLetterW + 5}" y2="${midY}" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4" />`;
-      svg += `<line x1="${secStartX - 5}" y1="${baseY}" x2="${secStartX + totalLetterW + 5}" y2="${baseY}" stroke="#CBD5E1" stroke-width="1" />`;
+      svg += `<line x1="${secStartX - 5}" y1="${baseY}" x2="${secStartX + totalLetterW + 5}" y2="${baseY}" stroke="#CBD5E1" stroke-width="${baseStroke}" />`;
 
       section.forEach((letter, lIdx) => {
         const lx = secStartX + lIdx * (letterW + 12);
@@ -894,7 +899,7 @@ function renderTraceNameMode(
           strokes.forEach(stroke => {
             if (stroke.length < 2) return;
             const points = stroke.map(([px, py]) => `${px2x(px)},${py2y(py)}`).join(' ');
-            svg += `<polyline points="${points}" fill="none" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
+            svg += `<polyline points="${points}" fill="none" stroke="#CBD5E1" stroke-width="${refStroke}" stroke-linecap="round" stroke-linejoin="round" />`;
           });
         } else if (rowKind === 'Trace') {
           // Dot-trace: dots along the stroke path

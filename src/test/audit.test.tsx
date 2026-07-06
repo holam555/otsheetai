@@ -511,3 +511,68 @@ describe('grading audit fixes', () => {
     expect(avgR('medium')).toBeGreaterThan(avgR('hard')); // hard used to share medium's size pool
   });
 });
+
+// ---------------------------------------------------------------------------
+// GRADING FOLLOW-UPS (F1–F5, 2026-07-06). See GRADING_AUDIT.md.
+// ---------------------------------------------------------------------------
+describe('grading follow-up fixes', () => {
+  const er = (r: number) => r * 0.4;
+
+  it('F1 figureGround: medium/hard overlap ≥60% AND stay spread out (not one clump)', () => {
+    for (const difficulty of ['medium', 'hard'] as const) {
+      let total = 0, overlapping = 0, spreadSum = 0;
+      const N = 30;
+      for (let seed = 0; seed < N; seed++) {
+        const p = generateWorksheetSeeded({ ...defaultConfig, mode: 'figureGround', difficulty, childAge: 8 }, seed).figureGroundPuzzle!.shapes;
+        p.forEach((a, i) => { total++; if (p.some((b, j) => i !== j && Math.hypot(a.cx - b.cx, a.cy - b.cy) < er(a.r) + er(b.r))) overlapping++; });
+        const xs = p.map(s => s.cx), ys = p.map(s => s.cy);
+        spreadSum += ((Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys))) / (400 * 400);
+      }
+      expect(overlapping / total, `${difficulty} overlap`).toBeGreaterThanOrEqual(0.6);
+      expect(spreadSum / N, `${difficulty} spread (not clumped)`).toBeGreaterThan(0.2);
+    }
+  });
+
+  it('F1 figureGround: easy stays sparse (little overlap)', () => {
+    let total = 0, overlapping = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const p = generateWorksheetSeeded({ ...defaultConfig, mode: 'figureGround', difficulty: 'easy', childAge: 4 }, seed).figureGroundPuzzle!.shapes;
+      p.forEach((a, i) => { total++; if (p.some((b, j) => i !== j && Math.hypot(a.cx - b.cx, a.cy - b.cy) < er(a.r) + er(b.r))) overlapping++; });
+    }
+    expect(overlapping / total).toBeLessThan(0.5);
+  });
+
+  it('F1 figureGround: answer-key counts equal the placed shapes', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const fg = generateWorksheetSeeded({ ...defaultConfig, mode: 'figureGround', difficulty: 'hard', childAge: 8 }, seed).figureGroundPuzzle!;
+      const actual: Record<string, number> = {};
+      fg.shapes.forEach(s => { actual[s.shape] = (actual[s.shape] ?? 0) + 1; });
+      for (const [shape, count] of Object.entries(fg.counts)) expect(actual[shape] ?? 0).toBe(count);
+    }
+  });
+
+  it('F4 visualScanning: target density falls with difficulty', () => {
+    const ratio = (d: WorksheetConfig['difficulty']) => {
+      const v = generateWorksheetSeeded({ ...defaultConfig, mode: 'visualScanning', difficulty: d, childAge: 8, visualScanDensity: 'medium' }, 5).visualScanData!;
+      return v.targetPositions.length / (v.rows * v.cols);
+    };
+    expect(ratio('easy')).toBeGreaterThan(ratio('medium'));
+    expect(ratio('medium')).toBeGreaterThan(ratio('hard'));
+  });
+
+  it('F5 sequence: every medium sheet contains at least one period-3 row', () => {
+    for (let seed = 0; seed < 100; seed++) {
+      const p = generateWorksheetSeeded({ ...defaultConfig, mode: 'sequence', difficulty: 'medium', childAge: 8, exerciseCount: 5 }, seed).sequencePuzzles!;
+      expect(p.some(x => new Set(x.sequence.map(c => c.shape)).size === 3), `seed ${seed}`).toBe(true);
+    }
+  });
+
+  it('F2 traceName: reference stroke weight grades by difficulty', () => {
+    const refWidth = (d: WorksheetConfig['difficulty']) => {
+      const out = svg({ mode: 'traceName', childName: 'Emma', difficulty: d });
+      const m = out.match(/polyline[^>]*stroke-width="([\d.]+)"/);
+      return m ? parseFloat(m[1]) : NaN;
+    };
+    expect(refWidth('easy')).toBeGreaterThan(refWidth('hard'));
+  });
+});

@@ -51,7 +51,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '5-6',
     language: 'en',
     goals: ['attention-scanning'],
-    overrides: { useEmoji: false, exerciseCount: 5 },
+    overrides: {},
   },
   {
     id: 'find-animals',
@@ -62,7 +62,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '3-4',
     language: 'en',
     goals: ['attention-scanning'],
-    overrides: { useEmoji: true, emojiTheme: 'animals', exerciseCount: 4 },
+    overrides: { useEmoji: true, emojiTheme: 'animals' },
   },
   {
     id: 'match-pattern',
@@ -73,7 +73,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '7-8',
     language: 'en',
     goals: ['copying-patterns'],
-    overrides: { gridSize: 3, exerciseCount: 3 },
+    overrides: { gridSize: 3 },
   },
   {
     id: 'count-shapes',
@@ -84,7 +84,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '5-6',
     language: 'en',
     goals: ['attention-scanning'],
-    overrides: { gridSize: 4, useEmoji: false },
+    overrides: { gridSize: 4 },
   },
   {
     id: 'copy-pattern',
@@ -95,7 +95,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '5-6',
     language: 'en',
     goals: ['copying-patterns'],
-    overrides: { gridSize: 3, exerciseCount: 4 },
+    overrides: { exerciseCount: 4 },
   },
   {
     id: 'what-next',
@@ -117,7 +117,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '5-6',
     language: 'en',
     goals: ['attention-scanning'],
-    overrides: { oddOneOutType: 'shapes', exerciseCount: 5 },
+    overrides: { oddOneOutType: 'shapes' },
   },
   {
     id: 'letter-reversal-bd',
@@ -128,7 +128,7 @@ export const TEMPLATES: Template[] = [
     ageBand: '7-8',
     language: 'en',
     goals: ['letter-reversals'],
-    overrides: { oddOneOutType: 'letters', oddOneOutCustomTarget: 'b', exerciseCount: 6 },
+    overrides: { oddOneOutType: 'letters', oddOneOutCustomTarget: 'b' },
   },
   {
     id: 'mirror-image',

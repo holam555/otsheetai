@@ -544,12 +544,19 @@ function generateSequenceMode(config: WorksheetConfig): WorksheetData {
   const puzzles: SequencePuzzle[] = [];
   const puzzleCount = config.exerciseCount;
 
+  // Medium mixes period-2 and period-3 rows, but an all-period-2 sheet is
+  // indistinguishable from easy. Guarantee at least one period-3 row: force
+  // the last row to period 3 if none was drawn yet.
+  let mediumHasPeriod3 = false;
+
   for (let p = 0; p < puzzleCount; p++) {
     let patternLen: number;
     if (config.difficulty === 'easy') {
       patternLen = 2;
     } else if (config.difficulty === 'medium') {
-      patternLen = randomFrom([2, 3]);
+      const isLast = p === puzzleCount - 1;
+      patternLen = isLast && !mediumHasPeriod3 ? 3 : randomFrom([2, 3]);
+      if (patternLen === 3) mediumHasPeriod3 = true;
     } else {
       patternLen = 3;
     }
@@ -841,6 +848,21 @@ function generateFigureGroundMode(config: WorksheetConfig): WorksheetData {
   const areaW = 400;
   const areaH = 400;
 
+  // Effective drawn half-extent in 400-space (getShapeRawSVG draws at ≈0.4×r).
+  const er = (r: number) => r * 0.4;
+  // Figure-ground = pulling a figure out of a competing background, so contours
+  // must cross. We build a few overlapping CLUSTERS whose centres sit on a
+  // jittered grid: overlaps stay local within each cluster, and the clusters
+  // spread across the whole field (easy = clusters of 1 = a sparse search).
+  const clusterSize = config.difficulty === 'easy' ? 1 : config.difficulty === 'medium' ? 2 : 3;
+  const nClusters = Math.ceil(shapeTotal / clusterSize);
+  const gCols = Math.ceil(Math.sqrt(nClusters));
+  const gRows = Math.ceil(nClusters / gCols);
+  const cellW = areaW / gCols;
+  const cellH = areaH / gRows;
+  const cellOrder = shuffle(Array.from({ length: gCols * gRows }, (_, k) => k));
+  const clusterAnchor: Record<number, { cx: number; cy: number; r: number }> = {};
+
   for (let i = 0; i < shapeTotal; i++) {
     const shape = randomFrom(targetShapes);
     counts[shape]++;
@@ -851,13 +873,32 @@ function generateFigureGroundMode(config: WorksheetConfig): WorksheetData {
       : config.difficulty === 'medium'
         ? randomFrom([38, 46, 55])
         : randomFrom([28, 34, 42]);
-    placed.push({
-      shape,
-      cx: 80 + Math.random() * (areaW - 160),
-      cy: 80 + Math.random() * (areaH - 160),
-      r,
-      rotation: getDifficultyRotation(config.difficulty),
-    });
+    const rotation = getDifficultyRotation(config.difficulty);
+    const margin = er(r) + 8;
+    const clamp = (v: number, max: number) => Math.max(margin, Math.min(max - margin, v));
+
+    const clusterIdx = Math.floor(i / clusterSize);
+    const anchor = clusterAnchor[clusterIdx];
+    let cx: number;
+    let cy: number;
+    if (!anchor) {
+      // First shape of a cluster: place at its distributed (jittered) cell.
+      const cell = cellOrder[clusterIdx % cellOrder.length];
+      const gx = cell % gCols;
+      const gy = Math.floor(cell / gCols);
+      cx = clamp(gx * cellW + cellW * (0.25 + 0.5 * Math.random()), areaW);
+      cy = clamp(gy * cellH + cellH * (0.25 + 0.5 * Math.random()), areaH);
+      clusterAnchor[clusterIdx] = { cx, cy, r };
+    } else {
+      // Later shapes overlap the cluster anchor: distance ∈ [0.45,0.8]×(er+er)
+      // so outlines cross without being concentric.
+      const reach = er(anchor.r) + er(r);
+      const ang = Math.random() * Math.PI * 2;
+      const dist = reach * (0.45 + 0.35 * Math.random());
+      cx = clamp(anchor.cx + Math.cos(ang) * dist, areaW);
+      cy = clamp(anchor.cy + Math.sin(ang) * dist, areaH);
+    }
+    placed.push({ shape, cx, cy, r, rotation });
   }
 
   return {
@@ -1445,7 +1486,12 @@ function generateVisualScanningMode(config: WorksheetConfig): WorksheetData {
   const density = config.visualScanDensity;
   const cols = density === 'small' ? 8 : density === 'medium' ? 10 : 12;
   const rows = density === 'small' ? 6 : density === 'medium' ? 8 : 10;
-  const targetPercent = config.visualScanTargetCount === 'many' ? 0.3 : 0.2;
+  // Target density falls with difficulty: fewer hits among more distractors
+  // means the child must scan more of the field per find. The 'many' control
+  // adds a fixed boost on top. (Was a flat 0.2/0.3, so age changed the grid
+  // size but not the search effort per target.)
+  const baseRatio = config.difficulty === 'easy' ? 0.25 : config.difficulty === 'medium' ? 0.2 : 0.15;
+  const targetPercent = config.visualScanTargetCount === 'many' ? baseRatio + 0.1 : baseRatio;
 
   // Auto-select distractors
   const DISTRACTOR_MAP: Record<string, string[]> = {

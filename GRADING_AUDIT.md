@@ -17,12 +17,12 @@ change.
 | pattern | pattern dim 2→3→4, distractor subtlety (2-cell swap → similar 1-cell) | **STRONG** |
 | count | 2 kinds/2×2 → 3/3×3 → 4/4×4, hard adds non-target distractors | **STRONG** |
 | copy | dim 2→3→4, palette 2→3→4, rotation 0→2→12 cells | **STRONG** |
-| sequence | rows 3→5→8, period 2→~2.8→3 | OK (see F5) |
+| sequence | rows 3→5→8; ≥1 period-3 row guaranteed at medium (F5) | **STRONG** |
 | oddOneOut | rows 3→5→8; odd goes different-shape → similar-shape → rotation-only | **STRONG** |
 | mirror | dim 2→3→4, filled cells 2→5→13 | **STRONG** |
-| figureGround | shapes 6→8→10, size 62→46→35 avg r (fixed this pass) | OK (see F1) |
-| closure | rows 3→5→8, contour present ~80%→62%→50% (fixed this pass) | **STRONG** |
-| traceName | letter height 60→50→40px (renderer) | WEAK-OK (see F2) |
+| figureGround | shapes 6→8→10, size 62→46→35 r, + enforced overlap medium/hard (F1) | **STRONG** |
+| closure | rows 3→5→8, contour present ~80%→62%→50% | **STRONG** |
+| traceName | letter height 60→50→40px + reference/guide weight 4.5→3→2 (F2) | **STRONG** |
 | handwriting | letter height 20→15→12 mm | **STRONG** |
 | maze | 8×8→12×12→16×16 + shortcuts 25%→10%→0% | **STRONG** |
 | connectDots | dots ~16→~31→~62 | **STRONG** |
@@ -48,40 +48,46 @@ direction by construction — the UI now disables that button (see fixes).
    explanatory tooltip, and the selection snaps back to "Just right" when an
    age switch would strand it. Verified via real clicks.
 
-## Follow-ups for Opus (each self-contained; use the worksheet-grading +
-## worksheet-audit skills)
+## Follow-ups — status (2026-07-06, Opus pass)
 
-- **F1 — figureGround: enforce overlap.** Shapes are placed at random and may
-  not overlap at all — without embedded/overlapping contours this degenerates
-  into find-and-count, which weakens its clinical claim (figure-ground =
-  distinguishing a figure from a competing background). Make medium/hard
-  guarantee overlap (e.g. place each shape within r of an existing one until
-  ≥60% of shapes intersect another; easy can stay sparse). Files:
-  `generateFigureGroundMode` in `src/lib/shapes.ts`. Acceptance: computed
-  pairwise intersections ≥60% of shapes at medium+, visually verified; counts
-  in the answer key still correct.
-- **F2 — traceName: a second age lever.** Age currently only changes letter
-  height (via difficulty). Clinically, younger children also need fewer
-  repetitions and a thicker reference. Suggest: 3–4 = 2 trace/write pairs with
-  extra-thick reference strokes; 7–8 = more repetitions (fills page) and
-  thinner guides. Files: `renderTraceNameMode` in `WorksheetPreview.tsx`
-  (+ a preset entry in `grading.ts` if a config field is added). Acceptance:
-  band change visibly alters rows/stroke weight, arm's-length test passes.
-- **F3 — copy hard "memory" variant** (ROADMAP 1.1 leftover, product call):
-  hard could blank 1 cell of the model ("remember and skip") for visual-memory
-  load. Only if the user wants it — mark in the sheet's instructions clearly.
-- **F4 — visualScanning target ratio.** Fixed at 20% ('few') across levels;
-  consider 25%→20%→15% by level so older kids scan more field per hit. Minor.
-- **F5 — sequence medium determinism.** Medium rows draw period from
-  randomFrom([2,3]) — an unlucky sheet can be all period-2 (indistinguishable
-  from easy rows). Guarantee ≥1 period-3 row per medium sheet. Files:
-  `generateSequenceMode`. Acceptance: 100 seeded medium sheets each contain a
-  period-3 row.
-- **F6 — template override hygiene.** Overrides bypass age presets at load (by
-  design), but some are now redundant or stale (e.g. `find-shapes` sets
-  `exerciseCount: 5`, which find ignores). Audit the 22 templates: keep only
-  overrides that intentionally deviate from the preset. Acceptance: every
-  remaining override changes the generated sheet vs. the preset default.
+- **F1 — figureGround overlap. DONE.** `generateFigureGroundMode` now builds
+  overlapping CLUSTERS: cluster size 1/2/3 by difficulty, centres on a jittered
+  grid, later shapes placed to cross the cluster anchor's contour. Measured
+  over 30 seeds: overlap easy 0.2 / medium 1.0 / hard 0.9; bounding-box spread
+  ≥0.38 at medium+ (a first naïve "anchor on nearest" version passed the 60%
+  overlap check but collapsed all 10 shapes into one corner — the arm's-length
+  screenshot caught it; hence the explicit cluster model + a spread assertion).
+  Answer-key counts verified unchanged. Regression tests added.
+- **F2 — traceName second lever. DONE.** Added graded support weight alongside
+  letter height: reference-stroke width 4.5→3→2 and baseline width 1.6→1→0.7
+  by difficulty (bold model + strong guides for the youngest, faint for the
+  oldest). Smaller letters at 7–8 already fit more trace/write rows, so
+  repetitions grade too. Files: `renderTraceNameMode` in `WorksheetPreview.tsx`.
+  Regression test on reference stroke weight.
+- **F3 — copy "memory" variant. DEFERRED (product decision, not a bug).**
+  Blanking a model cell turns copy from *visual-motor copying* (the mode's
+  stated skill) into a *visual-memory* task — a different clinical target.
+  Left unimplemented pending an explicit product call; if wanted, gate it and
+  state it clearly in the sheet's instructions.
+- **F4 — scan target ratio. DONE.** `generateVisualScanningMode` base density
+  now 25%/20%/15% by difficulty (+0.1 when the 'many' control is on), so older
+  children scan more field per hit. Regression test.
+- **F5 — sequence medium determinism. DONE.** Medium now forces the last row to
+  period-3 if none was drawn, so a medium sheet is never all-period-2. Verified
+  across 100 seeds. (Caveat: needs ≥3 shapes selected to realise period 3;
+  default is 4.) Regression test.
+- **F6 — template override hygiene. DONE.** Trimmed 7 override blocks: removed
+  `exerciseCount` from the two `find` templates (the generator ignores it),
+  dropped values that merely restated the age preset (`match-pattern`/
+  `copy-pattern`/`count-shapes`/`odd-one-out`), and removed `letter-reversal-bd`'s
+  off-slider `exerciseCount: 6` (rendered a lying slider; preset now gives 8).
+  Kept genuine deviations (`match-pattern` 3×3, `mirror-image` 3×3+4, the
+  `number-hunt`/`letter-hunt` density choices) and all content overrides
+  (names, handwriting text/layout, shapes, themes). Note: a few templates still
+  pin difficulty-scope fields (`pre-writing-strokes` thickness, `scissor-skills`
+  count) that soften their age preset — kept because they change the sheet, but
+  a future pass could align them to the preset if the curated intent is just
+  "use the age default".
 
 ## Re-audit rule
 

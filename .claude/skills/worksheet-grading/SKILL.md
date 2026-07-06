@@ -125,6 +125,14 @@ their generators already respond strongly.
 - Difficulty levers that are invisible at the actual render size (±15%
   shapeScale on a 170px cell reads as "the same"). If a lever can't be seen,
   it isn't grading.
+- A metric can pass while the layout is wrong. figureGround's overlap check
+  read 94% while every shape had collapsed into one corner clump (each new
+  shape anchored on the nearest already-placed one → snowball). The
+  arm's-length screenshot caught what the number hid. Fix was an explicit
+  cluster model (distributed centres + local overlap) AND a second assertion on
+  spatial spread (bounding-box coverage). Lesson: when a fix moves geometry,
+  assert BOTH the intended property and that you didn't wreck distribution —
+  and always look at it (verification step 3 is not optional).
 - Rotation as the "hard" discriminator on rotation-symmetric shapes — see
   `VISIBLE_ROTATIONS` and the worksheet-audit skill.
 - Setting preset fields the mode's generator never reads (check the generator
