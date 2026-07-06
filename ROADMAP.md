@@ -138,6 +138,13 @@ meta. Acceptance: social-card validators show the image.
 
 ---
 
+> **Phase 3 DONE (2026-07-05):** 3.1 multi-child profiles (context + header
+> switcher + per-child config + age→difficulty + interests→emoji), 3.2 print
+> history + "Print 5 varied" + progression nudge + recently-printed strip, and
+> 3.3 shareable ?c= links (exact reproduction incl. seed) are all implemented,
+> tested and committed. Stayed client-side (localStorage) as decided; the v2
+> schema carries ids + timestamps so Phase 4 can sync it. 51 tests pass.
+
 ## Phase 3 — Per-child profiles & worksheet sets (personalization architecture)
 
 **Decision: profiles stay client-side (localStorage) in this phase.** No
