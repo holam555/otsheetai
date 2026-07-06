@@ -2,6 +2,21 @@
 
 _Last updated: 2026-07-05. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
 
+## 2026-07-06 — Strategy pass 2 (Fable): design + SEO + scroll fix
+- **Bug fixed:** SPA navigation kept the gallery scroll offset — opening a
+  worksheet landed past the Print/Customize toolbar. `ScrollToTop` on route
+  change in App.tsx; verified (scrollY 4221 → 0, toolbar visible).
+- **DESIGN_STRATEGY.md:** decided direction "warm paper studio" — site tokens
+  (Fredoka display, category palette, taped-paper thumbnails, dotted-path
+  motifs) + worksheet redesign (title header, age/level chip, "I did it!"
+  reward row, instruction icons, opt-in corner doodles, print-your-own footer
+  URL), phased A0–A4 / B1–B4 with acceptance criteria and ink/solvability
+  constraints for Opus.
+- **seo-content skill:** three intent clusters mapped to page types; /guides
+  architecture (G0) speced on the GoalPage pattern; per-article recipe with
+  E-E-A-T writing standards for a kids'-health-adjacent site; 20-topic seed
+  backlog; llms.txt/JSON-LD rules; one-guide-per-session cadence.
+
 ## 2026-07-05 (later) — Fable deferred-items session (D1–D3)
 
 ### D3 font licensing decision + print QA

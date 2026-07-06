@@ -270,6 +270,13 @@ input is aggregate history, not free text about the child. Build only after
 > it (`ui/sonner.tsx`); `@tanstack/react-query` is provider-only and kept as the
 > intended data layer for the Phase 5 LLM calls.
 
+> **New strategy docs (2026-07-06, Fable):** [DESIGN_STRATEGY.md](DESIGN_STRATEGY.md)
+> — decided visual direction ("warm paper studio") for the website (Part A) and
+> the printed worksheets (Part B), phased for Opus. SEO/content:
+> `.claude/skills/seo-content` — full strategy + the /guides content space (G0)
+> + per-article production recipe + 20-topic backlog. Navigation scroll-reset
+> bug fixed (cards opened past the toolbar).
+
 ## Phase 6 — Trust & polish backlog (fold into any phase)
 
 - Replace footer placeholders: real contact email, real Buy-Me-a-Coffee link,
