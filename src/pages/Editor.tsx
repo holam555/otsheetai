@@ -16,7 +16,7 @@ import { getTemplate, templateConfig } from '@/data/templates';
 import { defaultConfig, ageBandConfig } from '@/lib/defaultConfig';
 import {
   loadTemplateConfig, saveTemplateConfig, clearTemplateConfig,
-  addHistory, countPrints, diffConfig,
+  addHistory, countPrints, diffConfig, encodeConfig, decodeConfig,
 } from '@/lib/persistence';
 import { useProfiles } from '@/hooks/use-profiles';
 import { usePageMeta } from '@/hooks/use-page-meta';
@@ -71,6 +71,19 @@ export default function Editor() {
 
   const template = templateId ? getTemplate(templateId) : undefined;
 
+  // Canonical, profile-independent base for diffing/encoding (history + shareable
+  // links), so a stored/shared worksheet reproduces the same for anyone.
+  const shareBase = useMemo(() => (template ? templateConfig(template) : defaultConfig), [template]);
+
+  // A shared worksheet arrives as ?c=<encoded>. It reproduces exactly and beats
+  // both the child profile and any saved customization. Read once per template.
+  const initialShare = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const c = new URLSearchParams(window.location.search).get('c');
+    return c ? decodeConfig(c) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId]);
+
   // Profile-aware defaults for this template (no saved overrides yet): the
   // active child's age drives difficulty, their name auto-fills, and their
   // first interest sets the emoji theme where the template didn't fix one.
@@ -88,34 +101,46 @@ export default function Editor() {
 
   const initialConfig = useMemo<WorksheetConfig>(() => {
     if (!template) return defaultConfig;
-    // This child's saved customization of this template wins over the defaults.
+    // A shared link wins over profile + saved config, so it reproduces exactly.
+    if (initialShare) return { ...shareBase, ...initialShare.diff, mode: template.mode };
+    // Otherwise this child's saved customization of this template wins over defaults.
     const saved = templateId ? loadTemplateConfig(effectiveProfileId, templateId) : null;
     return saved ? { ...profileBase, ...saved, mode: template.mode } : profileBase;
-  }, [template, templateId, profileBase, effectiveProfileId]);
+  }, [template, templateId, profileBase, effectiveProfileId, initialShare, shareBase]);
 
   usePageMeta(
     template ? `${template.title} — Free Printable Worksheet (${ageBandLabel[template.ageBand]})` : undefined,
     template ? `Free printable ${template.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[template.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print — no signup.` : undefined
   );
 
-  // Canonical, profile-independent base for diffing (history + shareable links),
-  // so a stored/shared worksheet reproduces the same for anyone.
-  const shareBase = useMemo(() => (template ? templateConfig(template) : defaultConfig), [template]);
-
   const [config, setConfig] = useState<WorksheetConfig>(initialConfig);
-  const [seed, setSeed] = useState<number>(randomSeed);
+  const [seed, setSeed] = useState<number>(() => initialShare?.seed ?? randomSeed());
   const [data, setData] = useState<WorksheetData>(() => generateWorksheetSeeded(initialConfig, seed));
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [batchSeeds, setBatchSeeds] = useState<number[] | null>(null);
   const [chipDismissed, setChipDismissed] = useState(false);
   const [printTick, setPrintTick] = useState(0);
 
-  // Reset when the template or active child changes: fresh config + new seed.
+  // Reset when the template or active child changes: fresh config, and a seed
+  // from the shared link if present (so it reproduces) else a new random one.
   useEffect(() => {
     setConfig(initialConfig);
-    setSeed(randomSeed());
+    setSeed(initialShare?.seed ?? randomSeed());
     setChipDismissed(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialConfig]);
+
+  // Keep the URL in sync (debounced) with the exact current worksheet, so the
+  // address bar / Share button always points at this precise sheet. Uses
+  // replaceState (no history spam, no router churn).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !templateId) return;
+    const t = setTimeout(() => {
+      const encoded = encodeConfig(diffConfig(config, shareBase), seed);
+      window.history.replaceState(null, '', `${window.location.pathname}?c=${encoded}`);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [config, seed, shareBase, templateId]);
 
   // Regenerate the visible puzzle when a generative setting OR the seed changes;
   // cosmetic fields re-render via the config prop without re-rolling the puzzle.
@@ -174,6 +199,18 @@ export default function Editor() {
   const handlePrintBatch = useCallback(() => {
     setBatchSeeds(Array.from({ length: 5 }, () => randomSeed()));
   }, []);
+
+  // Copy a link that reproduces this exact worksheet (settings + seed).
+  const handleShare = useCallback(async () => {
+    const encoded = encodeConfig(diffConfig(config, shareBase), seed);
+    const url = `${window.location.origin}${window.location.pathname}?c=${encoded}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('Link copied', { description: 'Anyone who opens it gets this exact worksheet.' });
+    } catch {
+      toast('Copy this link', { description: url });
+    }
+  }, [config, shareBase, seed]);
 
   // Once the 5 pages have rendered, fire the print dialog, then clear them.
   useEffect(() => {
@@ -235,6 +272,7 @@ export default function Editor() {
             onPrint={handlePrint}
             onPrintBatch={handlePrintBatch}
             onRegenerate={handleRegenerate}
+            onShare={handleShare}
             onToggleCustomize={() => setCustomizeOpen((o) => !o)}
             customizeOpen={customizeOpen}
           />

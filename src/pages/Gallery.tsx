@@ -8,7 +8,7 @@ import { TEMPLATES, GOALS, LANGUAGES, Goal, Language } from '@/data/templates';
 import { AGE_BANDS, AgeBand } from '@/lib/defaultConfig';
 import { WorksheetMode } from '@/lib/shapes';
 import { useProfiles } from '@/hooks/use-profiles';
-import { loadHistory } from '@/lib/persistence';
+import { loadHistory, encodeConfig } from '@/lib/persistence';
 
 type AgeFilter = AgeBand | 'all';
 type GoalFilter = Goal | 'all';
@@ -71,15 +71,16 @@ export default function Gallery() {
   const anyFilter = age !== 'all' || goal !== 'all' || lang !== 'all' || mode !== 'all';
   const clearAll = () => { setAge('all'); setGoal('all'); setLang('all'); setMode('all'); };
 
-  // Most-recently-printed templates for the active child (distinct, up to 4).
+  // Most-recently-printed worksheets for the active child (distinct templates,
+  // up to 4). Each links back to the exact sheet that was printed (diff + seed).
   const recent = useMemo(() => {
     const seen = new Set<string>();
-    const out: typeof TEMPLATES = [];
+    const out: { template: typeof TEMPLATES[number]; to: string }[] = [];
     for (const h of loadHistory()) {
       if (h.profileId !== effectiveProfileId || seen.has(h.templateId)) continue;
       seen.add(h.templateId);
-      const t = TEMPLATES.find((x) => x.id === h.templateId);
-      if (t) out.push(t);
+      const template = TEMPLATES.find((x) => x.id === h.templateId);
+      if (template) out.push({ template, to: `/edit/${template.id}?c=${encodeConfig(h.diff, h.seed)}` });
       if (out.length >= 4) break;
     }
     return out;
@@ -109,8 +110,8 @@ export default function Gallery() {
               Recently printed{activeProfile ? ` for ${activeProfile.name}` : ''}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {recent.map((t) => (
-                <TemplateCard key={t.id} template={t} />
+              {recent.map(({ template, to }) => (
+                <TemplateCard key={template.id} template={template} to={to} />
               ))}
             </div>
           </section>

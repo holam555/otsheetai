@@ -1,15 +1,16 @@
 import { Button } from '@/components/ui/button';
-import { Printer, RefreshCw, SlidersHorizontal, Layers } from 'lucide-react';
+import { Printer, RefreshCw, SlidersHorizontal, Layers, Link2 } from 'lucide-react';
 
 interface Props {
   onPrint: () => void;
   onPrintBatch: () => void;
   onRegenerate: () => void;
+  onShare: () => void;
   onToggleCustomize: () => void;
   customizeOpen: boolean;
 }
 
-export default function EditorToolbar({ onPrint, onPrintBatch, onRegenerate, onToggleCustomize, customizeOpen }: Props) {
+export default function EditorToolbar({ onPrint, onPrintBatch, onRegenerate, onShare, onToggleCustomize, customizeOpen }: Props) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Button onClick={onPrint} className="font-display font-bold gap-2 h-11 px-5 shadow-sm">
@@ -20,6 +21,9 @@ export default function EditorToolbar({ onPrint, onPrintBatch, onRegenerate, onT
       </Button>
       <Button onClick={onRegenerate} variant="outline" className="font-display font-bold gap-2 h-11">
         <RefreshCw className="w-4 h-4" /> Regenerate
+      </Button>
+      <Button onClick={onShare} variant="outline" className="font-display font-bold gap-2 h-11" title="Copy a link to this exact worksheet">
+        <Link2 className="w-4 h-4" /> Share
       </Button>
       <Button
         onClick={onToggleCustomize}

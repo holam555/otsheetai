@@ -4,7 +4,7 @@ import WorksheetPreview from '@/components/WorksheetPreview';
 import { Template, templateConfig, ageBandLabel } from '@/data/templates';
 import { generateWorksheetSeeded, hashSeed } from '@/lib/seededGenerate';
 
-export default function TemplateCard({ template }: { template: Template }) {
+export default function TemplateCard({ template, to }: { template: Template; to?: string }) {
   // Generate the preview once, with a stable seed, so the card never flickers
   // or re-randomizes on re-render. Reuses the real rendering engine.
   const { config, data } = useMemo(() => {
@@ -17,7 +17,7 @@ export default function TemplateCard({ template }: { template: Template }) {
     // A real <a href> (not a button+navigate): crawlers discover the template
     // pages from the homepage, and open-in-new-tab works.
     <Link
-      to={`/edit/${template.id}`}
+      to={to ?? `/edit/${template.id}`}
       className="group block text-left rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-lg hover:border-primary/40 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <div className="relative bg-muted/40 border-b border-border overflow-hidden">
