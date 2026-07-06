@@ -11,6 +11,9 @@ interface Props {
    * chrome, page 1 only, non-interactive.
    */
   variant?: 'full' | 'thumb';
+  /** DOM id for the full-variant wrapper. Batch pages pass unique ids so
+   *  multiple previews can coexist without duplicating #worksheet-preview. */
+  htmlId?: string;
 }
 
 // No trace overlays needed anymore
@@ -46,7 +49,7 @@ function getCellBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', wi
   return `fill="none" stroke="${strokeColor}" stroke-width="${width}"${dash}${rx}`;
 }
 
-export default function WorksheetPreview({ config, data, variant = 'full' }: Props) {
+export default function WorksheetPreview({ config, data, variant = 'full', htmlId = 'worksheet-preview' }: Props) {
   const getFill = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_FILL;
   const getStroke = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_STROKE;
   const getStrokeW = () => config.useColor ? 1.5 : 2.5;
@@ -159,7 +162,7 @@ export default function WorksheetPreview({ config, data, variant = 'full' }: Pro
   }
 
   return (
-    <div id="worksheet-preview" ref={containerRef} className="space-y-4">
+    <div id={htmlId} ref={containerRef} className="space-y-4 worksheet-print-root">
       <div
         className="worksheet-paper"
         style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}

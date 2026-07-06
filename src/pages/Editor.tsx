@@ -10,13 +10,35 @@ import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePrintCount } from '@/hooks/use-print-count';
-import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetData, Difficulty, WorksheetMode } from '@/lib/shapes';
+import { generateWorksheetSeeded } from '@/lib/seededGenerate';
 import { getTemplate, templateConfig } from '@/data/templates';
 import { defaultConfig, ageBandConfig } from '@/lib/defaultConfig';
-import { loadTemplateConfig, saveTemplateConfig, clearTemplateConfig } from '@/lib/persistence';
+import {
+  loadTemplateConfig, saveTemplateConfig, clearTemplateConfig,
+  addHistory, countPrints, diffConfig,
+} from '@/lib/persistence';
 import { useProfiles } from '@/hooks/use-profiles';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ageBandLabel } from '@/data/templates';
+
+const randomSeed = () => (Math.random() * 0xffffffff) >>> 0;
+
+// Modes whose difficulty is meaningful — the progression nudge only applies here
+// (handwriting/pattern/pixelArt/visualScanning don't use the difficulty field).
+const DIFFICULTY_MODES: WorksheetMode[] = ['find', 'count', 'copy', 'sequence', 'oddOneOut', 'mirror', 'figureGround', 'closure', 'maze', 'connectDots', 'tracingPaths', 'scissorSkills'];
+
+/** The next harder difficulty allowed for a child of this age, or null. */
+function harderDifficulty(difficulty: Difficulty, childAge: number | null): Difficulty | null {
+  const order: Difficulty[] = ['easy', 'medium', 'hard'];
+  const next = order[order.indexOf(difficulty) + 1];
+  if (!next) return null;
+  if (childAge !== null) {
+    if (childAge <= 3) return null;            // easy only
+    if (childAge <= 5 && next === 'hard') return null; // easy/medium only
+  }
+  return next;
+}
 
 // Fields that only affect presentation — the renderer reads them from config
 // directly, so changing them must NOT re-roll the puzzle. A parent who found a
@@ -76,23 +98,32 @@ export default function Editor() {
     template ? `Free printable ${template.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[template.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print — no signup.` : undefined
   );
 
-  const [config, setConfig] = useState<WorksheetConfig>(initialConfig);
-  const [data, setData] = useState<WorksheetData>(() => generateWorksheet(initialConfig));
-  const [customizeOpen, setCustomizeOpen] = useState(false);
+  // Canonical, profile-independent base for diffing (history + shareable links),
+  // so a stored/shared worksheet reproduces the same for anyone.
+  const shareBase = useMemo(() => (template ? templateConfig(template) : defaultConfig), [template]);
 
-  // Re-seed the worksheet whenever a setting changes (live preview).
+  const [config, setConfig] = useState<WorksheetConfig>(initialConfig);
+  const [seed, setSeed] = useState<number>(randomSeed);
+  const [data, setData] = useState<WorksheetData>(() => generateWorksheetSeeded(initialConfig, seed));
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [batchSeeds, setBatchSeeds] = useState<number[] | null>(null);
+  const [chipDismissed, setChipDismissed] = useState(false);
+  const [printTick, setPrintTick] = useState(0);
+
+  // Reset when the template or active child changes: fresh config + new seed.
   useEffect(() => {
     setConfig(initialConfig);
-    setData(generateWorksheet(initialConfig));
+    setSeed(randomSeed());
+    setChipDismissed(false);
   }, [initialConfig]);
 
-  // Regenerate the visible puzzle only when a generative setting changes;
-  // cosmetic fields re-render via config without re-rolling the puzzle.
+  // Regenerate the visible puzzle when a generative setting OR the seed changes;
+  // cosmetic fields re-render via the config prop without re-rolling the puzzle.
   const genKey = generativeKey(config);
   useEffect(() => {
-    setData(generateWorksheet(config));
+    setData(generateWorksheetSeeded(config, seed));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [genKey]);
+  }, [genKey, seed]);
 
   // Persist this child's customization of this template (debounced).
   useEffect(() => {
@@ -102,19 +133,34 @@ export default function Editor() {
   }, [config, templateId, effectiveProfileId]);
 
   const handleRegenerate = useCallback(() => {
-    setData(generateWorksheet(config));
-  }, [config]);
+    setSeed(randomSeed());
+  }, []);
 
   const handleReset = useCallback(() => {
     if (!template || !templateId) return;
     clearTemplateConfig(effectiveProfileId, templateId);
     setConfig(profileBase);
-    setData(generateWorksheet(profileBase));
+    setSeed(randomSeed());
     toast('Reset to defaults');
   }, [template, templateId, effectiveProfileId, profileBase]);
 
+  // Record a print in this child's history (enables "recently printed" + the
+  // progression nudge + exact reprints).
+  const recordPrint = useCallback((s: number) => {
+    if (!templateId) return;
+    addHistory({
+      profileId: effectiveProfileId,
+      templateId,
+      diff: diffConfig(config, shareBase),
+      seed: s,
+      printedAt: new Date().toISOString(),
+    });
+    setPrintTick((t) => t + 1);
+  }, [templateId, effectiveProfileId, config, shareBase]);
+
   const handlePrint = useCallback(() => {
     window.print();
+    recordPrint(seed);
     const n = increment();
     if (n >= 3) {
       // Gentle, non-blocking nudge — never gates printing.
@@ -122,7 +168,40 @@ export default function Editor() {
         description: 'Everything stays free. If they help, you can buy me a coffee.',
       });
     }
-  }, [increment]);
+  }, [increment, recordPrint, seed]);
+
+  // Print 5 varied worksheets (same settings, different puzzles) in one dialog.
+  const handlePrintBatch = useCallback(() => {
+    setBatchSeeds(Array.from({ length: 5 }, () => randomSeed()));
+  }, []);
+
+  // Once the 5 pages have rendered, fire the print dialog, then clear them.
+  useEffect(() => {
+    if (!batchSeeds) return;
+    const clear = () => setBatchSeeds(null);
+    window.addEventListener('afterprint', clear, { once: true });
+    const t = setTimeout(() => {
+      window.print();
+      recordPrint(batchSeeds[0]);
+      const n = increment();
+      if (n >= 3) toast('Enjoying these worksheets? ☕', { description: 'Everything stays free. If they help, you can buy me a coffee.' });
+      // Fallback for browsers that don't fire afterprint.
+      setTimeout(clear, 1000);
+    }, 60);
+    return () => { clearTimeout(t); window.removeEventListener('afterprint', clear); };
+  }, [batchSeeds, recordPrint, increment]);
+
+  // Progression nudge: after 3 prints of this template at the current difficulty,
+  // gently suggest the next level (age-capped). Non-blocking.
+  const nextDifficulty = useMemo(() => {
+    if (!template || !templateId || !activeProfile) return null;
+    if (!DIFFICULTY_MODES.includes(config.mode)) return null;
+    const harder = harderDifficulty(config.difficulty, config.childAge);
+    if (!harder) return null;
+    // printTick is a dependency so this recomputes right after a print.
+    return countPrints(effectiveProfileId, templateId, config.difficulty) >= 3 ? harder : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, templateId, activeProfile, config.mode, config.difficulty, config.childAge, effectiveProfileId, printTick]);
 
   if (!template) {
     return (
@@ -154,6 +233,7 @@ export default function Editor() {
         <div className="no-print mb-4">
           <EditorToolbar
             onPrint={handlePrint}
+            onPrintBatch={handlePrintBatch}
             onRegenerate={handleRegenerate}
             onToggleCustomize={() => setCustomizeOpen((o) => !o)}
             customizeOpen={customizeOpen}
@@ -161,11 +241,29 @@ export default function Editor() {
           <p className="text-[11px] text-muted-foreground mt-2">
             🖨️ Printing works best from a desktop browser. Browse and preview freely on any device.
           </p>
+
+          {/* Progression nudge — appears after 3 prints at this level. */}
+          {nextDifficulty && !chipDismissed && (
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-2.5 text-sm">
+              <span className="text-lg">🌱</span>
+              <p className="flex-1 text-foreground">
+                {activeProfile?.name} has done this a few times — ready for a {nextDifficulty} challenge?
+              </p>
+              <Button size="sm" onClick={() => { setConfig((c) => ({ ...c, difficulty: nextDifficulty })); setChipDismissed(true); }} className="font-display">
+                Try {nextDifficulty}
+              </Button>
+              <button onClick={() => setChipDismissed(true)} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Preview + (desktop) collapsible right panel */}
         <div className={`flex gap-6 ${customizeOpen && !isMobile ? 'lg:flex-row' : ''} flex-col lg:flex-row`}>
-          <div className="flex-1 flex justify-center">
+          {/* Hide the single preview while a batch is queued so only the 5-page
+              set prints. */}
+          <div className={`flex-1 flex justify-center ${batchSeeds ? 'no-print' : ''}`}>
             <div className="w-full max-w-[560px]">
               <WorksheetPreview config={config} data={data} />
             </div>
@@ -192,6 +290,16 @@ export default function Editor() {
           )}
         </div>
       </main>
+
+      {/* Print-only: 5 varied worksheets, one per page. Rendered only while a
+          batch is queued; screen-hidden via .batch-print. */}
+      {batchSeeds && (
+        <div className="batch-print" aria-hidden>
+          {batchSeeds.map((s, i) => (
+            <WorksheetPreview key={s} htmlId={`batch-${i}`} config={config} data={generateWorksheetSeeded(config, s)} />
+          ))}
+        </div>
+      )}
 
       {/* Mobile: bottom-sheet Customize */}
       {isMobile && (

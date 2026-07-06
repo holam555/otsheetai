@@ -7,6 +7,8 @@ import TemplateCard from '@/components/gallery/TemplateCard';
 import { TEMPLATES, GOALS, LANGUAGES, Goal, Language } from '@/data/templates';
 import { AGE_BANDS, AgeBand } from '@/lib/defaultConfig';
 import { WorksheetMode } from '@/lib/shapes';
+import { useProfiles } from '@/hooks/use-profiles';
+import { loadHistory } from '@/lib/persistence';
 
 type AgeFilter = AgeBand | 'all';
 type GoalFilter = Goal | 'all';
@@ -40,6 +42,7 @@ function FilterRow({ label, children }: { label: string; children: React.ReactNo
 
 export default function Gallery() {
   usePageMeta();
+  const { effectiveProfileId, activeProfile } = useProfiles();
   const [age, setAge] = useState<AgeFilter>('all');
   const [goal, setGoal] = useState<GoalFilter>('all');
   const [lang, setLang] = useState<LangFilter>('all');
@@ -68,6 +71,20 @@ export default function Gallery() {
   const anyFilter = age !== 'all' || goal !== 'all' || lang !== 'all' || mode !== 'all';
   const clearAll = () => { setAge('all'); setGoal('all'); setLang('all'); setMode('all'); };
 
+  // Most-recently-printed templates for the active child (distinct, up to 4).
+  const recent = useMemo(() => {
+    const seen = new Set<string>();
+    const out: typeof TEMPLATES = [];
+    for (const h of loadHistory()) {
+      if (h.profileId !== effectiveProfileId || seen.has(h.templateId)) continue;
+      seen.add(h.templateId);
+      const t = TEMPLATES.find((x) => x.id === h.templateId);
+      if (t) out.push(t);
+      if (out.length >= 4) break;
+    }
+    return out;
+  }, [effectiveProfileId]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
@@ -84,6 +101,20 @@ export default function Gallery() {
         </div>
 
         <AboutStrip />
+
+        {/* Recently printed for the active child */}
+        {recent.length > 0 && (
+          <section aria-label="Recently printed">
+            <h2 className="font-display text-lg font-bold text-foreground mb-3">
+              Recently printed{activeProfile ? ` for ${activeProfile.name}` : ''}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {recent.map((t) => (
+                <TemplateCard key={t.id} template={t} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Browse filters */}
         <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5 space-y-3">

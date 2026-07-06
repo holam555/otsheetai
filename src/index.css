@@ -149,4 +149,21 @@
     size: A4 portrait;
     margin: 0;
   }
+  .batch-print {
+    display: block;
+  }
+  /* Each variation (and each worksheet page) starts on a fresh printed page. */
+  .batch-print .worksheet-print-root {
+    break-after: page;
+    page-break-after: always;
+  }
+  .batch-print .worksheet-print-root:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
+
+/* Batch print set: hidden on screen, revealed only when printing. */
+.batch-print {
+  display: none;
 }
