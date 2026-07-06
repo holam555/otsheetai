@@ -194,8 +194,12 @@ screenshots. Pairs naturally with a strong model that can eyeball each PDF.
 
 ## D4 — Social share image (OG image, ROADMAP 2.3)
 
-**Status:** not done. `index.html` currently has no `og:image` (the old broken
-lovable.app URL was removed). Cards render without a preview image.
+**Status: DONE (2026-07-05).** 1200×630 `public/og.png` designed (brand mark +
+tagline + three worksheet motifs: find-the-shape grid, color-by-grid heart,
+tri-line handwriting with dashed trace row) and wired into index.html
+(og:image + width/height/alt, twitter:card=summary_large_image). All 30
+prerendered pages inherit it. Validate on the live deploy with the social-card
+debuggers after the next Vercel deployment.
 
 **Why deferred:** producing a real 1200×630 raster PNG is a design/asset task —
 it needs an actual image file (a nicely composed screenshot of a colorful
