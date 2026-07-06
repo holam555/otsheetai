@@ -489,3 +489,25 @@ describe('challenge grading', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// GRADING AUDIT (2026-07-05 full-matrix sweep) — regressions for the two
+// generator-level collapses it found. See GRADING_AUDIT.md.
+// ---------------------------------------------------------------------------
+describe('grading audit fixes', () => {
+  it('closure: the missing-contour fraction differs at every difficulty', () => {
+    const dash = (d: WorksheetConfig['difficulty']) =>
+      gen({ mode: 'closure', difficulty: d, childAge: 8 }).closurePuzzles![0].dashArray;
+    const gaps = new Set([dash('easy'), dash('medium'), dash('hard')]);
+    expect(gaps.size).toBe(3); // easy and medium used to collapse to '8,3'
+  });
+
+  it('figureGround: shapes get visibly smaller at every difficulty step', () => {
+    const avgR = (d: WorksheetConfig['difficulty']) => {
+      const s = gen({ mode: 'figureGround', difficulty: d, childAge: 8 }).figureGroundPuzzle!.shapes;
+      return s.reduce((a, x) => a + x.r, 0) / s.length;
+    };
+    expect(avgR('easy')).toBeGreaterThan(avgR('medium'));
+    expect(avgR('medium')).toBeGreaterThan(avgR('hard')); // hard used to share medium's size pool
+  });
+});

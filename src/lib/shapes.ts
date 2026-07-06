@@ -844,7 +844,13 @@ function generateFigureGroundMode(config: WorksheetConfig): WorksheetData {
   for (let i = 0; i < shapeTotal; i++) {
     const shape = randomFrom(targetShapes);
     counts[shape]++;
-    const r = config.difficulty === 'easy' ? randomFrom([50, 60, 70]) : randomFrom([35, 45, 55]);
+    // Shape size shrinks with difficulty — hard must be visibly smaller than
+    // medium (it used to share medium's size pool, so only the count changed).
+    const r = config.difficulty === 'easy'
+      ? randomFrom([50, 60, 70])
+      : config.difficulty === 'medium'
+        ? randomFrom([38, 46, 55])
+        : randomFrom([28, 34, 42]);
     placed.push({
       shape,
       cx: 80 + Math.random() * (areaW - 160),
@@ -874,10 +880,11 @@ function generateClosureMode(config: WorksheetConfig): WorksheetData {
 
   for (let i = 0; i < puzzleCount; i++) {
     const shape = randomFrom(shapes);
-    const gapRatio = config.difficulty === 'easy' ? 0.15 : config.difficulty === 'medium' ? 0.3 : 0.5;
-    const dashLen = 8;
-    const gapLen = Math.round(dashLen * gapRatio / (1 - gapRatio));
-    const dashArray = `${dashLen},${Math.max(3, gapLen)}`;
+    // The missing-contour fraction IS the clinical grade for closure, so the
+    // three levels must be visibly distinct: ~80% / ~62% / ~50% of the outline
+    // present. (A computed formula with a min-gap floor used to collapse
+    // easy and medium to the same dash pattern.)
+    const dashArray = config.difficulty === 'easy' ? '12,3' : config.difficulty === 'medium' ? '8,5' : '6,6';
 
     const distractors = pickN(shapes.filter(s => s !== shape), Math.min(2, shapes.filter(s => s !== shape).length));
     const options = [shape, ...distractors];

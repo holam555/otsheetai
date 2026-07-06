@@ -114,6 +114,14 @@ their generators already respond strongly.
 - A fixed count that saturates: mirror once used 3/5/7 shapes — on a 2×2 grid
   all difficulties filled every cell identically. Scale by capacity
   (fraction of grid), not absolute counts.
+- Min/max floors that collapse levels: closure's computed dash gap had a
+  `max(3,…)` floor that made easy and medium produce the SAME contour gap —
+  the mode's core clinical lever didn't grade. Prefer explicit per-level
+  values over formulas with clamps; assert all three outputs are distinct.
+- Clamped edge levels: at ages 3–4 "Easier" and at 7–8 "Harder" have nowhere
+  to go — those buttons are disabled with a tooltip (and the selection snaps
+  to "Just right" on age switch). Keep that honest-UI behavior if levels are
+  ever added or removed. Full audit + follow-ups: see GRADING_AUDIT.md.
 - Difficulty levers that are invisible at the actual render size (±15%
   shapeScale on a 170px cell reads as "the same"). If a lever can't be seen,
   it isn't grading.

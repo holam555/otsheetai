@@ -169,8 +169,16 @@ export default function CustomizeControls({ config, onChange }: Props) {
                 variant={active ? 'default' : 'outline'}
                 size="sm"
                 // Age re-grades the whole task (scope preset + difficulty),
-                // keeping the current Challenge nudge applied on top.
-                onClick={() => update({ ...ageBandConfig(b.value), ...applyGrading(mode, b.value, config.challenge) })}
+                // keeping the Challenge nudge — unless the new band clamps it
+                // (3–4 has nothing below level 0, 7–8 nothing above level 2),
+                // in which case snap back to "Just right" so the UI stays honest.
+                onClick={() => {
+                  const clamped =
+                    (b.value === '3-4' && config.challenge === 'easier') ||
+                    (b.value === '7-8' && config.challenge === 'harder');
+                  const ch = clamped ? 'standard' : config.challenge;
+                  update({ challenge: ch, ...ageBandConfig(b.value), ...applyGrading(mode, b.value, ch) });
+                }}
                 className="font-display text-xs"
               >
                 {b.label}
@@ -184,17 +192,28 @@ export default function CustomizeControls({ config, onChange }: Props) {
       <div className="space-y-2">
         <FieldLabel>Challenge</FieldLabel>
         <div className="grid grid-cols-3 gap-2">
-          {CHALLENGES.map((ch) => (
-            <Button
-              key={ch.value}
-              variant={config.challenge === ch.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => update({ challenge: ch.value, ...applyGrading(mode, childAgeToBand(config.childAge), ch.value) })}
-              className="font-display text-xs"
-            >
-              {ch.label}
-            </Button>
-          ))}
+          {CHALLENGES.map((ch) => {
+            const band = childAgeToBand(config.childAge);
+            // The grade ladder has 3 levels; at the edge bands one direction
+            // has nowhere to go. Disable that button rather than let it
+            // silently do nothing.
+            const clamped =
+              (band === '3-4' && ch.value === 'easier') ||
+              (band === '7-8' && ch.value === 'harder');
+            return (
+              <Button
+                key={ch.value}
+                variant={config.challenge === ch.value ? 'default' : 'outline'}
+                size="sm"
+                disabled={clamped}
+                title={clamped ? (ch.value === 'easier' ? 'Ages 3–4 already get the gentlest version' : 'Ages 7–8 already get the toughest version') : undefined}
+                onClick={() => update({ challenge: ch.value, ...applyGrading(mode, band, ch.value) })}
+                className="font-display text-xs"
+              >
+                {ch.label}
+              </Button>
+            );
+          })}
         </div>
         <p className="text-[10px] text-muted-foreground">Tuned to the age — nudge if it feels too easy or too hard.</p>
       </div>
