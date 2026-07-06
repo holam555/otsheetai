@@ -11,6 +11,60 @@ self-contained.
 
 ---
 
+## Phase 4 & 5 — execution risk map (READ before letting a cheaper model start)
+
+Most of Phase 4 (accounts + Stripe) and Phase 5 (LLM word lists) is fine for a
+capable executor (Opus) — but three classes of work inside them must NOT be
+"just implemented" by a weaker model, because a plausible-but-wrong version is
+silent and catastrophic. Split the work like this:
+
+**A. Fine for Opus (mechanical, well-specified, reviewable):**
+- Supabase project scaffolding; email/OAuth sign-in UI; the serverless function
+  skeleton; the Stripe Checkout redirect + customer-portal wiring; client-side
+  entitlement-gating UI; the free-trial feature-flag structure; the 30 static
+  fallback word lists; caching + IP rate-limit plumbing for /api/wordlist.
+
+**B. Reserve for Fable (or, at minimum, gate behind `/security-review` + real
+multi-account testing) — high blast radius, easy to get subtly wrong:**
+- **Supabase Row-Level Security policies.** One gap leaks another family's
+  child names/history across accounts. Every table, every policy, no holes —
+  this is the single most error-prone part. Verify by logging in as two
+  accounts and trying to read each other's rows.
+- **Stripe webhook handling:** signature verification + idempotency + granting
+  entitlements ONLY from verified webhook events. Get this wrong and either
+  anyone forges "paid" and unlocks Pro free, or double-charges/retries corrupt
+  state.
+- **Server-side entitlement enforcement.** Gating in React is cosmetic; Pro
+  features must be enforced on the server/DB. Deciding what is truly gated vs.
+  cosmetic is architectural, not mechanical.
+- **The server schema + localStorage→server merge/migration.** Expensive to
+  change once real users exist; the conflict logic (same child, two devices) is
+  where silent data-loss hides.
+- **LLM output content-safety (Phase 5).** Themed words go straight onto a sheet
+  a child sees. A naive impl will eventually emit an inappropriate word. Needs
+  constrained prompting + an allow/deny output filter, not just JSON-schema
+  validation. This is a genuine kids'-product judgment call.
+- **API-key isolation.** The Anthropic key stays in the serverless env only;
+  make sure no client-imported module ever references it.
+
+**C. NOT a model decision at all — surface to the human FIRST (may change the
+architecture):**
+- **COPPA / GDPR-K compliance.** The moment accounts store a child's *name* on
+  a server, this is a children's product holding kids' PII → regulated. Decide
+  BEFORE building: is a real child name stored server-side at all, or do Pro
+  accounts sync only a nickname / keep names client-only? This can change the
+  Phase 4 schema, so it must be settled up front — not discovered later.
+- **Pricing, Terms of Service, refund policy.** Business/legal.
+- **Whether ANY data (even theme + age, no name) may be sent to an external LLM
+  from a children's app.** A privacy-posture call the owner signs off on; the
+  app currently sends zero data anywhere.
+
+Bottom line for a "should Opus do Phase 4/5?" decision: **yes for bucket A, no
+for buckets B and C.** Have the human resolve C, have Fable (or a reviewed pass)
+do B, and let Opus do A around them.
+
+---
+
 ## D1 — Lowercase letterforms for name tracing (ROADMAP 1.2)
 
 **Status:** not started. Currently `generateTraceNameMode` uppercases every
