@@ -89,6 +89,11 @@ reliability fix). Acceptance: fonts load offline from own origin.
 
 ---
 
+> **Phase 2 progress (2026-07-05):** items **2.1** (build-time prerendering —
+> all 29 routes emit static HTML, verified) and **2.2** (6 goal content pages
+> with FAQ/JSON-LD, internally linked) are DONE and committed. Item **2.3**
+> (OG share image) is deferred — see [DEFER_TO_FABLE.md](DEFER_TO_FABLE.md) D4.
+
 ## Phase 2 — Prerendering & content SEO (the rendering decision)
 
 **Decision: stay on Vite + React SPA; add build-time prerendering with a

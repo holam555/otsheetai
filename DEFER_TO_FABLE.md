@@ -143,6 +143,37 @@ screenshots. Pairs naturally with a strong model that can eyeball each PDF.
 
 ---
 
+## D4 — Social share image (OG image, ROADMAP 2.3)
+
+**Status:** not done. `index.html` currently has no `og:image` (the old broken
+lovable.app URL was removed). Cards render without a preview image.
+
+**Why deferred:** producing a real 1200×630 raster PNG is a design/asset task —
+it needs an actual image file (a nicely composed screenshot of a colorful
+worksheet grid + logo + tagline), not code. A weaker model can't rasterize one
+reliably, and an SVG `og:image` isn't rendered by Twitter/Facebook, so a
+half-measure would look broken in shares.
+
+**Exact scope:**
+- Create `public/og.png` at 1200×630: OTsheet.ai logo + tagline ("Free
+  printable OT worksheets for kids") over a tidy arrangement of 2–3 real
+  worksheet thumbnails (find-the-shape grid, handwriting lines, a maze). On-
+  brand teal/warm palette.
+- Reference it in `index.html`: `<meta property="og:image" content="https://otsheetai.vercel.app/og.png">`
+  + `twitter:image` + switch `twitter:card` to `summary_large_image`.
+- Optionally per-route OG images later (nice-to-have, not required).
+- Acceptance: Facebook Sharing Debugger and Twitter Card Validator both render
+  the image.
+
+**Ready-to-paste prompt:**
+> Set model to claude-fable-5. In otsheetai/, do ROADMAP 2.3 per
+> DEFER_TO_FABLE.md D4: design a 1200×630 public/og.png (logo + tagline + real
+> worksheet thumbnails, on-brand), wire og:image/twitter:image into index.html,
+> and switch twitter:card to summary_large_image. Verify it renders in a social
+> card validator.
+
+---
+
 ## How the executing (weaker) model should hand back
 
 When you finish the mechanical parts of a phase and hit one of these, don't
