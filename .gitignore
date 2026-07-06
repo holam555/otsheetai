@@ -25,3 +25,4 @@ dist-ssr
 
 # Local-only Claude settings
 .claude/settings.local.json
+dist-ssr/
