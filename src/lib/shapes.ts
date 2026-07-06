@@ -500,14 +500,24 @@ function generateCopyMode(config: WorksheetConfig): WorksheetData {
   const gridSize = config.gridSize;
   const puzzleCount = config.exerciseCount;
 
+  // Difficulty controls the palette size (fewer distinct shapes = easier to
+  // hold in visual memory while copying) on top of the rotation that
+  // getDifficultyRotation already adds for medium/hard.
+  const paletteSize = config.difficulty === 'easy'
+    ? Math.min(2, shapes.length)
+    : config.difficulty === 'medium'
+      ? Math.min(3, shapes.length)
+      : shapes.length;
+
   const puzzles: CopyPuzzle[] = [];
   for (let p = 0; p < puzzleCount; p++) {
+    const palette = pickN(shapes, Math.max(2, paletteSize));
     const cells: CellData[][] = [];
     for (let r = 0; r < gridSize; r++) {
       const row: CellData[] = [];
       for (let c = 0; c < gridSize; c++) {
         row.push({
-          shape: randomFrom(shapes),
+          shape: randomFrom(palette),
           rotation: getDifficultyRotation(config.difficulty),
         });
       }
@@ -766,7 +776,12 @@ function generateOddOneOutNumbers(config: WorksheetConfig): WorksheetData {
 function generateMirrorMode(config: WorksheetConfig): WorksheetData {
   const shapes = getActiveShapes(config);
   const gridSize = config.gridSize;
-  const shapeCount = config.difficulty === 'easy' ? 3 : config.difficulty === 'medium' ? 5 : 7;
+  // Fill a fraction of the grid so difficulty stays meaningful at every grid
+  // size — a fixed count (3/5/7) collapsed to "all cells" on a 2×2 grid, so
+  // easy and hard looked identical. Fraction of capacity never collapses.
+  const cellCapacity = gridSize * gridSize;
+  const fillFraction = config.difficulty === 'easy' ? 0.4 : config.difficulty === 'medium' ? 0.6 : 0.8;
+  const shapeCount = Math.max(2, Math.min(cellCapacity - 1, Math.round(cellCapacity * fillFraction)));
   const puzzleCount = config.exerciseCount;
 
   const puzzles: MirrorPuzzle[] = [];
@@ -956,12 +971,15 @@ function generateMazeMode(config: WorksheetConfig): WorksheetData {
     }
   }
 
-  // Add dead ends for hard difficulty or remove some for easy
-  if (config.difficulty === 'easy') {
-    // Remove extra walls to create wider paths
+  // Open extra passages so difficulty is graded: easy has many shortcuts
+  // (forgiving, multiple routes), medium a few, hard is a true perfect maze
+  // (single winding solution, maximal dead ends). Same maze size across all —
+  // the "Maze Size" control is independent of difficulty.
+  const openProb = config.difficulty === 'easy' ? 0.25 : config.difficulty === 'medium' ? 0.1 : 0;
+  if (openProb > 0) {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols - 1; c++) {
-        if (Math.random() < 0.25 && grid[r][c].right) {
+        if (Math.random() < openProb && grid[r][c].right) {
           grid[r][c].right = false;
           grid[r][c + 1].left = false;
         }
@@ -969,7 +987,7 @@ function generateMazeMode(config: WorksheetConfig): WorksheetData {
     }
     for (let r = 0; r < rows - 1; r++) {
       for (let c = 0; c < cols; c++) {
-        if (Math.random() < 0.25 && grid[r][c].bottom) {
+        if (Math.random() < openProb && grid[r][c].bottom) {
           grid[r][c].bottom = false;
           grid[r + 1][c].top = false;
         }
@@ -1341,6 +1359,16 @@ function generateScissorSkillsMode(config: WorksheetConfig): WorksheetData {
   const areaW = 460;
   const margin = 40;
 
+  // Difficulty controls how demanding the cut is: easy = gentle, few turns;
+  // hard = tighter amplitude and more direction changes (harder to stay on
+  // the line). Straight lines are unaffected.
+  const isEasy = config.difficulty === 'easy';
+  const isHard = config.difficulty === 'hard';
+  const wavySegments = isEasy ? 4 : isHard ? 6 : 5;
+  const wavyAmp = isEasy ? 8 : isHard ? 18 : 12;
+  const zigzagPoints = isEasy ? 6 : isHard ? 10 : 8;
+  const zigzagAmp = isEasy ? 7 : isHard ? 14 : 10;
+
   const lineTypes: ScissorLineType[] = ['straight', 'wavy', 'zigzag'];
   const lines: ScissorSkillsData['lines'] = [];
 
@@ -1355,9 +1383,9 @@ function generateScissorSkillsMode(config: WorksheetConfig): WorksheetData {
         pathD = `M ${startX} 0 L ${areaW - margin} 0`;
         break;
       case 'wavy': {
-        const segments = 5;
+        const segments = wavySegments;
         const segW = (areaW - 2 * margin) / segments;
-        const amp = 12;
+        const amp = wavyAmp;
         pathD = `M ${startX} 0`;
         for (let s = 0; s < segments; s++) {
           const cx1 = startX + s * segW + segW * 0.25;
@@ -1369,9 +1397,9 @@ function generateScissorSkillsMode(config: WorksheetConfig): WorksheetData {
         break;
       }
       case 'zigzag': {
-        const points = 8;
+        const points = zigzagPoints;
         const segW = (areaW - 2 * margin) / points;
-        const amp = 10;
+        const amp = zigzagAmp;
         pathD = `M ${startX} 0`;
         for (let p = 1; p <= points; p++) {
           pathD += ` L ${startX + p * segW} ${p % 2 === 1 ? -amp : amp}`;
@@ -1414,10 +1442,18 @@ function generateVisualScanningMode(config: WorksheetConfig): WorksheetData {
     'w': ['m', 'v', 'u', 'n'],
   };
 
-  const distractors = DISTRACTOR_MAP[target.toLowerCase()] || (() => {
+  // Distractors must match the target's case — an uppercase 'B' hunt with
+  // lowercase d/p/q distractors is trivially easy and defeats the reversal
+  // practice. Build lowercase distractors, then uppercase them if the target
+  // is an uppercase letter.
+  const isUpperLetter = /[A-Z]/.test(target) && target === target.toUpperCase();
+  const lowerDistractors = DISTRACTOR_MAP[target.toLowerCase()] || (() => {
     const alpha = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c => c !== target.toLowerCase());
     return shuffle(alpha).slice(0, 4);
   })();
+  const distractors = isUpperLetter
+    ? lowerDistractors.map(d => (/[a-z]/.test(d) ? d.toUpperCase() : d))
+    : lowerDistractors;
 
   const totalCells = rows * cols;
   const targetCount = Math.round(totalCells * targetPercent);

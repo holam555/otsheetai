@@ -250,3 +250,52 @@ describe('puzzles are solvable and unambiguous', () => {
     expect(data.instructions).not.toMatch(/circle|square|triangle|cross|diamond|star|rectangle|oval|heart|arrow|hexagon|pentagon/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// PHASE 1 — difficulty semantics now produce measurable differences, and
+// visual-scan distractors match the target's case.
+// ---------------------------------------------------------------------------
+describe('phase 1: difficulty is meaningful across modes', () => {
+  const seeded = (o: Partial<WorksheetConfig>, seed = 42) =>
+    generateWorksheetSeeded({ ...defaultConfig, ...o }, seed);
+
+  it('copy: easy uses a smaller shape palette than hard', () => {
+    const palette = (o: Partial<WorksheetConfig>) => {
+      const data = seeded({ mode: 'copy', selectedShapes: ['circle', 'square', 'triangle', 'cross', 'star', 'heart'], exerciseCount: 1, ...o });
+      return new Set((data.copyPuzzles![0].sourceGrid).flat().map((c) => c.shape)).size;
+    };
+    expect(palette({ difficulty: 'easy', gridSize: 4 })).toBeLessThanOrEqual(2);
+    expect(palette({ difficulty: 'hard', gridSize: 4 })).toBeGreaterThan(2);
+  });
+
+  it('mirror: shape count scales with difficulty and never fills the whole grid', () => {
+    const count = (d: WorksheetConfig['difficulty']) => {
+      const data = seeded({ mode: 'mirror', gridSize: 4, difficulty: d, exerciseCount: 1 });
+      return data.mirrorPuzzles![0].sourceGrid.flat().filter(Boolean).length;
+    };
+    expect(count('easy')).toBeLessThan(count('hard'));
+    expect(count('hard')).toBeLessThan(16); // leaves empty cells — still a puzzle
+  });
+
+  it('maze: easy has more open passages (fewer walls) than hard', () => {
+    const walls = (d: WorksheetConfig['difficulty']) => {
+      const g = seeded({ mode: 'maze', mazeSize: 'medium', difficulty: d }).mazeData!.grid;
+      let n = 0;
+      g.forEach((row) => row.forEach((c) => { n += [c.top, c.right, c.bottom, c.left].filter(Boolean).length; }));
+      return n;
+    };
+    expect(walls('easy')).toBeLessThan(walls('hard'));
+  });
+
+  it('scissor: hard cutting lines differ from easy (amplitude/complexity)', () => {
+    const easy = JSON.stringify(seeded({ mode: 'scissorSkills', scissorLineType: 'wavy', difficulty: 'easy' }).scissorSkillsData);
+    const hard = JSON.stringify(seeded({ mode: 'scissorSkills', scissorLineType: 'wavy', difficulty: 'hard' }).scissorSkillsData);
+    expect(easy).not.toBe(hard);
+  });
+
+  it('visualScanning: uppercase target gets uppercase distractors', () => {
+    const data = gen({ mode: 'visualScanning', visualScanTarget: 'B', visualScanDensity: 'small' });
+    const chars = data.visualScanData!.grid.flat();
+    expect(chars.every((c) => c === c.toUpperCase())).toBe(true);
+  });
+});

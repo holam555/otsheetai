@@ -50,8 +50,13 @@ const GRID_MODES: WorksheetMode[] = ['find', 'copy', 'mirror'];
 // Modes whose renderer actually draws an answer key. (copy + the motor/path modes
 // don't consume showAnswerKey; visualScanning does.)
 const ANSWER_KEY_MODES: WorksheetMode[] = ['find', 'pattern', 'count', 'sequence', 'oddOneOut', 'mirror', 'figureGround', 'closure', 'visualScanning'];
-// Modes whose generation ignores `difficulty`, so the override would be a no-op.
-const DIFFICULTY_DEAD_MODES: WorksheetMode[] = ['scissorSkills', 'pixelArt', 'visualScanning'];
+// Modes whose generation ignores `difficulty`, so the override would be a
+// no-op. scissorSkills now consumes difficulty (curve amplitude/complexity),
+// so it's no longer dead. pixelArt uses fixed artwork; visualScanning uses its
+// own density/frequency controls instead.
+const DIFFICULTY_DEAD_MODES: WorksheetMode[] = ['pixelArt', 'visualScanning'];
+// Modes whose renderer draws inter-cell grid lines from `showGridLines`.
+const GRIDLINE_MODES: WorksheetMode[] = ['find', 'count', 'copy', 'pattern'];
 
 function getAvailableDifficulties(age: number | null) {
   if (age === null) return { easy: true, medium: true, hard: true };
@@ -484,6 +489,15 @@ export default function CustomizeControls({ config, onChange }: Props) {
                       <Button key={s} variant={config.gridSize === s ? 'default' : 'outline'} size="sm" onClick={() => update({ gridSize: s })} className="font-display">{s}×{s}</Button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Grid lines — some children track shapes better with a visible
+                  grid; others find it cluttered. */}
+              {GRIDLINE_MODES.includes(mode) && (
+                <div className="flex items-center justify-between">
+                  <FieldLabel>Show grid lines</FieldLabel>
+                  <Switch checked={config.showGridLines} onCheckedChange={(v) => update({ showGridLines: v })} />
                 </div>
               )}
 
