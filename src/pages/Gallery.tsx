@@ -20,7 +20,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3.5 py-1.5 text-sm font-semibold border transition-all ${
+      className={`rounded-full px-3.5 py-1.5 text-sm font-semibold border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
         active
           ? 'bg-primary text-primary-foreground border-primary shadow-sm'
           : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'

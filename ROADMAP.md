@@ -261,6 +261,16 @@ input is aggregate history, not free text about the child. Build only after
 
 ---
 
+> **Phase 6 progress (2026-07-05):** DONE — prerendered `/privacy` page (honest
+> on-device data policy) linked from the footer + sitemap; worksheet SVG now has
+> a descriptive `role="img"` aria-label; gallery chips have focus-visible rings;
+> `prefers-reduced-motion` disables the paper animation; mobile print hint shows
+> "Save as PDF" guidance. NOT done (need owner input, see summary): real contact
+> email + Buy-Me-a-Coffee link; analytics left OFF pending explicit opt-in.
+> Correction: `next-themes` is NOT removable — the shadcn Sonner toaster imports
+> it (`ui/sonner.tsx`); `@tanstack/react-query` is provider-only and kept as the
+> intended data layer for the Phase 5 LLM calls.
+
 ## Phase 6 — Trust & polish backlog (fold into any phase)
 
 - Replace footer placeholders: real contact email, real Buy-Me-a-Coffee link,

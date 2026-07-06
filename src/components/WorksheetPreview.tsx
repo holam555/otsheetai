@@ -161,8 +161,12 @@ export default function WorksheetPreview({ config, data, variant = 'full', htmlI
     );
   }
 
+  // The worksheet is drawn as raw SVG (dangerouslySetInnerHTML), which screen
+  // readers can't parse — expose a concise description instead.
+  const ariaLabel = `Worksheet: ${data.instructions} (${data.skillLabel})`;
+
   return (
-    <div id={htmlId} ref={containerRef} className="space-y-4 worksheet-print-root">
+    <div id={htmlId} ref={containerRef} role="img" aria-label={ariaLabel} className="space-y-4 worksheet-print-root">
       <div
         className="worksheet-paper"
         style={{ aspectRatio: '210/297', maxHeight: '85vh', position: 'relative', overflow: 'hidden' }}

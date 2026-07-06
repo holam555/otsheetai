@@ -277,7 +277,9 @@ export default function Editor() {
             customizeOpen={customizeOpen}
           />
           <p className="text-[11px] text-muted-foreground mt-2">
-            🖨️ Printing works best from a desktop browser. Browse and preview freely on any device.
+            {isMobile
+              ? '🖨️ On a phone: open your browser menu → Print (or Share → Print), then choose “Save as PDF”.'
+              : '🖨️ Printing works best from a desktop browser. Browse and preview freely on any device.'}
           </p>
 
           {/* Progression nudge — appears after 3 prints at this level. */}

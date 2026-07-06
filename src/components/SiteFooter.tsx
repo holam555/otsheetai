@@ -24,6 +24,7 @@ export default function SiteFooter() {
           <p className="text-xs text-muted-foreground">© OTsheet.ai · Made with care for little learners.</p>
           <nav className="flex items-center gap-5 text-sm font-medium text-muted-foreground">
             <a href="/#about" className="hover:text-foreground transition-colors">About</a>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             {/* TODO: replace with real contact address */}
             <a href="mailto:hello@otsheet.ai" className="hover:text-foreground transition-colors">Contact</a>
             {/* TODO: replace with real Buy Me a Coffee link */}

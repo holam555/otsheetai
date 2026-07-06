@@ -49,6 +49,11 @@ export const routes: PrerenderRoute[] = [
     description:
       'Free printable occupational therapy worksheets for children aged 2–12: handwriting practice, name tracing, letter reversals, visual perception, scissor skills, mazes and more. Customize and print in seconds — no signup.',
   },
+  {
+    path: '/privacy',
+    title: 'Privacy · OTsheet.ai',
+    description: 'How OTsheet.ai handles data: everything stays on your device. No accounts, no uploads, no third-party tracking of children.',
+  },
   ...GOAL_SLUGS.map((slug) => ({
     path: `/worksheets/${slug}`,
     title: `${GOAL_COPY[slug].heading} · OTsheet.ai`,

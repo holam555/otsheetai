@@ -167,3 +167,11 @@
 .batch-print {
   display: none;
 }
+
+/* Respect reduced-motion: the paper "appear" animation is decorative. */
+@media (prefers-reduced-motion: reduce) {
+  .worksheet-paper,
+  .worksheet-paper:nth-child(2) {
+    animation: none !important;
+  }
+}
