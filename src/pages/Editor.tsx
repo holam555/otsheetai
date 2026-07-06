@@ -12,8 +12,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePrintCount } from '@/hooks/use-print-count';
 import { WorksheetConfig, WorksheetData, generateWorksheet } from '@/lib/shapes';
 import { getTemplate, templateConfig } from '@/data/templates';
-import { defaultConfig } from '@/lib/defaultConfig';
-import { loadProfile, saveProfile, loadTemplateConfig, saveTemplateConfig, clearTemplateConfig } from '@/lib/persistence';
+import { defaultConfig, ageBandConfig } from '@/lib/defaultConfig';
+import { loadTemplateConfig, saveTemplateConfig, clearTemplateConfig } from '@/lib/persistence';
+import { useProfiles } from '@/hooks/use-profiles';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ageBandLabel } from '@/data/templates';
 
@@ -43,22 +44,32 @@ export default function Editor() {
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { increment, shouldNudge } = usePrintCount();
+  const { increment } = usePrintCount();
+  const { activeProfile, effectiveProfileId } = useProfiles();
 
   const template = templateId ? getTemplate(templateId) : undefined;
+
+  // Profile-aware defaults for this template (no saved overrides yet): the
+  // active child's age drives difficulty, their name auto-fills, and their
+  // first interest sets the emoji theme where the template didn't fix one.
+  const profileBase = useMemo<WorksheetConfig>(() => {
+    if (!template) return defaultConfig;
+    let base = templateConfig(template);
+    if (activeProfile) {
+      base = { ...base, ...ageBandConfig(activeProfile.ageBand), childName: activeProfile.name };
+      if (activeProfile.interests.length && !('emojiTheme' in template.overrides)) {
+        base = { ...base, emojiTheme: activeProfile.interests[0] };
+      }
+    }
+    return base;
+  }, [template, activeProfile]);
+
   const initialConfig = useMemo<WorksheetConfig>(() => {
     if (!template) return defaultConfig;
-    const base = templateConfig(template);
-    // Restore the last customization of this template (survives refresh);
-    // merge over fresh defaults so newly added config fields stay valid.
-    const saved = templateId ? loadTemplateConfig(templateId) : null;
-    if (saved) return { ...base, ...saved, mode: template.mode };
-    // First visit to this template: carry the child's name over from any
-    // other worksheet the family has used.
-    const profile = loadProfile();
-    if (profile?.childName && !base.childName) return { ...base, childName: profile.childName };
-    return base;
-  }, [template, templateId]);
+    // This child's saved customization of this template wins over the defaults.
+    const saved = templateId ? loadTemplateConfig(effectiveProfileId, templateId) : null;
+    return saved ? { ...profileBase, ...saved, mode: template.mode } : profileBase;
+  }, [template, templateId, profileBase, effectiveProfileId]);
 
   usePageMeta(
     template ? `${template.title} — Free Printable Worksheet (${ageBandLabel[template.ageBand]})` : undefined,
@@ -83,15 +94,12 @@ export default function Editor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [genKey]);
 
-  // Persist customizations (debounced) + remember the child's name globally.
+  // Persist this child's customization of this template (debounced).
   useEffect(() => {
     if (!templateId) return;
-    const t = setTimeout(() => {
-      saveTemplateConfig(templateId, config);
-      if (config.childName.trim()) saveProfile({ childName: config.childName.trim() });
-    }, 400);
+    const t = setTimeout(() => saveTemplateConfig(effectiveProfileId, templateId, config), 400);
     return () => clearTimeout(t);
-  }, [config, templateId]);
+  }, [config, templateId, effectiveProfileId]);
 
   const handleRegenerate = useCallback(() => {
     setData(generateWorksheet(config));
@@ -99,12 +107,11 @@ export default function Editor() {
 
   const handleReset = useCallback(() => {
     if (!template || !templateId) return;
-    clearTemplateConfig(templateId);
-    const fresh = templateConfig(template);
-    setConfig(fresh);
-    setData(generateWorksheet(fresh));
-    toast('Reset to template defaults');
-  }, [template, templateId]);
+    clearTemplateConfig(effectiveProfileId, templateId);
+    setConfig(profileBase);
+    setData(generateWorksheet(profileBase));
+    toast('Reset to defaults');
+  }, [template, templateId, effectiveProfileId, profileBase]);
 
   const handlePrint = useCallback(() => {
     window.print();

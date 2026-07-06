@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import ProfileSwitcher from '@/components/ProfileSwitcher';
 
 interface Props {
   /** Optional right-aligned slot (e.g. editor toolbar actions). */
@@ -23,7 +24,10 @@ export default function SiteHeader({ right }: Props) {
             <p className="text-[11px] text-muted-foreground leading-none">Printable worksheets for kids</p>
           </div>
         </Link>
-        {right}
+        <div className="flex items-center gap-3">
+          <ProfileSwitcher />
+          {right}
+        </div>
       </div>
     </header>
   );

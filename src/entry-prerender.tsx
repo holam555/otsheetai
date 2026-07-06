@@ -3,6 +3,7 @@ import { StaticRouter } from 'react-router-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AppRoutes from './AppRoutes';
+import { ProfileProvider } from '@/hooks/use-profiles';
 import { TEMPLATES, ageBandLabel } from '@/data/templates';
 import { GOAL_COPY, GOAL_SLUGS } from '@/data/goalCopy';
 
@@ -21,9 +22,11 @@ export function render(url: string): string {
   return renderToString(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <StaticRouter location={url}>
-          <AppRoutes />
-        </StaticRouter>
+        <ProfileProvider>
+          <StaticRouter location={url}>
+            <AppRoutes />
+          </StaticRouter>
+        </ProfileProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
