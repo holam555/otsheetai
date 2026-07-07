@@ -22,6 +22,7 @@ import {
 import { useProfiles } from '@/hooks/use-profiles';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ageBandLabel } from '@/data/templates';
+import { styleForTemplate } from '@/lib/categoryColors';
 import { track } from '@vercel/analytics';
 
 const randomSeed = () => (Math.random() * 0xffffffff) >>> 0;
@@ -262,6 +263,7 @@ export default function Editor() {
     );
   }
 
+  const cat = styleForTemplate(template);
   const controls = <CustomizeControls config={config} onChange={setConfig} />;
 
   return (
@@ -275,12 +277,18 @@ export default function Editor() {
       />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-5">
-        <div className="no-print mb-4">
-          <h2 className="font-display text-xl font-extrabold text-foreground">{template.title}</h2>
-          <p className="text-xs text-muted-foreground">{template.clinicalName} · {template.skillTag}</p>
+        <div className="no-print mb-4 flex items-start gap-3">
+          <span className="mt-0.5 rounded-full px-2.5 py-1 text-[11px] font-bold shrink-0" style={{ backgroundColor: cat.tint, color: cat.color }}>
+            {cat.label}
+          </span>
+          <div>
+            <h2 className="font-display text-xl font-extrabold text-foreground leading-tight">{template.title}</h2>
+            <p className="text-xs text-muted-foreground">{template.clinicalName} · {template.skillTag}</p>
+          </div>
         </div>
 
-        <div className="no-print mb-4">
+        {/* Sticky action bar — stays reachable while scrolling the sheet. */}
+        <div className="no-print sticky top-[58px] z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 mb-3 bg-background/85 backdrop-blur border-b border-border">
           <EditorToolbar
             onPrint={handlePrint}
             onPrintBatch={handlePrintBatch}
@@ -289,7 +297,10 @@ export default function Editor() {
             onToggleCustomize={() => setCustomizeOpen((o) => !o)}
             customizeOpen={customizeOpen}
           />
-          <p className="text-[11px] text-muted-foreground mt-2">
+        </div>
+
+        <div className="no-print mb-4">
+          <p className="text-[11px] text-muted-foreground">
             {isMobile
               ? '🖨️ On a phone: open your browser menu → Print (or Share → Print), then choose “Save as PDF”.'
               : '🖨️ Printing works best from a desktop browser. Browse and preview freely on any device.'}
@@ -317,7 +328,7 @@ export default function Editor() {
           {/* Hide the single preview while a batch is queued so only the 5-page
               set prints. */}
           <div className={`flex-1 flex justify-center ${batchSeeds ? 'no-print' : ''}`}>
-            <div className="w-full max-w-[560px]">
+            <div className="worksheet-desk w-full max-w-[600px]">
               <WorksheetPreview config={config} data={data} sheetTitle={template.title} />
             </div>
           </div>

@@ -193,6 +193,12 @@
     background: white !important;
     background-image: none !important;
   }
+  /* The editor "desk" frame is screen decoration — never print its gradient. */
+  .worksheet-desk {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
   @page {
     size: A4 portrait;
     margin: 0;
