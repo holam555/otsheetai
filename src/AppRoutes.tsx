@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import Gallery from "./pages/Gallery";
 import Editor from "./pages/Editor";
 import GoalPage from "./pages/GoalPage";
+import GuidesIndex from "./pages/GuidesIndex";
+import GuidePage from "./pages/GuidePage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 
@@ -15,6 +17,8 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<Gallery />} />
       <Route path="/worksheets/:goalSlug" element={<GoalPage />} />
+      <Route path="/guides" element={<GuidesIndex />} />
+      <Route path="/guides/:slug" element={<GuidePage />} />
       <Route path="/edit/:templateId" element={<Editor />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

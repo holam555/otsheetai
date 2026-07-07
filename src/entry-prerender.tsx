@@ -6,6 +6,7 @@ import AppRoutes from './AppRoutes';
 import { ProfileProvider } from '@/hooks/use-profiles';
 import { TEMPLATES, ageBandLabel } from '@/data/templates';
 import { GOAL_COPY, GOAL_SLUGS } from '@/data/goalCopy';
+import { GUIDES } from '@/data/guides';
 
 /**
  * Build-time prerender entry. Renders the SAME route tree the client uses
@@ -58,6 +59,16 @@ export const routes: PrerenderRoute[] = [
     path: `/worksheets/${slug}`,
     title: `${GOAL_COPY[slug].heading} · OTsheet.ai`,
     description: GOAL_COPY[slug].metaDescription,
+  })),
+  {
+    path: '/guides',
+    title: 'Guides for Parents — Handwriting & Fine Motor · OTsheet.ai',
+    description: 'Practical, therapist-informed guides for parents: letter reversals, scissor skills, pre-writing and more — each with free printables.',
+  },
+  ...GUIDES.map((g) => ({
+    path: `/guides/${g.slug}`,
+    title: `${g.title} · OTsheet.ai`,
+    description: g.metaDescription,
   })),
   ...TEMPLATES.map((t) => ({
     path: `/edit/${t.id}`,

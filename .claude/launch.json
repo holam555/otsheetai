@@ -4,8 +4,14 @@
     {
       "name": "otsheet-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 8080
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "8090"
+      ],
+      "port": 8090
     }
   ]
 }

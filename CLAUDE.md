@@ -1,199 +1,86 @@
 # OTsheet.ai — CLAUDE.md
 
-## Project Purpose
+Client-side web app: parents and occupational therapists generate print-ready
+A4 worksheets (SVG) for children 2–12. Three areas: handwriting, fine motor,
+visual perception. No backend; everything runs in the browser.
 
-OTsheet.ai is a client-side web app that lets parents and occupational therapists (OTs) generate print-ready worksheets for children aged 2–12. It covers three therapeutic areas:
+Routing note: read this file's parent router first
+(`/Users/katewong/Code/OTsheet/CLAUDE.md`) — it says which doc owns which fact.
+Architecture decisions live in [ROADMAP.md](ROADMAP.md) and are final.
+High-risk items a weaker model must not attempt: [DEFER_TO_FABLE.md](DEFER_TO_FABLE.md).
 
-- **Handwriting** — guided letter/word practice on triline, 4-line, word-box, or grid paper
-- **Fine motor** — tracing paths, scissor skills, connect-the-dots, mazes
-- **Visual perception** — find-the-shape, pattern matching, odd one out, figure-ground, visual closure, pixel art, and more
+## Stack
 
-All worksheet generation is client-side (no backend). Output is SVG-based and sized for A4 print.
+React 18 + TypeScript 5, Vite 5 (SPA + build-time prerender via
+`scripts/prerender.mjs`), React Router 6, shadcn/ui + Tailwind 3, Vitest.
+Package manager: bun preferred, npm works.
 
----
-
-## Tech Stack
-
-| Layer | Library / Tool |
-|-------|----------------|
-| Framework | React 18 + TypeScript 5 |
-| Build | Vite 5 |
-| Routing | React Router DOM 6 |
-| UI Components | shadcn/ui (Radix UI + Tailwind CSS 3) |
-| Forms | React Hook Form + Zod |
-| Icons | Lucide React |
-| Notifications | Sonner |
-| Testing | Vitest + Testing Library |
-| Package manager | Bun (preferred) or npm |
-
----
-
-## Repository Structure
-
-```
-src/
-├── pages/
-│   ├── Index.tsx             # Main page — state, layout, print trigger
-│   └── NotFound.tsx          # 404 fallback
-├── components/
-│   ├── WorksheetControls.tsx # Left sidebar: all user-facing settings (~950 lines)
-│   ├── WorksheetPreview.tsx  # SVG renderer for all 15+ exercise modes (~1627 lines)
-│   ├── NavLink.tsx           # Router NavLink wrapper
-│   └── ui/                   # shadcn/ui primitives (do not edit manually)
-├── lib/
-│   ├── shapes.ts             # Core generation engine — all puzzle/data generators (~1836 lines)
-│   ├── letterPaths.ts        # Letter/number stroke data for handwriting modes
-│   └── utils.ts              # cn() Tailwind merge helper
-├── hooks/
-│   ├── use-mobile.tsx        # Mobile breakpoint
-│   └── use-toast.ts          # Toast hook
-└── test/
-    ├── example.test.ts       # Placeholder
-    └── setup.ts              # Vitest setup
-```
-
----
-
-## Core Data Flow
-
-```
-WorksheetConfig (state in Index.tsx)
-        │
-        ▼  (on any config change)
-generateWorksheet(config)  ←─── lib/shapes.ts
-        │
-        ▼
-WorksheetData (passed as prop)
-        │
-        ▼
-WorksheetPreview.tsx  ──renders──▶  SVG (A4, 595×842px)
-        │
-        ▼
-window.print()  (browser print dialog → PDF)
-```
-
-Key types live in `src/lib/shapes.ts`:
-- `WorksheetConfig` — all user settings (50+ fields)
-- `WorksheetData` — generated puzzle data for any mode
-- `WorksheetMode` — union of all 15+ mode string literals
-
----
-
-## Exercise Modes
-
-### Visual Perception (14 modes)
-| Mode | Key in config |
-|------|---------------|
-| Find the Shape | `find` |
-| Match Pattern | `pattern` |
-| Find & Count | `count` |
-| Copy Pattern | `copy` |
-| Sequence | `sequence` |
-| Odd One Out | `oddOneOut` |
-| Mirror Image | `mirror` |
-| Figure Ground | `figureGround` |
-| Visual Closure | `closure` |
-| Maze | `maze` |
-| Connect the Dots | `connectDots` |
-| Tracing Paths | `tracing` |
-| Scissor Skills | `scissor` |
-| Visual Scanning | `visualScanning` |
-| Pixel Art | `pixelArt` |
-
-### Handwriting (1 mode, multiple layouts)
-Mode key: `handwriting`. Layout variants: `triline`, `fourline`, `wordBoxes`, `gridBox`, `combined`.
-
----
-
-## Adding a New Exercise Mode
-
-1. **Add the mode string** to `WorksheetMode` union in `shapes.ts`
-2. **Add a generator function** `generateXxxMode(config): XxxData` in `shapes.ts`
-3. **Call the generator** in the `generateWorksheet()` switch in `shapes.ts`
-4. **Add a renderer** `renderXxxMode()` in `WorksheetPreview.tsx` and call it from the main render switch
-5. **Add UI controls** in `WorksheetControls.tsx` — typically under a new conditional block inside the correct tab
-6. **Add any new config fields** to `WorksheetConfig` in `shapes.ts` and initialise them in `Index.tsx`
-
----
-
-## Shapes & SVG
-
-- 12 base shapes: `circle`, `square`, `triangle`, `cross`, `diamond`, `star`, `rectangle`, `oval`, `heart`, `arrow`, `hexagon`, `pentagon`
-- Emoji mode maps each shape to a themed emoji (animals, food, transport, nature, faces)
-- SVG paths for each shape are in `getShapeRawSVG()` at the bottom of `shapes.ts`
-- `getShapeSVG(shape, x, y, size, fill, stroke, rotation)` is the main drawing helper used in `WorksheetPreview.tsx`
-
----
-
-## Print / PDF Output
-
-- Worksheet is rendered as an `<svg>` element at 595×842px (A4 portrait)
-- `window.print()` is called from the Print button in `Index.tsx`
-- `@media print` CSS hides everything except the SVG preview
-- Multi-page worksheets (e.g. pattern mode with answer key) render two SVG elements stacked
-
----
-
-## Known Issues & Improvement Opportunities
-
-**See [ROADMAP.md](ROADMAP.md)** — the maintained, phased backlog with decisions
-already made (therapeutic-quality items, prerendering/SEO, per-child profiles,
-monetization architecture, LLM word-list feature). NOTES.md holds the session
-history.
-
-Still true as of 2026-07-05:
-- Persistence exists (`src/lib/persistence.ts`, localStorage) — settings and
-  the child's name survive refresh; multi-child profiles are ROADMAP Phase 3.
-- Tests: `src/test/audit.test.tsx` (38 tests) covers control reflection and
-  puzzle solvability; deeper per-generator unit tests still welcome.
-- Accessibility (SVG ARIA labels) and mobile zoom/pan remain open (ROADMAP
-  Phase 6).
-- `next-themes` unused; `@tanstack/react-query` unused until ROADMAP Phase 4/5.
-
----
-
-## Commands
+## Commands (run inside `otsheetai/`)
 
 ```bash
-# Install dependencies
-bun install          # preferred
-npm install          # fallback
-
-# Dev server (http://localhost:5173)
-bun run dev
-npm run dev
-
-# Type check
-bun run build        # runs tsc then vite build
-npx tsc --noEmit     # type-check only
-
-# Lint
-bun run lint
-
-# Tests
-bun run test
-bun run test:ui      # Vitest UI
+npm run dev        # dev server — vite.config.ts says 8080, but see below
+                   # ⚠ verify on 8090 (preview tool `otsheet-dev`), NOT 8080:
+                   # a stale iCloud-copy vite server may be squatting on 8080
+npm test           # vitest run — must stay green
+npx tsc --noEmit   # type-check
+npm run build      # client build + SSR build + prerender of all routes
+npm run lint
 ```
 
----
+## Map (verified 2026-07-07 — if a path 404s, re-verify with ls, then fix here)
 
-## Design Conventions
+Pages (`src/AppRoutes.tsx`): `/` Gallery, `/worksheets/:goalSlug` GoalPage,
+`/edit/:templateId` Editor, `/privacy`, 404.
 
-- Worksheet dimensions: **595 × 842px** (A4 portrait, 1px ≈ 0.265mm)
-- Worksheet content area: `x=40, y=80` to `x=555, y=800` (40px margin all sides)
-- Header height: ~70px (name/date fields + custom instruction)
-- Footer height: ~30px (skill label + attribution)
-- Fonts embedded via Google Fonts CDN: **Nunito** (headers/labels) and **Inter** (body/instructions)
-- Difficulty → visual complexity: easy = larger shapes, no rotation; hard = smaller shapes, rotated, more distractors
+| File | Role |
+|---|---|
+| `src/lib/shapes.ts` | **The engine.** `WorksheetConfig`, `WorksheetData`, all 17 mode generators, `generateWorksheet()` switch, shape SVG paths |
+| `src/components/WorksheetPreview.tsx` | Renders every mode to the A4 SVG; `variant="thumb"` for gallery cards |
+| `src/components/editor/CustomizeControls.tsx` | All user-facing controls; per-mode core/advanced split; gating lists (`SHAPE_MODES`, `EXERCISE_SLIDER_MODES`, `GRID_MODES`, `ANSWER_KEY_MODES`, `GRIDLINE_MODES`) |
+| `src/data/templates.ts` | 24 templates (as of 2026-07-07) mapping to the 17 modes; goal/age/language maps |
+| `src/lib/grading.ts` + `defaultConfig.ts` | Age-band → difficulty grading presets |
+| `src/lib/letterPaths.ts` | Stroke data. Uppercase: y∈[0,1]. Lowercase: y∈[0,1.4] (0=ascender, 0.4=x-height, 1=baseline, 1.4=descender) — keep both contracts |
+| `src/lib/persistence.ts` | localStorage: per-template config + child profiles |
+| `src/lib/seededGenerate.ts` | Deterministic generation for thumbnails |
+| `src/test/audit.test.tsx` | Control-reflection + solvability regression suite |
 
----
+Data flow: config change → `generateWorksheet(config)` → `WorksheetData` →
+`WorksheetPreview` SVG (595×842) → `window.print()` (print CSS hides the rest).
 
-## Out of Scope (for now — see ROADMAP.md for the decided future phases)
+## Adding a new exercise mode
 
-- Real-time collaboration
-- User accounts / cloud sync / payment — **decided and specified** in ROADMAP
-  Phase 4 (Supabase + Stripe, freemium), but only built when the usage trigger
-  is met
-- Build-time prerendering — planned (ROADMAP Phase 2); full SSR still out
-- Direct PDF export — free tier keeps browser print; PDF download is a Phase 4
-  Pro feature
+1. Add the mode string to `WorksheetMode` in `shapes.ts`; add config fields to
+   `WorksheetConfig` with defaults in `src/lib/defaultConfig.ts`.
+2. Add `generateXxxMode(config)` in `shapes.ts` + case in `generateWorksheet()`.
+3. Add `renderXxxMode()` in `WorksheetPreview.tsx` + case in its switch.
+4. Add controls in `CustomizeControls.tsx` (decide core vs Advanced; add the
+   mode to the gating lists that apply).
+5. Add template(s) in `src/data/templates.ts` so it appears in the gallery.
+6. Add audit tests: every control you expose must measurably change the data
+   or rendered SVG (copy an existing pattern in `audit.test.tsx`), and the
+   puzzle must be provably solvable.
+
+## Invariants (do not regress — each one was a real shipped bug or a decision)
+
+- **Every puzzle solvable, every answer key correct.** The audit suite guards
+  this; extend it, never delete from it.
+- **Print output is the product.** A4 = 595×842px, content box x∈[40,555]
+  y∈[80,800]. After any renderer change: print QA — no ink outside the
+  viewBox, nothing clipped, at easy AND hard.
+- **Cosmetic edits must not re-roll the puzzle** (name/instruction/colors are
+  stable; see seeded generation + Editor state handling).
+- **User text is XML-escaped** before SVG injection.
+- **Fonts are self-hosted** (`public/fonts/EduQLDBeginner.woff2`, SIL OFL).
+  Do NOT reintroduce KG Primary fonts (personal-use license only) or a
+  CDN-loaded worksheet-critical font. The dotted trace row is SVG paint, not
+  a font — keep it font-independent.
+- **Never gate single-sheet printing** behind accounts/payment (product
+  thesis; monetization is ROADMAP Phase 4, usage-triggered).
+- `showGridLines` is functional (4 renderers read it) — not dead code.
+
+## Definition of done
+
+`npx tsc --noEmit` clean, `npm test` green, lint clean on touched files; for
+renderer/layout changes also the print QA above; for engine changes add a
+regression test. Then record a dated entry in [NOTES.md](NOTES.md) (what/why/
+verification), and update this file ONLY if a fact it states became false.

@@ -7,6 +7,7 @@ import TemplateCard from '@/components/gallery/TemplateCard';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { TEMPLATES } from '@/data/templates';
 import { GOAL_COPY } from '@/data/goalCopy';
+import { guidesForGoal } from '@/data/guides';
 import NotFound from '@/pages/NotFound';
 
 export default function GoalPage() {
@@ -89,6 +90,19 @@ export default function GoalPage() {
             ))}
           </div>
         </section>
+
+        {guidesForGoal(copy.slug).length > 0 && (
+          <section aria-label="Related guides" className="border-t border-border pt-6">
+            <h2 className="font-display text-lg font-bold text-foreground mb-3">Read more</h2>
+            <ul className="space-y-1.5">
+              {guidesForGoal(copy.slug).map((g) => (
+                <li key={g.slug}>
+                  <Link to={`/guides/${g.slug}`} className="text-primary hover:underline font-medium">{g.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
 
       <SiteFooter />
