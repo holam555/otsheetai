@@ -80,8 +80,13 @@ Mirror the proven GoalPage pattern exactly:
 
 ## Seed topic backlog (priority order; primary keyword in quotes)
 
-1. "letter reversals age 6" — when b/d flipping is normal vs not → letter-reversals goal
-2. "scissor skills by age" — snip→line→curve ladder + grading → scissor-skills
+_The /guides space (G0) is BUILT (guides.ts + GuidePage + GuidesIndex, routes,
+prerender, sitemap, llms.txt, footer "Learn", goal-page links). New articles are
+just `Guide` entries in `src/data/guides.ts` — follow the recipe above. Check
+guides.ts for what's already written; `updated` field tracks review dates._
+
+1. ~~"letter reversals age 6"~~ ✓ DONE (guides/letter-reversals-age-6, 2026-07-06)
+2. "scissor skills by age" — snip→line→curve ladder + grading → scissor-skills  ← NEXT
 3. "pre-writing strokes order" — the developmental stroke sequence → pre-writing-strokes
 4. "teach child to write their name" — readiness signs, name-first debate → handwriting
 5. "fine motor milestones 3 4 5 year old" — table-heavy → scissor + pre-writing
