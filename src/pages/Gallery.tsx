@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { GUIDES } from '@/data/guides';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import AboutStrip from '@/components/gallery/AboutStrip';
@@ -224,6 +226,35 @@ export default function Gallery() {
               <TemplateCard key={t.id} template={t} />
             ))}
           </div>
+        )}
+
+        {/* Parent guides — surfaces the content + builds trust ("we know the
+            why behind the practice"), and gives the guides a home on the
+            highest-traffic page. */}
+        {GUIDES.length > 0 && (
+          <section aria-label="Guides for parents" className="border-t border-border pt-8">
+            <div className="flex items-end justify-between gap-4 mb-4">
+              <div>
+                <h2 className="font-display text-xl font-bold text-foreground">Guides for parents</h2>
+                <p className="text-sm text-muted-foreground mt-1">Therapist-informed answers to the questions parents actually ask — with free printables to practise.</p>
+              </div>
+              <Link to="/guides" className="shrink-0 text-sm font-semibold text-primary hover:underline whitespace-nowrap">All guides →</Link>
+            </div>
+            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {GUIDES.slice(0, 3).map((g) => (
+                <li key={g.slug}>
+                  <Link
+                    to={`/guides/${g.slug}`}
+                    className="group block h-full rounded-2xl border border-border bg-card p-4 shadow-paper hover:border-primary/40 hover:-translate-y-0.5 transition-all"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Guide</p>
+                    <h3 className="font-display font-bold text-foreground mt-1 leading-snug group-hover:text-primary transition-colors">{g.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1.5">{g.metaDescription}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </main>
 
