@@ -1,6 +1,11 @@
 import { useRef } from 'react';
 import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
 import { getLetterStrokes } from '@/lib/letterPaths';
+import { childAgeToBand } from '@/lib/defaultConfig';
+import { CATEGORY_STYLES, categoryForMode } from '@/lib/categoryColors';
+
+const AGE_LABEL: Record<string, string> = { '3-4': 'Ages 3–4', '5-6': 'Ages 5–6', '7-8': 'Ages 7–8' };
+const CHALLENGE_LABEL: Record<string, string> = { easier: 'Easier', standard: 'Just right', harder: 'Harder' };
 
 interface Props {
   config: WorksheetConfig;
@@ -14,6 +19,9 @@ interface Props {
   /** DOM id for the full-variant wrapper. Batch pages pass unique ids so
    *  multiple previews can coexist without duplicating #worksheet-preview. */
   htmlId?: string;
+  /** Friendly worksheet title shown in the sheet header (e.g. the template
+   *  title). Falls back to a generic label. */
+  sheetTitle?: string;
 }
 
 // No trace overlays needed anymore
@@ -49,7 +57,7 @@ function getCellBorderAttrs(config: WorksheetConfig, strokeColor = '#CBD5E1', wi
   return `fill="none" stroke="${strokeColor}" stroke-width="${width}"${dash}${rx}`;
 }
 
-export default function WorksheetPreview({ config, data, variant = 'full', htmlId = 'worksheet-preview' }: Props) {
+export default function WorksheetPreview({ config, data, variant = 'full', htmlId = 'worksheet-preview', sheetTitle }: Props) {
   const getFill = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_FILL;
   const getStroke = (shape: ShapeName) => config.useColor ? SHAPE_COLORS[shape] : BW_STROKE;
   const getStrokeW = () => config.useColor ? 1.5 : 2.5;
@@ -59,11 +67,9 @@ export default function WorksheetPreview({ config, data, variant = 'full', htmlI
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Header font sizes
-  const nameFontSize = 16;
   const dateFontSize = 11;
   const nameWeight = config.headerBold ? '800' : '600';
   const ageStr = config.childAge !== null ? ` (Age ${config.childAge})` : '';
-  const nameStr = config.childName ? config.childName + ageStr : '___________________';
 
   const instrFontSize = config.instructionFontSize === 'small' ? 11 : config.instructionFontSize === 'large' ? 18 : 14;
   const instrWeight = config.instructionBold ? '800' : '700';
@@ -73,18 +79,64 @@ export default function WorksheetPreview({ config, data, variant = 'full', htmlI
   // this string is injected into the SVG via innerHTML.
   const instructions = config.customInstruction.trim() || data.instructions;
 
+  // Category accent (colour-codes the sheet by skill family, like the cards).
+  const cat = CATEGORY_STYLES[categoryForMode(data.mode)];
+  const title = (sheetTitle && sheetTitle.trim()) || 'Practice Worksheet';
+  const band = config.childAge !== null ? childAgeToBand(config.childAge) : null;
+  const levelChip = band ? `${AGE_LABEL[band]} · ${CHALLENGE_LABEL[config.challenge] ?? 'Just right'}` : '';
+  const dispFont = "'Fredoka', 'Nunito', sans-serif";
+
+  // Name write-on: a proper tri-line segment (baseline + faint x-height guide)
+  // so the child practises from the first pen stroke.
+  const nameLineX = MARGIN + 52;
+  const nameLineX2 = MARGIN + 250;
+  const nameBaseY = MARGIN + 52;
+  const nameStuff = config.childName
+    ? `<text x="${nameLineX + 3}" y="${nameBaseY - 2}" font-family="${dispFont}" font-size="15" font-weight="${nameWeight}" fill="#334155">${escapeXml(config.childName + ageStr)}</text>`
+    : '';
+
   const headerSVG = `
-    <text x="${W / 2}" y="${MARGIN + 22}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="20" font-weight="800" fill="#0D9488">OTsheet.ai</text>
-    <line x1="${MARGIN}" y1="${MARGIN + 32}" x2="${W - MARGIN}" y2="${MARGIN + 32}" stroke="#E2E8F0" stroke-width="1" />
-    <text x="${MARGIN}" y="${MARGIN + 52}" font-family="Nunito, sans-serif" font-size="${nameFontSize}" font-weight="${nameWeight}" fill="#334155">Name: ${escapeXml(nameStr)}</text>
-    <text x="${W - MARGIN}" y="${MARGIN + 52}" text-anchor="end" font-family="Inter, sans-serif" font-size="${dateFontSize}" fill="#94A3B8">Date: ____/____/________</text>
+    <text x="${MARGIN}" y="${MARGIN + 11}" font-family="${dispFont}" font-size="11" font-weight="600" fill="#0D9488">OTsheet.ai</text>
+    <text x="${W - MARGIN}" y="${MARGIN + 11}" text-anchor="end" font-family="Inter, sans-serif" font-size="${dateFontSize}" fill="#94A3B8">Date: ____/____/________</text>
+    <text x="${W / 2}" y="${MARGIN + 28}" text-anchor="middle" font-family="${dispFont}" font-size="19" font-weight="600" fill="#0F172A">${escapeXml(title)}</text>
+    <line x1="${MARGIN}" y1="${MARGIN + 36}" x2="${W - MARGIN}" y2="${MARGIN + 36}" stroke="${cat.color}" stroke-width="1.5" opacity="0.5" />
+    <text x="${MARGIN}" y="${nameBaseY}" font-family="${dispFont}" font-size="13" font-weight="${nameWeight}" fill="#334155">Name:</text>
+    <line x1="${nameLineX}" y1="${nameBaseY - 8}" x2="${nameLineX2}" y2="${nameBaseY - 8}" stroke="#CBD5E1" stroke-width="0.6" stroke-dasharray="3 3" />
+    <line x1="${nameLineX}" y1="${nameBaseY}" x2="${nameLineX2}" y2="${nameBaseY}" stroke="#94A3B8" stroke-width="1" />
+    ${nameStuff}
     <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${instrFontSize}" font-weight="${instrWeight}" fill="#1E293B">${escapeXml(instructions)}</text>
   `;
 
+  // "I did it!" self-monitoring row — 3 outline stars + a checkbox, line-art
+  // only (near-zero ink), centred just below the body. Gated by showReward.
+  const rewardY = H - MARGIN - 22;
+  let rewardSVG = '';
+  if (config.showReward) {
+    const star = (cx: number, cy: number, r: number) => {
+      const pts: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        const ao = -Math.PI / 2 + (2 * Math.PI * i) / 5;
+        const ai = ao + Math.PI / 5;
+        pts.push(`${(cx + Math.cos(ao) * r).toFixed(1)},${(cy + Math.sin(ao) * r).toFixed(1)}`);
+        pts.push(`${(cx + Math.cos(ai) * r * 0.42).toFixed(1)},${(cy + Math.sin(ai) * r * 0.42).toFixed(1)}`);
+      }
+      return `<polygon points="${pts.join(' ')}" fill="none" stroke="#F59E0B" stroke-width="1.2" stroke-linejoin="round" />`;
+    };
+    const cxStart = W / 2 - 6;
+    rewardSVG =
+      `<text x="${cxStart - 12}" y="${rewardY + 3}" text-anchor="end" font-family="${dispFont}" font-size="10" font-weight="600" fill="#64748B">How did I do?</text>` +
+      star(cxStart + 4, rewardY, 7) + star(cxStart + 24, rewardY, 7) + star(cxStart + 44, rewardY, 7) +
+      `<rect x="${cxStart + 62}" y="${rewardY - 6}" width="12" height="12" rx="2.5" fill="none" stroke="#94A3B8" stroke-width="1.1" />` +
+      `<text x="${cxStart + 80}" y="${rewardY + 3}" font-family="${dispFont}" font-size="10" font-weight="600" fill="#64748B">I did it!</text>`;
+  }
+
   const footerSVG = `
-    <line x1="${MARGIN}" y1="${H - MARGIN - 20}" x2="${W - MARGIN}" y2="${H - MARGIN - 20}" stroke="#E2E8F0" stroke-width="1" />
-    <text x="${MARGIN}" y="${H - MARGIN - 4}" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#94A3B8">Skill: ${data.skillLabel}</text>
-    <text x="${W - MARGIN}" y="${H - MARGIN - 4}" text-anchor="end" font-family="Inter, sans-serif" font-size="9" fill="#CBD5E1">Generated by OTsheet.ai</text>
+    ${rewardSVG}
+    <line x1="${MARGIN}" y1="${H - MARGIN - 13}" x2="${W - MARGIN}" y2="${H - MARGIN - 13}" stroke="#E2E8F0" stroke-width="1" />
+    ${levelChip ? `<rect x="${MARGIN}" y="${H - MARGIN - 10}" width="${8 + levelChip.length * 4.4}" height="12" rx="6" fill="${cat.tint}" />
+    <text x="${MARGIN + 5}" y="${H - MARGIN - 1}" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="${cat.color}">${escapeXml(levelChip)}</text>` : ''}
+    <text x="${MARGIN + (levelChip ? 16 + levelChip.length * 4.4 : 0)}" y="${H - MARGIN - 1}" font-family="Inter, sans-serif" font-size="9" fill="#94A3B8">${escapeXml(data.skillLabel.split(' · ')[0])}</text>
+    <text x="${W - MARGIN}" y="${H - MARGIN - 1}" text-anchor="end" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#0D9488">Print your own · otsheetai.vercel.app</text>
   `;
 
   // No trace overlays to collect

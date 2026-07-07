@@ -17,6 +17,7 @@ export const defaultConfig: WorksheetConfig = {
   showGridLines: true,
   useColor: true,
   showAnswerKey: false,
+  showReward: true,
   exerciseCount: 5,
   customInstruction: '',
   borderStyle: 'plain',

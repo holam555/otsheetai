@@ -148,6 +148,7 @@ describe('render-only controls change the SVG', () => {
   it('instructionBold', () => diff({ instructionBold: false }, { instructionBold: true }));
   it('headerBold', () => diff({ headerBold: false }, { headerBold: true }));
   it('showAnswerKey', () => diff({ showAnswerKey: false }, { showAnswerKey: true }));
+  it('showReward', () => diff({ showReward: false }, { showReward: true }));
 
   it('childName appears in the header', () => {
     expect(svg({ mode: 'find', childName: 'Zoe-Test' }, data)).toContain('Zoe-Test');

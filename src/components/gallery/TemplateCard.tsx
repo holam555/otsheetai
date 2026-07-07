@@ -21,7 +21,7 @@ export default function TemplateCard({ template, to }: { template: Template; to?
       className="group block text-left rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-lg hover:border-primary/40 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <div className="relative bg-muted/40 border-b border-border overflow-hidden">
-        <WorksheetPreview config={config} data={data} variant="thumb" />
+        <WorksheetPreview config={config} data={data} variant="thumb" sheetTitle={template.title} />
         <span className="absolute top-2 left-2 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-bold text-primary shadow-sm">
           {ageBandLabel[template.ageBand]}
         </span>

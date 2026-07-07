@@ -604,6 +604,12 @@ export default function CustomizeControls({ config, onChange }: Props) {
                 <Switch checked={config.headerBold} onCheckedChange={(v) => update({ headerBold: v })} />
               </div>
 
+              {/* "I did it!" reward row */}
+              <div className="flex items-center justify-between">
+                <FieldLabel>“I did it!” reward row</FieldLabel>
+                <Switch checked={config.showReward} onCheckedChange={(v) => update({ showReward: v })} />
+              </div>
+
               {/* Answer key — only modes whose renderer draws one. */}
               {ANSWER_KEY_MODES.includes(mode) && (
                 <div className="flex items-center justify-between">

@@ -83,6 +83,8 @@ export interface WorksheetConfig {
   showGridLines: boolean;
   useColor: boolean;
   showAnswerKey: boolean;
+  /** "I did it!" self-monitoring reward row in the footer (line-art). */
+  showReward: boolean;
   exerciseCount: number;
   customInstruction: string;
   borderStyle: BorderStyle;

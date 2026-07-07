@@ -52,7 +52,7 @@ const COSMETIC_FIELDS: (keyof WorksheetConfig)[] = [
   'challenge',
   'childAge', 'customInstruction', 'borderStyle', 'headerFontSize', 'headerBold',
   'instructionFontSize', 'instructionBold', 'nameDateFontSize', 'useColor',
-  'showAnswerKey', 'showGridLines', 'mazeShowSolution', 'pixelArtBW',
+  'showAnswerKey', 'showReward', 'showGridLines', 'mazeShowSolution', 'pixelArtBW',
   'handwritingShowColoredLines', 'handwritingLineColor', 'handwritingHighlightColor',
   'handwritingShowHighlight', 'handwritingShowStartEnd', 'visualScanFontStyle',
   'visualScanCharSize', 'wordBoxDisplayMode',
@@ -318,7 +318,7 @@ export default function Editor() {
               set prints. */}
           <div className={`flex-1 flex justify-center ${batchSeeds ? 'no-print' : ''}`}>
             <div className="w-full max-w-[560px]">
-              <WorksheetPreview config={config} data={data} />
+              <WorksheetPreview config={config} data={data} sheetTitle={template.title} />
             </div>
           </div>
 
@@ -349,7 +349,7 @@ export default function Editor() {
       {batchSeeds && (
         <div className="batch-print" aria-hidden>
           {batchSeeds.map((s, i) => (
-            <WorksheetPreview key={s} htmlId={`batch-${i}`} config={config} data={generateWorksheetSeeded(config, s)} />
+            <WorksheetPreview key={s} htmlId={`batch-${i}`} config={config} data={generateWorksheetSeeded(config, s)} sheetTitle={template.title} />
           ))}
         </div>
       )}
