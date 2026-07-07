@@ -2,6 +2,21 @@
 
 _Last updated: 2026-07-05. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
 
+## 2026-07-06 (later) — Design execution (Opus): A0–A2 + B1
+Ran DESIGN_STRATEGY.md 'warm paper studio'. Shipped + verified (74/74 tests,
+build + 30-route prerender green, desktop+mobile):
+- A0 tokens (Fredoka, categoryColors.ts, print-safe paper grain, utils)
+- A1 gallery/hero (taped-worksheet cards, HeroFan of 3 real sheets, crayon
+  underline, sticker chips, "⭐ {name}'s desk")
+- A2 editor (sticky action bar, .worksheet-desk backdrop w/ print reset,
+  category chip on title)
+- B1 worksheet header/footer (TITLE on every sheet, tri-line Name write-on,
+  "I did it!" reward row via showReward, age/level filing chip, "Print your
+  own" growth URL) — print-QA 0 overflow across 22×easy/hard.
+Deferred to Fable (art-taste + cross-mode safety layer): B2 instruction icons,
+B3 corner doodles, B4 per-mode polish, A3/A4 remainder — see DESIGN_STRATEGY.md
+"Progress & Fable hand-off".
+
 ## 2026-07-06 — Strategy pass 2 (Fable): design + SEO + scroll fix
 - **Bug fixed:** SPA navigation kept the gallery scroll offset — opening a
   worksheet landed past the Print/Customize toolbar. `ScrollToTop` on route

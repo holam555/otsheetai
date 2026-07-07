@@ -170,6 +170,52 @@ config-gated, and must pass the existing print-QA bbox sweep.
 
 ---
 
+## Progress & Fable hand-off (2026-07-06, Opus pass)
+
+**DONE and shipped** (the "make it attractive" core — verified desktop+mobile,
+74/74 tests, build + 30-route prerender green each phase):
+- **A0 tokens** — Fredoka display, `categoryColors.ts` (4 skill-family
+  accents+tints keyed by goal/mode), print-safe paper grain, `shadow-paper` +
+  `dotted-divider` + `font-hand` utilities.
+- **A1 gallery/hero** — taped-worksheet cards (deterministic tilt + washi tape +
+  category age sticker + category skill tag, straighten/lift on hover); hero
+  with Fredoka headline + crayon underline + `HeroFan` (3 real worksheets
+  fanned) + CTAs; sticker-style filter chips; "⭐ {name}'s desk" recent heading.
+- **A2 editor** — sticky action bar (Print/Customize reachable while scrolling),
+  `.worksheet-desk` backdrop (print-reset), category chip on the title row.
+- **B1 worksheet header/footer** — sheets now show their TITLE; tri-line Name
+  write-on; "How did I do? ⭐⭐⭐ I did it!" reward row (config `showReward`);
+  age/level filing chip; "Print your own · otsheetai.vercel.app" growth line.
+  Print-QA: 0 overflow across 22 templates × easy/hard.
+
+**DEFERRED to Fable** (the visual-art-taste + careful cross-mode QA layer —
+this is where a stronger visual model + patient per-sheet verification beats a
+mechanical pass; flagged per the "mark it for Fable" instruction):
+- **B2 instruction icons** — a cohesive 14px line-icon set (eye/pencil/
+  scissors/puzzle/crayon) in the dotted-tracing-path style. Needs genuine icon
+  craft to not look amateur; must sit before the instruction without unbalancing
+  the header (≤90px budget). Wire per skill family in `WorksheetPreview`.
+- **B3 corner doodles** — `cornerDoodles` config (default ON ages 3–6). REUSE
+  the existing `DOT_SHAPE_PATHS` (rocket/flower/butterfly/sun/star outlines) as
+  corner art — good paths already exist, so this is placement, not drawing.
+  The hard part is SAFE placement: doodles must NOT enter the content area and
+  must be BANNED on perception/shape sheets (find/count/figureGround/oddOneOut/
+  mirror/closure/sequence/pattern/copy/visualScanning) where an extra outline
+  could be mistaken for task content — restrict to handwriting/traceName/
+  tracingPaths/scissorSkills/connectDots/maze, which reliably have corner
+  whitespace. Re-run the print-QA bbox sweep AND eyeball every allowed mode at
+  easy/hard (a doodle overlapping a stroke line is worse than none).
+- **B4 per-mode polish** — the small alignment/icon-consistency passes.
+- **A3 goal-page/footer band restyle & A4 remaining micro-motion** (card/chip
+  hover + button transitions already landed; the one-time Print pulse after
+  first Regenerate is the remainder). Lower value; do after B2/B3.
+
+Reason for the split: A0–A2 + B1 are structure/layout/tokens (verifiable,
+mechanical-ish, done). B2–B4 are decorative art + delicate clinical-safety
+placement across 17 modes — higher taste bar, higher risk of a subtle wrong
+call (a cute doodle that sabotages a figure-ground task). Hand those to Fable
+with the worksheet-audit + worksheet-grading skills in the loop.
+
 ## Sequencing for Opus (both parts)
 
 1. A0 tokens → B1 header/footer (biggest visible wins, lowest risk)
