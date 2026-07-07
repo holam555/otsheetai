@@ -4,11 +4,37 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import AboutStrip from '@/components/gallery/AboutStrip';
 import TemplateCard from '@/components/gallery/TemplateCard';
-import { TEMPLATES, GOALS, LANGUAGES, Goal, Language } from '@/data/templates';
+import WorksheetPreview from '@/components/WorksheetPreview';
+import { TEMPLATES, GOALS, LANGUAGES, Goal, Language, templateConfig, getTemplate } from '@/data/templates';
 import { AGE_BANDS, AgeBand } from '@/lib/defaultConfig';
 import { WorksheetMode } from '@/lib/shapes';
+import { generateWorksheetSeeded, hashSeed } from '@/lib/seededGenerate';
 import { useProfiles } from '@/hooks/use-profiles';
 import { loadHistory, encodeConfig } from '@/lib/persistence';
+
+/** Fanned stack of three real worksheet previews for the hero. */
+function HeroFan() {
+  const sheets = useMemo(() => {
+    return ['find-animals', 'trace-name', 'maze']
+      .map((id) => getTemplate(id))
+      .filter((t): t is NonNullable<typeof t> => !!t)
+      .map((t) => ({ t, config: templateConfig(t), data: generateWorksheetSeeded(templateConfig(t), hashSeed(t.id)) }));
+  }, []);
+  const rot = [-7, 0, 7];
+  return (
+    <div className="relative h-[340px]" aria-hidden="true">
+      {sheets.map((s, i) => (
+        <div
+          key={s.t.id}
+          className="absolute top-1/2 left-1/2 w-[210px] rounded-lg shadow-paper ring-1 ring-black/5 bg-white transition-transform"
+          style={{ transform: `translate(-50%,-50%) translateX(${(i - 1) * 96}px) rotate(${rot[i]}deg)`, zIndex: i === 1 ? 2 : 1 }}
+        >
+          <WorksheetPreview config={s.config} data={s.data} variant="thumb" sheetTitle={s.t.title} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type AgeFilter = AgeBand | 'all';
 type GoalFilter = Goal | 'all';
@@ -20,10 +46,10 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3.5 py-1.5 text-sm font-semibold border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+      className={`rounded-full px-3.5 py-1.5 text-sm font-semibold border-2 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
         active
-          ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-          : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+          ? 'bg-primary text-primary-foreground border-primary shadow'
+          : 'bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
       }`}
     >
       {children}
@@ -90,16 +116,42 @@ export default function Gallery() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <div className="text-center pt-2 pb-1">
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
-            Printable worksheets, made your way
-          </h2>
-          <p className="text-muted-foreground mt-1.5 text-sm sm:text-base">
-            Print a template as-is, or customize every detail: shapes, difficulty, fonts, and more.
-            No setup, no signup.
-          </p>
-        </div>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-8">
+        {/* Hero */}
+        <section className="grid lg:grid-cols-2 gap-8 items-center pt-2">
+          <div className="text-center lg:text-left">
+            {activeProfile && (
+              <p className="font-hand text-2xl text-secondary -rotate-2 mb-1">for {activeProfile.name} ✎</p>
+            )}
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.9rem] font-bold text-foreground leading-[1.1]">
+              Print a worksheet made for{' '}
+              <span className="relative inline-block text-primary">
+                your
+                <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 120 12" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M3 8 Q 30 2 60 7 T 117 6" stroke="hsl(var(--secondary))" strokeWidth="4" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>{' '}
+              kid
+            </h1>
+            <p className="text-muted-foreground mt-4 text-base sm:text-lg max-w-md mx-auto lg:mx-0">
+              Occupational-therapy practice sheets you can tune to the child in front of you —
+              handwriting, visual perception, fine motor. Free, no signup.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 justify-center lg:justify-start">
+              <a href="#gallery" className="rounded-full bg-primary text-primary-foreground font-display font-bold px-6 py-3 shadow-paper hover:-translate-y-0.5 transition-transform">
+                Browse worksheets
+              </a>
+              <button
+                type="button"
+                onClick={() => document.getElementById('filters')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                className="rounded-full bg-card border-2 border-border text-foreground font-display font-bold px-6 py-3 shadow-sm hover:border-primary/50 transition-colors"
+              >
+                Browse by goal
+              </button>
+            </div>
+          </div>
+          <HeroFan />
+        </section>
 
         <AboutStrip />
 
@@ -107,7 +159,7 @@ export default function Gallery() {
         {recent.length > 0 && (
           <section aria-label="Recently printed">
             <h2 className="font-display text-lg font-bold text-foreground mb-3">
-              Recently printed{activeProfile ? ` for ${activeProfile.name}` : ''}
+              {activeProfile ? `⭐ ${activeProfile.name}'s desk` : '⭐ Recently printed'}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {recent.map(({ template, to }) => (
@@ -118,7 +170,7 @@ export default function Gallery() {
         )}
 
         {/* Browse filters */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5 space-y-3">
+        <div id="filters" className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5 space-y-3 scroll-mt-20">
           <FilterRow label="By age">
             <Chip active={age === 'all'} onClick={() => setAge('all')}>All ages</Chip>
             {AGE_BANDS.map((b) => (
@@ -167,7 +219,7 @@ export default function Gallery() {
         {filtered.length === 0 ? (
           <p className="text-center text-muted-foreground py-16">No worksheets match those filters yet — try clearing some.</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div id="gallery" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 scroll-mt-20">
             {filtered.map((t) => (
               <TemplateCard key={t.id} template={t} />
             ))}
