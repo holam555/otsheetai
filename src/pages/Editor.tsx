@@ -53,7 +53,7 @@ const COSMETIC_FIELDS: (keyof WorksheetConfig)[] = [
   'challenge',
   'childAge', 'customInstruction', 'borderStyle', 'headerFontSize', 'headerBold',
   'instructionFontSize', 'instructionBold', 'nameDateFontSize', 'useColor',
-  'showAnswerKey', 'showReward', 'showGridLines', 'mazeShowSolution', 'pixelArtBW',
+  'showAnswerKey', 'showReward', 'cornerDoodles', 'showGridLines', 'mazeShowSolution', 'pixelArtBW',
   'handwritingShowColoredLines', 'handwritingLineColor', 'handwritingHighlightColor',
   'handwritingShowHighlight', 'handwritingShowStartEnd', 'visualScanFontStyle',
   'visualScanCharSize', 'wordBoxDisplayMode',

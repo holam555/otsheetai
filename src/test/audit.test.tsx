@@ -188,6 +188,66 @@ describe('render-only controls change the SVG', () => {
 });
 
 // ---------------------------------------------------------------------------
+// DECORATION layer (design B2/B3). Safety-critical half: doodles must NEVER
+// appear on perception/matching sheets, where an extra outline can read as
+// task content and break solvability.
+// ---------------------------------------------------------------------------
+describe('decoration: instruction icons + corner doodles', () => {
+  it('instruction icon matches the skill family', () => {
+    expect(svg({ mode: 'find' })).toContain('data-instr-icon="eye"');
+    expect(svg({ mode: 'pattern' })).toContain('data-instr-icon="puzzle"');
+    expect(svg({ mode: 'scissorSkills' })).toContain('data-instr-icon="scissors"');
+    expect(svg({ mode: 'handwriting', handwritingText: 'cat' })).toContain('data-instr-icon="pencil"');
+    expect(svg({ mode: 'pixelArt' })).toContain('data-instr-icon="crayon"');
+  });
+
+  it('over-long custom instructions drop the icon instead of overflowing', () => {
+    const longInstr = 'Circle every single shape that matches the example shown in the box at the top of this page!';
+    expect(svg({ mode: 'find', customInstruction: longInstr })).not.toContain('data-instr-icon');
+  });
+
+  // Configs that make every doodle-eligible mode actually render content.
+  const doodleConfigs: Partial<WorksheetConfig>[] = [
+    { mode: 'handwriting', handwritingText: 'cat sat' },
+    { mode: 'traceName', childName: 'Emma' },
+    { mode: 'tracingPaths' },
+    { mode: 'scissorSkills' },
+    { mode: 'connectDots' },
+    { mode: 'maze' },
+  ];
+
+  it('cornerDoodles toggle adds/removes doodles on every eligible mode', () => {
+    for (const cfg of doodleConfigs) {
+      const data = gen(cfg);
+      expect(svg({ ...cfg, cornerDoodles: true }, data), `${cfg.mode} ON`).toContain('data-doodle');
+      expect(svg({ ...cfg, cornerDoodles: false }, data), `${cfg.mode} OFF`).not.toContain('data-doodle');
+    }
+  });
+
+  it('doodles are BANNED on perception/matching modes even when enabled', () => {
+    const banned: WorksheetConfig['mode'][] = [
+      'find', 'count', 'pattern', 'copy', 'sequence', 'oddOneOut', 'mirror',
+      'figureGround', 'closure', 'visualScanning', 'pixelArt',
+    ];
+    for (const mode of banned) {
+      expect(svg({ mode, cornerDoodles: true }), mode).not.toContain('data-doodle');
+    }
+  });
+
+  it('maze corner doodle never echoes the goal-star marker', () => {
+    const out = svg({ mode: 'maze', cornerDoodles: true });
+    expect(out).not.toContain('data-doodle="star"');
+  });
+
+  it('7–8 age band defaults cornerDoodles off, younger bands on', async () => {
+    const { ageBandConfig } = await import('@/lib/defaultConfig');
+    expect(ageBandConfig('3-4').cornerDoodles).toBe(true);
+    expect(ageBandConfig('5-6').cornerDoodles).toBe(true);
+    expect(ageBandConfig('7-8').cornerDoodles).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // SOLVABILITY / CORRECTNESS — puzzles must have exactly one right answer and
 // the odd item must be visibly different. Regression tests for the 2026-07-05
 // therapeutic-correctness fixes.

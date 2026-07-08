@@ -18,6 +18,7 @@ export const defaultConfig: WorksheetConfig = {
   useColor: true,
   showAnswerKey: false,
   showReward: true,
+  cornerDoodles: true,
   exerciseCount: 5,
   customInstruction: '',
   borderStyle: 'plain',
@@ -81,13 +82,15 @@ export const AGE_BANDS: { value: AgeBand; label: string }[] = [
  * age<=5 → easy/medium, age>5 → all).
  */
 export function ageBandConfig(band: AgeBand): Partial<WorksheetConfig> {
+  // cornerDoodles: decoration reads as babyish to 7–8s, so the oldest band
+  // defaults it off (eagerly, like difficulty — the user can re-toggle after).
   switch (band) {
     case '3-4':
-      return { childAge: 4, difficulty: 'easy' };
+      return { childAge: 4, difficulty: 'easy', cornerDoodles: true };
     case '5-6':
-      return { childAge: 6, difficulty: 'medium' };
+      return { childAge: 6, difficulty: 'medium', cornerDoodles: true };
     case '7-8':
-      return { childAge: 8, difficulty: 'hard' };
+      return { childAge: 8, difficulty: 'hard', cornerDoodles: false };
   }
 }
 

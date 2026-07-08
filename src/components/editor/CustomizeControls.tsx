@@ -3,6 +3,7 @@ import {
   ALL_SHAPES, SHAPE_COLORS, OddOneOutType, HandwritingLineColor, HandwritingLayout, InstructionFontSize,
   MazeSize, MazeShape, ConnectDotsShape, TracingStrokeType, TracingThickness, ScissorLineType,
   VisualScanDensity, VisualScanCharSize, PixelArtTheme, EMOJI_THEMES, EMOJI_ELIGIBLE_MODES, EmojiTheme, getShapeSVG,
+  CORNER_DOODLE_MODES,
 } from '@/lib/shapes';
 import { AGE_BANDS, AgeBand, ageBandConfig, childAgeToBand } from '@/lib/defaultConfig';
 import { applyGrading } from '@/lib/grading';
@@ -609,6 +610,15 @@ export default function CustomizeControls({ config, onChange }: Props) {
                 <FieldLabel>“I did it!” reward row</FieldLabel>
                 <Switch checked={config.showReward} onCheckedChange={(v) => update({ showReward: v })} />
               </div>
+
+              {/* Corner doodles — handwriting/motor modes only; perception
+                  sheets never get decoration that could read as task content. */}
+              {CORNER_DOODLE_MODES.includes(mode) && (
+                <div className="flex items-center justify-between">
+                  <FieldLabel>Corner doodles (colour them in!)</FieldLabel>
+                  <Switch checked={config.cornerDoodles} onCheckedChange={(v) => update({ cornerDoodles: v })} />
+                </div>
+              )}
 
               {/* Answer key — only modes whose renderer draws one. */}
               {ANSWER_KEY_MODES.includes(mode) && (

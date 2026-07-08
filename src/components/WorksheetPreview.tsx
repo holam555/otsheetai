@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { WorksheetConfig, WorksheetData, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG } from '@/lib/shapes';
+import { WorksheetConfig, WorksheetData, WorksheetMode, ShapeName, SHAPE_COLORS, getShapeSVG, getShapeRawSVG, DOT_SHAPE_PATHS } from '@/lib/shapes';
 import { getLetterStrokes } from '@/lib/letterPaths';
 import { childAgeToBand } from '@/lib/defaultConfig';
 import { CATEGORY_STYLES, categoryForMode } from '@/lib/categoryColors';
@@ -31,6 +31,91 @@ const H = 842;
 const MARGIN = 40;
 const BW_FILL = 'none';
 const BW_STROKE = '#1E293B';
+
+// ===== B2: instruction icons — pre-reader comprehension =====
+// One 14px line icon per skill FAMILY (not per mode) so the visual language
+// stays small: eye = find/scan, pencil = write/trace/draw, scissors = cut,
+// puzzle = match/complete, crayon = colour.
+type InstrIconKind = 'eye' | 'pencil' | 'scissors' | 'puzzle' | 'crayon';
+
+const INSTR_ICON_BY_MODE: Record<WorksheetMode, InstrIconKind> = {
+  find: 'eye', count: 'eye', figureGround: 'eye', visualScanning: 'eye', oddOneOut: 'eye',
+  pattern: 'puzzle', sequence: 'puzzle', closure: 'puzzle',
+  copy: 'pencil', mirror: 'pencil', handwriting: 'pencil', traceName: 'pencil',
+  maze: 'pencil', connectDots: 'pencil', tracingPaths: 'pencil',
+  scissorSkills: 'scissors',
+  pixelArt: 'crayon',
+};
+
+// Drawn on a 24×24 grid, rendered at 14px. Line-art only (the eye pupil and
+// crayon tip are the sole filled bits, ~2px — well under the ink budget).
+const INSTR_ICON_PATHS: Record<InstrIconKind, string> = {
+  eye: '<path d="M2.5 12 C6.5 5.8 17.5 5.8 21.5 12 C17.5 18.2 6.5 18.2 2.5 12 Z" /><circle cx="12" cy="12" r="3" fill="#475569" stroke="none" />',
+  pencil: '<path d="M5 19 L6.6 13.9 L16.2 4.3 A2.55 2.55 0 0 1 19.8 7.9 L10.2 17.5 L5 19 Z" /><path d="M6.6 13.9 L10.2 17.5" />',
+  scissors: '<circle cx="5.8" cy="7" r="2.7" /><circle cx="5.8" cy="17" r="2.7" /><path d="M8.2 8.4 L20 16.4" /><path d="M8.2 15.6 L20 7.6" />',
+  puzzle: '<path d="M4.5 10.4 H8.3 A2.6 2.6 0 1 1 13.1 10.4 H16.5 V13.6 A2.6 2.6 0 1 1 16.5 18.4 V19.6 H4.5 Z" />',
+  crayon: '<path d="M8.6 8.8 L12 3.4 L15.4 8.8 V19.4 Q15.4 20.5 14.3 20.5 H9.7 Q8.6 20.5 8.6 19.4 Z" /><path d="M8.6 11.4 H15.4" />',
+};
+
+// Measure the instruction so the icon+text group stays visually centred.
+// Canvas TextMetrics in the browser; a per-char estimate under SSR/jsdom
+// (prerender + tests) — a few px of gap drift there is purely cosmetic.
+let measureCtx: CanvasRenderingContext2D | null | undefined;
+function measureTextWidth(text: string, fontPx: number, weight: string): number {
+  if (measureCtx === undefined) {
+    measureCtx = typeof document !== 'undefined'
+      ? document.createElement('canvas').getContext('2d')
+      : null;
+  }
+  if (measureCtx) {
+    measureCtx.font = `${weight} ${fontPx}px Nunito, sans-serif`;
+    const w = measureCtx.measureText(text).width;
+    if (w > 0) return w;
+  }
+  return text.length * fontPx * 0.53;
+}
+
+// ===== B3: corner doodles — the opt-in "attractive" layer =====
+// Outline-only (colourable, near-zero ink), reusing the connect-the-dots
+// shape paths. Rendered ONLY inside CORNER_DOODLE_MODES renderers, in space
+// that is provably free of task content: the full-width row modes RESERVE a
+// bottom strip (rows shrink slightly), maze uses its measured layout gaps,
+// connect-dots uses a corner every shape path verifiably avoids. Perception
+// sheets never call these helpers — a doodle there could read as an answer.
+// Only the four outlines that stay READABLE as 42px polygon outlines — the
+// butterfly/flower point clouds turn to mush at doodle size (verified 07-07).
+type DoodleKind = 'star' | 'heart' | 'sun' | 'rocket';
+
+const DOODLE_PICK: Partial<Record<WorksheetMode, [DoodleKind, DoodleKind]>> = {
+  handwriting: ['star', 'heart'],
+  traceName: ['sun', 'star'],
+  tracingPaths: ['heart', 'sun'],
+  scissorSkills: ['rocket', 'star'],
+  maze: ['rocket', 'sun'], // no star here — the maze goal marker IS a star
+};
+
+// Height reserved at the bottom of the body for the doodle strip in the
+// full-width row modes (handwriting, traceName, tracingPaths, scissorSkills).
+const DOODLE_RESERVE = 52;
+
+function doodleSVG(kind: DoodleKind, cx: number, cy: number, size: number, rotation: number): string {
+  const pts = DOT_SHAPE_PATHS[kind](size).map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  return `<g data-doodle="${kind}" transform="translate(${(cx - size / 2).toFixed(1)}, ${(cy - size / 2).toFixed(1)}) rotate(${rotation}, ${size / 2}, ${size / 2})">` +
+    `<polygon points="${pts}" fill="none" stroke="#94A3B8" stroke-width="1.3" stroke-linejoin="round" /></g>`;
+}
+
+function bottomDoodlePair(mode: WorksheetMode, stripCenterY: number): string {
+  const [a, b] = DOODLE_PICK[mode]!;
+  return doodleSVG(a, MARGIN + 22, stripCenterY, 42, -8) + doodleSVG(b, W - MARGIN - 22, stripCenterY, 42, 8);
+}
+
+// Tiny magnifier icon — turns the find/connect-dots reference boxes into
+// "magnifier cards" (B3/B4 polish). Lens centre (cx,cy), lens radius r.
+function magnifierSVG(cx: number, cy: number, r: number, color = '#64748B'): string {
+  const hx = cx + r * 0.74, hy = cy + r * 0.74;
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="1.3" />` +
+    `<line x1="${hx.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${(cx + r * 1.7).toFixed(1)}" y2="${(cy + r * 1.7).toFixed(1)}" stroke="${color}" stroke-width="1.6" stroke-linecap="round" />`;
+}
 
 // Render emoji as SVG text element
 function getEmojiSVG(emoji: string, cx: number, cy: number, size: number): string {
@@ -95,6 +180,42 @@ export default function WorksheetPreview({ config, data, variant = 'full', htmlI
     ? `<text x="${nameLineX + 3}" y="${nameBaseY - 2}" font-family="${dispFont}" font-size="15" font-weight="${nameWeight}" fill="#334155">${escapeXml(config.childName + ageStr)}</text>`
     : '';
 
+  // Instruction line with its skill-family icon (B2). The icon sits just left
+  // of the measured text so the pair reads as one centred unit; skipped when
+  // a (custom) instruction is long enough to crowd the margins.
+  const instrY = MARGIN + 72;
+  let instrSVG = '';
+  {
+    const iconKind = INSTR_ICON_BY_MODE[data.mode];
+    const iconSize = 14;
+    const gap = 7;
+    const shift = (iconSize + gap) / 2;
+    // Shrink-to-fit: a long (custom) instruction reduces its font size instead
+    // of spilling into the margins; below 11px the icon is dropped so the text
+    // gets the full content width (min 9px).
+    const iconBudget = (W / 2 - MARGIN - shift) * 2 - (iconSize + gap) * 2;
+    let effFont = instrFontSize;
+    let textW = measureTextWidth(instructions, effFont, instrWeight);
+    if (textW > iconBudget) {
+      effFont = Math.max(11, Math.floor(effFont * iconBudget / textW));
+      textW = measureTextWidth(instructions, effFont, instrWeight);
+    }
+    if (instructions.length > 0 && textW <= iconBudget) {
+      const textX = W / 2 + shift;
+      const iconX = textX - textW / 2 - gap - iconSize;
+      const iconY = instrY - effFont * 0.36 - iconSize / 2;
+      instrSVG =
+        `<g data-instr-icon="${iconKind}" transform="translate(${iconX.toFixed(1)}, ${iconY.toFixed(1)}) scale(${(iconSize / 24).toFixed(4)})" fill="none" stroke="#475569" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${INSTR_ICON_PATHS[iconKind]}</g>` +
+        `<text x="${textX}" y="${instrY}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${effFont}" font-weight="${instrWeight}" fill="#1E293B">${escapeXml(instructions)}</text>`;
+    } else {
+      const fullBudget = W - MARGIN * 2;
+      let plainFont = instrFontSize;
+      const plainW = measureTextWidth(instructions, plainFont, instrWeight);
+      if (plainW > fullBudget) plainFont = Math.max(9, Math.floor(plainFont * fullBudget / plainW));
+      instrSVG = `<text x="${W / 2}" y="${instrY}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${plainFont}" font-weight="${instrWeight}" fill="#1E293B">${escapeXml(instructions)}</text>`;
+    }
+  }
+
   const headerSVG = `
     <text x="${MARGIN}" y="${MARGIN + 11}" font-family="${dispFont}" font-size="11" font-weight="600" fill="#0D9488">OTsheet.ai</text>
     <text x="${W - MARGIN}" y="${MARGIN + 11}" text-anchor="end" font-family="Inter, sans-serif" font-size="${dateFontSize}" fill="#94A3B8">Date: ____/____/________</text>
@@ -104,7 +225,7 @@ export default function WorksheetPreview({ config, data, variant = 'full', htmlI
     <line x1="${nameLineX}" y1="${nameBaseY - 8}" x2="${nameLineX2}" y2="${nameBaseY - 8}" stroke="#CBD5E1" stroke-width="0.6" stroke-dasharray="3 3" />
     <line x1="${nameLineX}" y1="${nameBaseY}" x2="${nameLineX2}" y2="${nameBaseY}" stroke="#94A3B8" stroke-width="1" />
     ${nameStuff}
-    <text x="${W / 2}" y="${MARGIN + 72}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="${instrFontSize}" font-weight="${instrWeight}" fill="#1E293B">${escapeXml(instructions)}</text>
+    ${instrSVG}
   `;
 
   // "I did it!" self-monitoring row — 3 outline stars + a checkbox, line-art
@@ -257,7 +378,8 @@ function renderFindMode(
 
   let svg = '';
   svg += `<rect x="${refBoxX}" y="${refBoxY}" width="${refBoxW}" height="${refBoxH}" rx="8" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="8,5" />`;
-  svg += `<text x="${refBoxX + 12}" y="${refBoxY + 16}" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Find this:</text>`;
+  svg += magnifierSVG(refBoxX + 15, refBoxY + 12, 4);
+  svg += `<text x="${refBoxX + 26}" y="${refBoxY + 16}" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#64748B">Find this:</text>`;
   const targetEmoji = (data as any)._targetEmoji;
   if (targetEmoji) {
     svg += getEmojiSVG(targetEmoji, refBoxX + refBoxW / 2, refBoxY + refBoxH / 2 + 5, 50 * shapeScale);
@@ -900,7 +1022,8 @@ function renderTraceNameMode(
   const refStroke = config.difficulty === 'easy' ? 4.5 : config.difficulty === 'medium' ? 3 : 2;
   const baseStroke = config.difficulty === 'easy' ? 1.6 : config.difficulty === 'medium' ? 1 : 0.7;
   const startY = MARGIN + 90;
-  const availH = H - startY - MARGIN - 35;
+  const doodleReserve = config.cornerDoodles ? DOODLE_RESERVE : 0;
+  const availH = H - startY - MARGIN - 35 - doodleReserve;
 
   // For each section of up to 5 letters
   const sectionCount = traceData.sections.length;
@@ -997,6 +1120,8 @@ function renderTraceNameMode(
       });
     }
   });
+
+  if (doodleReserve) svg += bottomDoodlePair('traceName', startY + availH + doodleReserve / 2);
 
   return svg;
 }
@@ -1224,7 +1349,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
 
   const contentW = W - MARGIN * 2;
   const startY = MARGIN + 90;
-  const availableH = H - startY - MARGIN - 30;
+  const doodleReserve = config.cornerDoodles ? DOODLE_RESERVE : 0;
+  const availableH = H - startY - MARGIN - 30 - doodleReserve;
   const colW = (contentW - 20) / 2; // 2 columns with 20px gap
   const lineH = fontSizeMm * mmToPx;
 
@@ -1304,6 +1430,8 @@ function renderWordBoxesMode(config: WorksheetConfig, data: WorksheetData): stri
     }
   });
 
+  if (doodleReserve) svg += bottomDoodlePair('handwriting', startY + availableH + doodleReserve / 2);
+
   return svg;
 }
 
@@ -1322,7 +1450,8 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
   const gapBetweenSets = 8 * mmToPx;
   const contentW = W - MARGIN * 2;
   const startY = MARGIN + 90;
-  const availableH = H - startY - MARGIN - 30;
+  const doodleReserve = config.cornerDoodles ? DOODLE_RESERVE : 0;
+  const availableH = H - startY - MARGIN - 30 - doodleReserve;
 
   const fontFamilyMap: Record<string, string> = {
     print: "Arial, Helvetica, sans-serif",
@@ -1398,6 +1527,8 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
     }
   }
 
+  if (doodleReserve) svg += bottomDoodlePair('handwriting', startY + availableH + doodleReserve / 2);
+
   return svg;
 }
 
@@ -1462,18 +1593,29 @@ function renderMazeMode(config: WorksheetConfig, data: WorksheetData): string {
   svg += `<circle cx="${startCx}" cy="${startCy}" r="${cellSize * 0.25}" fill="#22C55E" />`;
   svg += `<text x="${startCx}" y="${startCy + 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${cellSize * 0.22}" font-weight="700" fill="white">S</text>`;
 
-  // End marker (red star)
+  // End marker: outline star (B4 — line-art like the rest of the icon set,
+  // and far less ink than the old filled star at large cell sizes).
   const endCx = mazeX + (cols - 0.5) * cellSize;
   const endCy = mazeY + (rows - 0.5) * cellSize;
-  const starR = cellSize * 0.25;
+  const starR = cellSize * 0.28;
   const starPts: string[] = [];
   for (let i = 0; i < 5; i++) {
     const aOuter = -Math.PI / 2 + (2 * Math.PI * i) / 5;
     const aInner = aOuter + Math.PI / 5;
     starPts.push(`${endCx + Math.cos(aOuter) * starR},${endCy + Math.sin(aOuter) * starR}`);
-    starPts.push(`${endCx + Math.cos(aInner) * starR * 0.4},${endCy + Math.sin(aInner) * starR * 0.4}`);
+    starPts.push(`${endCx + Math.cos(aInner) * starR * 0.42},${endCy + Math.sin(aInner) * starR * 0.42}`);
   }
-  svg += `<polygon points="${starPts.join(' ')}" fill="#EF4444" />`;
+  svg += `<polygon points="${starPts.join(' ')}" fill="none" stroke="#EF4444" stroke-width="${Math.max(1.6, cellSize * 0.07)}" stroke-linejoin="round" />`;
+
+  // Corner doodles in the maze's measured layout gaps (the centred maze
+  // always leaves horizontal bands above/below; skip if a band is too thin).
+  if (config.cornerDoodles) {
+    const [a, b] = DOODLE_PICK.maze!;
+    const topGap = mazeY - startY;
+    const botGap = startY + availH - (mazeY + mazeH);
+    if (topGap >= 46) svg += doodleSVG(a, MARGIN + 22, startY + topGap / 2, Math.min(42, topGap - 6), -8);
+    if (botGap >= 46) svg += doodleSVG(b, W - MARGIN - 22, mazeY + mazeH + botGap / 2, Math.min(42, botGap - 6), 8);
+  }
 
   return svg;
 }
@@ -1501,7 +1643,8 @@ function renderConnectDotsMode(config: WorksheetConfig, data: WorksheetData): st
   const refX = W - MARGIN - refSize - 5;
   const refY = startY + 5;
   svg += `<rect x="${refX - 3}" y="${refY - 3}" width="${refSize + 6}" height="${refSize + 6}" rx="4" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />`;
-  svg += `<text x="${refX + refSize / 2}" y="${refY - 7}" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" fill="#94A3B8">Preview</text>`;
+  svg += magnifierSVG(refX + refSize / 2 - 20, refY - 10, 3.2, '#94A3B8');
+  svg += `<text x="${refX + refSize / 2 - 11}" y="${refY - 7}" font-family="Nunito, sans-serif" font-size="7.5" font-weight="700" fill="#94A3B8">Preview</text>`;
   const refPath = dotList.map((d, i) => `${i === 0 ? 'M' : 'L'} ${refX + d.x * refScale} ${refY + d.y * refScale}`).join(' ') + ' Z';
   svg += `<path d="${refPath}" fill="none" stroke="#CBD5E1" stroke-width="1" />`;
 
@@ -1535,6 +1678,18 @@ function renderConnectDotsMode(config: WorksheetConfig, data: WorksheetData): st
   svg += `<text x="${W / 2}" y="${colorY}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">✏️ Colour your picture here!</text>`;
   svg += `<rect x="${offsetX}" y="${colorY + 8}" width="${drawSize}" height="${availH * 0.2}" rx="6" fill="none" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="6,4" />`;
 
+  // Single corner doodle, top-left: every DOT_SHAPE_PATHS shape (and its dot
+  // labels) verifiably stays right/below of x<110,y<200, so the box at
+  // (57,143)–(103,189) can never collide with a dot. The other corners are
+  // taken (reference preview, colouring box), so this mode gets just one.
+  if (config.cornerDoodles) {
+    // Contrast rule: never a doodle that rhymes with the puzzle shape (a
+    // spiky corner sun next to a star puzzle invites "is that my picture?").
+    const spiky = shapeName === 'sun' || shapeName === 'star';
+    const kind: DoodleKind = spiky ? 'heart' : shapeName === 'heart' ? 'star' : 'sun';
+    svg += doodleSVG(kind, 80, 166, 46, -8);
+  }
+
   return svg;
 }
 
@@ -1542,7 +1697,8 @@ function renderConnectDotsMode(config: WorksheetConfig, data: WorksheetData): st
 function renderTracingPathsMode(config: WorksheetConfig, data: WorksheetData): string {
   const paths = data.tracingPathsData!;
   const startY = MARGIN + 88;
-  const availH = H - startY - MARGIN - 45;
+  const doodleReserve = config.cornerDoodles ? DOODLE_RESERVE : 0;
+  const availH = H - startY - MARGIN - 45 - doodleReserve;
   const availW = W - MARGIN * 2;
   const rowCount = paths.rows.length;
   const rowH = availH / rowCount;
@@ -1616,6 +1772,8 @@ function renderTracingPathsMode(config: WorksheetConfig, data: WorksheetData): s
     svg += `<text x="${MARGIN - 5}" y="${sY + 4}" text-anchor="end" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#94A3B8">${i + 1}</text>`;
   });
 
+  if (doodleReserve) svg += bottomDoodlePair('tracingPaths', startY + availH + doodleReserve / 2);
+
   return svg;
 }
 
@@ -1623,7 +1781,8 @@ function renderTracingPathsMode(config: WorksheetConfig, data: WorksheetData): s
 function renderScissorSkillsMode(config: WorksheetConfig, data: WorksheetData): string {
   const scissors = data.scissorSkillsData!;
   const startY = MARGIN + 88;
-  const availH = H - startY - MARGIN - 45;
+  const doodleReserve = config.cornerDoodles ? DOODLE_RESERVE : 0;
+  const availH = H - startY - MARGIN - 45 - doodleReserve;
   const availW = W - MARGIN * 2;
   const lineCount = scissors.lines.length;
   const lineSpacing = availH / lineCount;
@@ -1656,6 +1815,8 @@ function renderScissorSkillsMode(config: WorksheetConfig, data: WorksheetData): 
     const arrowX = MARGIN + line.startX * scaleX + 5;
     svg += `<polygon points="${arrowX},${y - 3} ${arrowX + 8},${y} ${arrowX},${y + 3}" fill="#94A3B8" />`;
   });
+
+  if (doodleReserve) svg += bottomDoodlePair('scissorSkills', startY + availH + doodleReserve / 2);
 
   return svg;
 }
@@ -1724,7 +1885,7 @@ function renderPixelArtMode(config: WorksheetConfig, data: WorksheetData): strin
     const ky = startY + keyH / 2;
     const swatchFill = config.pixelArtBW ? 'none' : ck.color;
     const swatchStroke = config.pixelArtBW ? '#1E293B' : ck.color;
-    svg += `<rect x="${kx - 25}" y="${ky - 10}" width="18" height="18" rx="2" fill="${swatchFill}" stroke="${swatchStroke}" stroke-width="1.5" />`;
+    svg += `<rect x="${kx - 25}" y="${ky - 10}" width="18" height="18" rx="5" fill="${swatchFill}" stroke="${swatchStroke}" stroke-width="1.5" />`;
     svg += `<text x="${kx - 16}" y="${ky + 4}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="${config.pixelArtBW ? '#1E293B' : (ck.index === 0 ? '#64748B' : 'white')}">${ck.index}</text>`;
     svg += `<text x="${kx + 2}" y="${ky + 3}" font-family="Inter, sans-serif" font-size="8" fill="#64748B">${ck.name}</text>`;
   });

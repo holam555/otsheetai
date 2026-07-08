@@ -188,33 +188,31 @@ config-gated, and must pass the existing print-QA bbox sweep.
   age/level filing chip; "Print your own · otsheetai.vercel.app" growth line.
   Print-QA: 0 overflow across 22 templates × easy/hard.
 
-**DEFERRED to Fable** (the visual-art-taste + careful cross-mode QA layer —
-this is where a stronger visual model + patient per-sheet verification beats a
-mechanical pass; flagged per the "mark it for Fable" instruction):
-- **B2 instruction icons** — a cohesive 14px line-icon set (eye/pencil/
-  scissors/puzzle/crayon) in the dotted-tracing-path style. Needs genuine icon
-  craft to not look amateur; must sit before the instruction without unbalancing
-  the header (≤90px budget). Wire per skill family in `WorksheetPreview`.
-- **B3 corner doodles** — `cornerDoodles` config (default ON ages 3–6). REUSE
-  the existing `DOT_SHAPE_PATHS` (rocket/flower/butterfly/sun/star outlines) as
-  corner art — good paths already exist, so this is placement, not drawing.
-  The hard part is SAFE placement: doodles must NOT enter the content area and
-  must be BANNED on perception/shape sheets (find/count/figureGround/oddOneOut/
-  mirror/closure/sequence/pattern/copy/visualScanning) where an extra outline
-  could be mistaken for task content — restrict to handwriting/traceName/
-  tracingPaths/scissorSkills/connectDots/maze, which reliably have corner
-  whitespace. Re-run the print-QA bbox sweep AND eyeball every allowed mode at
-  easy/hard (a doodle overlapping a stroke line is worse than none).
-- **B4 per-mode polish** — the small alignment/icon-consistency passes.
+**DONE by Fable (2026-07-07 pass) — B2 + B3 + B4:**
+- **B2 instruction icons** — hand-drawn 14px line set (eye/pencil/scissors/
+  puzzle/crayon), one per skill FAMILY, wired for all 17 modes in
+  `WorksheetPreview` (`INSTR_ICON_BY_MODE`). Icon + instruction stay centred
+  as one unit via canvas TextMetrics (per-char estimate under SSR/jsdom).
+  Bonus fix: long (custom) instructions now shrink-to-fit instead of spilling
+  into the margins, and 7 wordy default instructions were tightened.
+- **B3 corner doodles** — `cornerDoodles: boolean` (ON by default; 7–8 band
+  turns it OFF via `ageBandConfig`; Advanced toggle, cosmetic field). Doodle
+  set pruned to star/heart/sun/rocket — butterfly/flower outlines turn to mush
+  at 42px. Placement is provably safe per mode: full-width row modes
+  (handwriting/traceName/tracingPaths/scissorSkills) RESERVE a 52px bottom
+  strip; maze uses its measured layout gaps; connectDots gets one doodle in a
+  corner all shape paths avoid, with a contrast rule (never a doodle that
+  rhymes with the puzzle shape). Banned everywhere else — enforced by tests
+  (`decoration:` block in audit.test.tsx).
+- **B4 polish** — maze END is now an outline star (ink ↓, matches the line-art
+  language); find + connect-dots reference boxes are "magnifier cards";
+  pixel-art legend swatches rounded.
+
+**STILL OPEN (lower value):**
 - **A3 goal-page/footer band restyle & A4 remaining micro-motion** (card/chip
   hover + button transitions already landed; the one-time Print pulse after
-  first Regenerate is the remainder). Lower value; do after B2/B3.
-
-Reason for the split: A0–A2 + B1 are structure/layout/tokens (verifiable,
-mechanical-ish, done). B2–B4 are decorative art + delicate clinical-safety
-placement across 17 modes — higher taste bar, higher risk of a subtle wrong
-call (a cute doodle that sabotages a figure-ground task). Hand those to Fable
-with the worksheet-audit + worksheet-grading skills in the loop.
+  first Regenerate is the remainder).
+- **D4 OG image** (see DEFER_TO_FABLE.md).
 
 ## Sequencing for Opus (both parts)
 

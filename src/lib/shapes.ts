@@ -71,6 +71,15 @@ export const EMOJI_THEMES: Record<EmojiTheme, { icon: string; label: string; emo
 // Modes that support emoji
 export const EMOJI_ELIGIBLE_MODES: WorksheetMode[] = ['find', 'oddOneOut', 'count', 'sequence'];
 
+// Modes that may carry corner doodles (B3 decoration). Perception/matching
+// sheets (find, count, figureGround, oddOneOut, mirror, closure, sequence,
+// pattern, copy, visualScanning) are deliberately EXCLUDED: an extra outline
+// there can be mistaken for task content and sabotage the exercise. Only the
+// handwriting/motor family — where decoration can never be an answer — is in.
+export const CORNER_DOODLE_MODES: WorksheetMode[] = [
+  'handwriting', 'traceName', 'tracingPaths', 'scissorSkills', 'connectDots', 'maze',
+];
+
 export interface WorksheetConfig {
   mode: WorksheetMode;
   gridSize: GridSize;
@@ -85,6 +94,9 @@ export interface WorksheetConfig {
   showAnswerKey: boolean;
   /** "I did it!" self-monitoring reward row in the footer (line-art). */
   showReward: boolean;
+  /** Colourable outline doodles in the sheet corners — CORNER_DOODLE_MODES
+   *  only (renderer also gates); defaults ON for ages 3–6, OFF for 7–8. */
+  cornerDoodles: boolean;
   exerciseCount: number;
   customInstruction: string;
   borderStyle: BorderStyle;
@@ -490,7 +502,7 @@ function generateCountMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'count',
-    instructions: 'Count how many of each shape you can find. Write the number in the box!',
+    instructions: 'Count each shape and write the number in its box!',
     skillLabel: 'Visual Scanning · Figure-Ground',
     countPuzzle: {
       grid,
@@ -534,7 +546,7 @@ function generateCopyMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'copy',
-    instructions: 'Look at each pattern and copy it exactly into the empty grid on the right!',
+    instructions: 'Copy each pattern into the empty grid on the right!',
     skillLabel: 'Visual Motor Integration · Spatial Relations',
     copyPuzzles: puzzles,
   };
@@ -597,7 +609,7 @@ function generateSequenceMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'sequence',
-    instructions: 'What comes next? Circle the letter (A, B or C) of the correct answer!',
+    instructions: 'What comes next? Circle A, B or C!',
     skillLabel: 'Visual Sequential Memory · Pattern Recognition',
     sequencePuzzles: puzzles,
   };
@@ -905,7 +917,7 @@ function generateFigureGroundMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'figureGround',
-    instructions: 'Find each shape in the picture. Count them and write the number in each box!',
+    instructions: 'Find and count each shape hiding in the picture!',
     skillLabel: 'Figure-Ground Perception',
     figureGroundPuzzle: {
       shapes: placed,
@@ -980,7 +992,7 @@ function generateHandwritingMode(config: WorksheetConfig): WorksheetData {
   const text = config.handwritingText || config.childName || 'Hello';
   return {
     mode: 'handwriting',
-    instructions: 'Practise your handwriting! Trace the dotted letters, then write by yourself.',
+    instructions: 'Trace the dotted letters, then write by yourself!',
     skillLabel: 'Handwriting · Fine Motor',
     handwritingData: {
       text,
@@ -1115,7 +1127,9 @@ function generateMazeMode(config: WorksheetConfig): WorksheetData {
 }
 
 // ========== MODE 14: CONNECT THE DOTS ==========
-const DOT_SHAPE_PATHS: Record<ConnectDotsShape, (s: number) => { x: number; y: number }[]> = {
+// Exported: WorksheetPreview reuses these outlines as corner doodles (B3) —
+// placement work, not new artwork.
+export const DOT_SHAPE_PATHS: Record<ConnectDotsShape, (s: number) => { x: number; y: number }[]> = {
   star: (s) => {
     const pts: { x: number; y: number }[] = [];
     for (let i = 0; i < 10; i++) {
@@ -1547,7 +1561,7 @@ function generateVisualScanningMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'visualScanning',
-    instructions: `Circle every '${target}' you can find, then count how many there are!`,
+    instructions: `Circle every '${target}' and count how many you find!`,
     skillLabel: 'Visual Scanning · Visual Discrimination · Reversal Recognition',
     visualScanData: { grid, target, targetPositions, rows, cols },
   };
@@ -2032,7 +2046,7 @@ function generatePixelArtMode(config: WorksheetConfig): WorksheetData {
 
   return {
     mode: 'pixelArt',
-    instructions: `Colour each square using the number key to reveal the picture!`,
+    instructions: `Colour by number to reveal the picture!`,
     skillLabel: 'Fine Motor · Visual Scanning · Colour Matching',
     pixelArtData: { grid: pattern.grid, colorKey, gridSize: pattern.grid.length },
   };

@@ -37,7 +37,7 @@ Pages (`src/AppRoutes.tsx`): `/` Gallery, `/worksheets/:goalSlug` GoalPage,
 | `src/lib/shapes.ts` | **The engine.** `WorksheetConfig`, `WorksheetData`, all 17 mode generators, `generateWorksheet()` switch, shape SVG paths |
 | `src/components/WorksheetPreview.tsx` | Renders every mode to the A4 SVG; `variant="thumb"` for gallery cards |
 | `src/components/editor/CustomizeControls.tsx` | All user-facing controls; per-mode core/advanced split; gating lists (`SHAPE_MODES`, `EXERCISE_SLIDER_MODES`, `GRID_MODES`, `ANSWER_KEY_MODES`, `GRIDLINE_MODES`) |
-| `src/data/templates.ts` | 24 templates (as of 2026-07-07) mapping to the 17 modes; goal/age/language maps |
+| `src/data/templates.ts` | 22 templates (as of 2026-07-07) mapping to the 17 modes; goal/age/language maps |
 | `src/lib/grading.ts` + `defaultConfig.ts` | Age-band → difficulty grading presets |
 | `src/lib/letterPaths.ts` | Stroke data. Uppercase: y∈[0,1]. Lowercase: y∈[0,1.4] (0=ascender, 0.4=x-height, 1=baseline, 1.4=descender) — keep both contracts |
 | `src/lib/persistence.ts` | localStorage: per-template config + child profiles |

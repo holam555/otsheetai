@@ -1,6 +1,39 @@
 # OTsheet redesign — handoff notes
 
-_Last updated: 2026-07-05. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+_Last updated: 2026-07-07. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+
+## 2026-07-07 — Design B2/B3/B4 decoration pass (Fable)
+Executed the deferred decoration layer from DESIGN_STRATEGY.md "Progress &
+Fable hand-off". All renderer-only (`WorksheetPreview.tsx`) + config plumbing.
+- **B2 instruction icons:** hand-drawn 14px line set — eye (find/count/
+  figureGround/visualScanning/oddOneOut), puzzle (pattern/sequence/closure),
+  pencil (write/trace/draw modes), scissors, crayon (pixelArt). Icon + text
+  centred as one unit via canvas TextMetrics (estimate fallback under
+  SSR/jsdom). Long instructions now shrink-to-fit instead of overflowing the
+  margins; 7 wordy default instruction strings tightened (copy-only edits).
+- **B3 corner doodles:** `cornerDoodles` config (default ON; `ageBandConfig`
+  turns it OFF for 7–8; Advanced toggle; in Editor COSMETIC_FIELDS so it never
+  re-rolls). Set pruned to star/heart/sun/rocket after eyeballing — butterfly/
+  flower outlines are mush at 42px. Safe placement per mode: row modes
+  (handwriting/traceName/tracingPaths/scissorSkills) reserve a 52px bottom
+  strip; maze uses measured layout gaps (skips if gap < 46px); connectDots one
+  doodle in a corner all 10 shape paths provably avoid + contrast rule (no
+  doodle rhyming with the puzzle shape). BANNED on all perception/matching
+  modes — enforced by `CORNER_DOODLE_MODES` + audit tests.
+- **B4 polish:** maze END → outline star (less ink, matches line language);
+  find/connect-dots reference boxes → magnifier cards; pixel-art legend
+  swatches rounded.
+- **Verification:** 80/80 tests (74→80: icon-family, toggle-reflection,
+  banned-modes, maze-no-star-echo, band-default), tsc clean, build +
+  32-route prerender green, lint: 0 new issues (17 pre-existing `any`s
+  untouched). Print-QA bbox sweep via live app on :8090: 22 templates ×
+  Ages 3–4/7–8 (44 pages) **0 overflows**, plus hard+doodles-forced-ON on the
+  4 worst row modes — 0 overflows. Eyeballed: pre-writing, trace-name,
+  scissors, connect-dots, handwriting-en/zh, maze @3–4 & @7–8, match-pattern,
+  pixel-art, find, gallery/hero.
+- Doc fix in passing: templates.ts holds **22** templates (CLAUDE.md said 24).
+- Still open from the hand-off: A3/A4 remainder (goal-page band, footer
+  restyle, Print pulse), D4 OG image.
 
 ## 2026-07-06 (later) — Design execution (Opus): A0–A2 + B1
 Ran DESIGN_STRATEGY.md 'warm paper studio'. Shipped + verified (74/74 tests,
