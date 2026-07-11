@@ -11,18 +11,21 @@ import { WorksheetMode } from '@/lib/shapes';
 export type Category = 'perception' | 'fine-motor' | 'handwriting' | 'pre-writing';
 
 export interface CategoryStyle {
-  /** Solid accent (tape, icon, chip text/border). */
+  /** Solid accent — decorative surfaces only (tape, icons, borders). */
   color: string;
+  /** Darker shade of the accent for TEXT on white/tinted backgrounds —
+   * every value clears WCAG AA 4.5:1 there (the mid accents don't). */
+  textColor: string;
   /** Soft background tint (rgba, ~12% alpha). */
   tint: string;
   label: string;
 }
 
 export const CATEGORY_STYLES: Record<Category, CategoryStyle> = {
-  perception: { color: '#3B82F6', tint: 'rgba(59,130,246,0.12)', label: 'Visual perception' },
-  'fine-motor': { color: '#22C55E', tint: 'rgba(34,197,94,0.12)', label: 'Fine motor' },
-  handwriting: { color: '#8B5CF6', tint: 'rgba(139,92,246,0.12)', label: 'Handwriting' },
-  'pre-writing': { color: '#F59E0B', tint: 'rgba(245,158,11,0.13)', label: 'Pre-writing' },
+  perception: { color: '#3B82F6', textColor: '#1D4ED8', tint: 'rgba(59,130,246,0.12)', label: 'Visual perception' },
+  'fine-motor': { color: '#22C55E', textColor: '#15803D', tint: 'rgba(34,197,94,0.12)', label: 'Fine motor' },
+  handwriting: { color: '#8B5CF6', textColor: '#6D28D9', tint: 'rgba(139,92,246,0.12)', label: 'Handwriting' },
+  'pre-writing': { color: '#F59E0B', textColor: '#92400E', tint: 'rgba(245,158,11,0.13)', label: 'Pre-writing' },
 };
 
 const GOAL_CATEGORY: Record<Goal, Category> = {

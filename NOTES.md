@@ -1,6 +1,40 @@
 # OTsheet redesign — handoff notes
 
-_Last updated: 2026-07-07. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+_Last updated: 2026-07-10. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+
+## 2026-07-10 — Website redesign pass: A3 + A4 remainder + polish (Fable)
+User asked for a site redesign guided by external skills (nutlope/hallmark,
+Anthropic frontend-design, garrytan/gstack design review, coreyhaines
+copywriting). Audited first (gstack-style), concluded the shipped A0–A2 system
+is strong; executed the missing DESIGN_STRATEGY.md pieces inside the locked
+"warm paper studio" system rather than rotating to a new theme (hallmark's
+multi-page rule: consistency over variety). Site-layer only — renderer,
+engine, print CSS untouched.
+- **A3 goal pages** (`GoalPage.tsx`): category-tinted header band (washi tape,
+  skill-family icon, eyebrow, lead paragraph, live "N free worksheets" + age
+  chips from real templates); FAQ restyled as note cards with dotted dividers;
+  related guides as chip-labelled note cards. SEO copy/JSON-LD unchanged.
+- **A3 footer** (`SiteFooter.tsx`): dotted-divider top, brand block with logo +
+  thesis line ("Free to print, always — no accounts, no paywalls") + Caveat
+  "made with care ✎", 3 link groups. Contact/BMAC TODOs preserved.
+- **A4 remainder**: one-time `pulse-once` on Print after first Regenerate
+  (`Editor.tsx` ref + `EditorToolbar` prop); global button `:active` scale
+  0.98. Both inside `prefers-reduced-motion` guards.
+- **Slop-tell cleanup**: ⭐ emoji headings → shared `SectionHeading.tsx`
+  (crayon-star SVG); AboutStrip emoji-in-circle → taped note card with dotted
+  divider; guide-card uppercase eyebrow → chip; gallery grid got a heading
+  with live count; hero fan sheets got category-tinted tape + desk shadow;
+  404 rebuilt as a taped note card.
+- **Contrast fix (real bug)**: category greens/ambers (#22C55E/#F59E0B) were
+  used as ≤11px text on tints at ~2.3:1. Added `textColor` (blue-700/
+  green-700/violet-700/amber-800) to `categoryColors.ts`; all text usages
+  (card skill tag, age stickers, editor chip, goal-page labels) now ≥4.5:1.
+  Mid accents remain for decorative surfaces (tape/borders) only.
+- Mobile: goal-page header link no longer wraps ("Gallery" label < sm).
+- Verified: tsc clean, 80/80 tests, build + 32-route prerender green,
+  desktop/mobile screenshots on :8090. Note: the in-app browser pane can't
+  screenshot this site when scrolled (huge SVG layer tree) — DOM/read_page
+  verification works; not a site bug.
 
 ## 2026-07-07 — Design B2/B3/B4 decoration pass (Fable)
 Executed the deferred decoration layer from DESIGN_STRATEGY.md "Progress &

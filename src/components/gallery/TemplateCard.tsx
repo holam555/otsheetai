@@ -42,7 +42,7 @@ export default function TemplateCard({ template, to }: { template: Template; to?
           {/* Age sticker, category-tinted. */}
           <span
             className="absolute top-2 left-2 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm"
-            style={{ backgroundColor: cat.tint, color: cat.color, backdropFilter: 'blur(2px)' }}
+            style={{ backgroundColor: cat.tint, color: cat.textColor, backdropFilter: 'blur(2px)' }}
           >
             {ageBandLabel[template.ageBand]}
           </span>
@@ -54,7 +54,7 @@ export default function TemplateCard({ template, to }: { template: Template; to?
         </div>
         <div className="p-3.5">
           <h3 className="font-display font-bold text-sm text-foreground leading-snug">{template.title}</h3>
-          <p className="text-[11px] font-semibold mt-1" style={{ color: cat.color }}>{template.skillTag}</p>
+          <p className="text-[11px] font-semibold mt-1" style={{ color: cat.textColor }}>{template.skillTag}</p>
         </div>
       </div>
     </Link>

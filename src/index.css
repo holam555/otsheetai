@@ -137,6 +137,37 @@
   .taped-card:hover {
     transform: rotate(0deg) translateY(-5px);
   }
+  /* Translucent washi-tape strip pinning a note card to the page. Tint it per
+     category with --tape; defaults to the brand teal. */
+  .washi-tape {
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    width: 5.5rem;
+    height: 1.35rem;
+    transform: translateX(-50%) rotate(-2deg);
+    background-color: var(--tape, hsl(var(--primary) / 0.3));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 1px 2px rgba(24, 20, 14, 0.08);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+}
+
+/* A4 micro-motion: gentle press feedback on every real button. Transform-only,
+   guarded by reduced-motion below. */
+button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+/* One-time discoverability pulse on the Print button after the first
+   Regenerate ("you changed the sheet — this is how you get it on paper"). */
+@keyframes pulse-once {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  35% { box-shadow: 0 0 0 7px hsl(var(--primary) / 0.28); }
+  70% { box-shadow: 0 0 0 3px hsl(var(--primary) / 0.16); }
+}
+.pulse-once {
+  animation: pulse-once 1.1s ease-out 2;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -144,6 +175,12 @@
   .taped-card:hover {
     transform: none;
     transition: none;
+  }
+  button:not(:disabled):active {
+    transform: none;
+  }
+  .pulse-once {
+    animation: none;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -169,9 +169,24 @@ export default function Editor() {
     return () => clearTimeout(t);
   }, [config, templateId, effectiveProfileId]);
 
+  // One-time pulse on Print after the first Regenerate: "you rerolled the
+  // puzzle — this is how it gets onto paper". Never repeats in a session.
+  const [printPulse, setPrintPulse] = useState(false);
+  const hasRegenerated = useRef(false);
+
   const handleRegenerate = useCallback(() => {
     setSeed(randomSeed());
+    if (!hasRegenerated.current) {
+      hasRegenerated.current = true;
+      setPrintPulse(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!printPulse) return;
+    const t = setTimeout(() => setPrintPulse(false), 2400);
+    return () => clearTimeout(t);
+  }, [printPulse]);
 
   const handleReset = useCallback(() => {
     if (!template || !templateId) return;
@@ -278,7 +293,7 @@ export default function Editor() {
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-5">
         <div className="no-print mb-4 flex items-start gap-3">
-          <span className="mt-0.5 rounded-full px-2.5 py-1 text-[11px] font-bold shrink-0" style={{ backgroundColor: cat.tint, color: cat.color }}>
+          <span className="mt-0.5 rounded-full px-2.5 py-1 text-[11px] font-bold shrink-0" style={{ backgroundColor: cat.tint, color: cat.textColor }}>
             {cat.label}
           </span>
           <div>
@@ -296,6 +311,7 @@ export default function Editor() {
             onShare={handleShare}
             onToggleCustomize={() => setCustomizeOpen((o) => !o)}
             customizeOpen={customizeOpen}
+            pulsePrint={printPulse}
           />
         </div>
 

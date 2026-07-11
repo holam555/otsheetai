@@ -8,12 +8,14 @@ interface Props {
   onShare: () => void;
   onToggleCustomize: () => void;
   customizeOpen: boolean;
+  /** One-time gentle pulse on Print after the first Regenerate (discoverability). */
+  pulsePrint?: boolean;
 }
 
-export default function EditorToolbar({ onPrint, onPrintBatch, onRegenerate, onShare, onToggleCustomize, customizeOpen }: Props) {
+export default function EditorToolbar({ onPrint, onPrintBatch, onRegenerate, onShare, onToggleCustomize, customizeOpen, pulsePrint }: Props) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <Button onClick={onPrint} className="font-display font-bold gap-2 h-11 px-5 shadow-sm">
+      <Button onClick={onPrint} className={`font-display font-bold gap-2 h-11 px-5 shadow-sm ${pulsePrint ? 'pulse-once' : ''}`}>
         <Printer className="w-4 h-4" /> Print
       </Button>
       <Button onClick={onPrintBatch} variant="outline" className="font-display font-bold gap-2 h-11" title="Print 5 different versions of this worksheet at once">

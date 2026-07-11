@@ -208,10 +208,14 @@ config-gated, and must pass the existing print-QA bbox sweep.
   language); find + connect-dots reference boxes are "magnifier cards";
   pixel-art legend swatches rounded.
 
+**DONE by Fable (2026-07-10 pass) — A3 + A4 remainder (see NOTES.md entry):**
+- **A3** goal-page category band + FAQ note cards + footer brand/dotted-divider
+  restyle. **A4** button press scale + one-time Print pulse after first
+  Regenerate. Plus: SectionHeading (crayon star) replaces emoji headings, and
+  category `textColor` added for WCAG AA text contrast (mid accents were
+  ~2.3:1 as small text — decorative surfaces only now).
+
 **STILL OPEN (lower value):**
-- **A3 goal-page/footer band restyle & A4 remaining micro-motion** (card/chip
-  hover + button transitions already landed; the one-time Print pulse after
-  first Regenerate is the remainder).
 - **D4 OG image** (see DEFER_TO_FABLE.md).
 
 ## Sequencing for Opus (both parts)

@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { CSSProperties, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { GUIDES } from '@/data/guides';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import SectionHeading from '@/components/SectionHeading';
 import AboutStrip from '@/components/gallery/AboutStrip';
 import TemplateCard from '@/components/gallery/TemplateCard';
 import WorksheetPreview from '@/components/WorksheetPreview';
@@ -23,14 +24,18 @@ function HeroFan() {
       .map((t) => ({ t, config: templateConfig(t), data: generateWorksheetSeeded(templateConfig(t), hashSeed(t.id)) }));
   }, []);
   const rot = [-7, 0, 7];
+  const tape = ['rgba(59,130,246,0.30)', 'rgba(139,92,246,0.30)', 'rgba(34,197,94,0.30)'];
   return (
     <div className="relative h-[340px]" aria-hidden="true">
+      {/* Soft shadow pooling under the fan — sheets resting on the desk. */}
+      <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-[340px] h-10 rounded-[50%] bg-foreground/10 blur-xl" />
       {sheets.map((s, i) => (
         <div
           key={s.t.id}
           className="absolute top-1/2 left-1/2 w-[210px] rounded-lg shadow-paper ring-1 ring-black/5 bg-white transition-transform"
           style={{ transform: `translate(-50%,-50%) translateX(${(i - 1) * 96}px) rotate(${rot[i]}deg)`, zIndex: i === 1 ? 2 : 1 }}
         >
+          <span className="washi-tape !w-14 !h-4" style={{ '--tape': tape[i] } as CSSProperties} />
           <WorksheetPreview config={s.config} data={s.data} variant="thumb" sheetTitle={s.t.title} />
         </div>
       ))}
@@ -160,9 +165,9 @@ export default function Gallery() {
         {/* Recently printed for the active child */}
         {recent.length > 0 && (
           <section aria-label="Recently printed">
-            <h2 className="font-display text-lg font-bold text-foreground mb-3">
-              {activeProfile ? `⭐ ${activeProfile.name}'s desk` : '⭐ Recently printed'}
-            </h2>
+            <SectionHeading>
+              {activeProfile ? `${activeProfile.name}'s desk` : 'Recently printed'}
+            </SectionHeading>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {recent.map(({ template, to }) => (
                 <TemplateCard key={template.id} template={template} to={to} />
@@ -218,28 +223,33 @@ export default function Gallery() {
         </div>
 
         {/* Gallery grid */}
-        {filtered.length === 0 ? (
-          <p className="text-center text-muted-foreground py-16">No worksheets match those filters yet — try clearing some.</p>
-        ) : (
-          <div id="gallery" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 scroll-mt-20">
-            {filtered.map((t) => (
-              <TemplateCard key={t.id} template={t} />
-            ))}
-          </div>
-        )}
+        <section id="gallery" aria-label="All worksheets" className="scroll-mt-20">
+          <SectionHeading>
+            {anyFilter ? `${filtered.length} matching ${filtered.length === 1 ? 'worksheet' : 'worksheets'}` : `All ${TEMPLATES.length} worksheets`}
+          </SectionHeading>
+          {filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-16">No worksheets match those filters yet — try clearing some.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {filtered.map((t) => (
+                <TemplateCard key={t.id} template={t} />
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Parent guides — surfaces the content + builds trust ("we know the
             why behind the practice"), and gives the guides a home on the
             highest-traffic page. */}
         {GUIDES.length > 0 && (
-          <section aria-label="Guides for parents" className="border-t border-border pt-8">
-            <div className="flex items-end justify-between gap-4 mb-4">
-              <div>
-                <h2 className="font-display text-xl font-bold text-foreground">Guides for parents</h2>
-                <p className="text-sm text-muted-foreground mt-1">Therapist-informed answers to the questions parents actually ask — with free printables to practise.</p>
-              </div>
-              <Link to="/guides" className="shrink-0 text-sm font-semibold text-primary hover:underline whitespace-nowrap">All guides →</Link>
-            </div>
+          <section aria-label="Guides for parents" className="pt-2">
+            <div className="dotted-divider mb-8" aria-hidden="true" />
+            <SectionHeading
+              sub="Therapist-informed answers to the questions parents actually ask — with free printables to practise."
+              right={<Link to="/guides" className="text-sm font-semibold text-primary hover:underline whitespace-nowrap">All guides →</Link>}
+            >
+              Guides for parents
+            </SectionHeading>
             <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {GUIDES.slice(0, 3).map((g) => (
                 <li key={g.slug}>
@@ -247,8 +257,8 @@ export default function Gallery() {
                     to={`/guides/${g.slug}`}
                     className="group block h-full rounded-2xl border border-border bg-card p-4 shadow-paper hover:border-primary/40 hover:-translate-y-0.5 transition-all"
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Guide</p>
-                    <h3 className="font-display font-bold text-foreground mt-1 leading-snug group-hover:text-primary transition-colors">{g.title}</h3>
+                    <span className="rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-[11px] font-bold">Guide</span>
+                    <h3 className="font-display font-bold text-foreground mt-2 leading-snug group-hover:text-primary transition-colors">{g.title}</h3>
                     <p className="text-xs text-muted-foreground mt-1.5">{g.metaDescription}</p>
                   </Link>
                 </li>
