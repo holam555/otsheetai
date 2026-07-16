@@ -68,9 +68,9 @@ export const defaultConfig: WorksheetConfig = {
 export type AgeBand = '3-4' | '5-6' | '7-8';
 
 export const AGE_BANDS: { value: AgeBand; label: string }[] = [
-  { value: '3-4', label: 'Ages 3–4' },
-  { value: '5-6', label: 'Ages 5–6' },
-  { value: '7-8', label: 'Ages 7–8' },
+  { value: '3-4', label: 'Ages 3-4' },
+  { value: '5-6', label: 'Ages 5-6' },
+  { value: '7-8', label: 'Ages 7-8' },
 ];
 
 /**

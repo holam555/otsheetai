@@ -77,10 +77,58 @@ Data flow: config change → `generateWorksheet(config)` → `WorksheetData` →
 - **Never gate single-sheet printing** behind accounts/payment (product
   thesis; monetization is ROADMAP Phase 4, usage-triggered).
 - `showGridLines` is functional (4 renderers read it) — not dead code.
+- **No em dash or en dash in user-visible copy** (swept 2026-07-15). See
+  "Copy style" below.
+
+## Copy style
+
+**Never ship an em dash (—) or en dash (–) in user-visible copy.** That
+covers: page text, `<title>`/meta descriptions, OG and Twitter tags, JSON-LD
+in `index.html`, `aria-label`/`title`/`placeholder`, `public/llms.txt`, and
+any string rendered into the worksheet SVG. Copy sources are mainly
+`src/data/goalCopy.ts`, `src/data/guides.ts`, `src/data/templates.ts`,
+`src/pages/*`, `src/entry-prerender.tsx`, `index.html`, `public/llms.txt`.
+
+How to fix one:
+
+- **Prose:** rewrite the sentence. Use a comma, a colon, parentheses, or a
+  full stop. `too easy — nudge it` → `too easy. Nudge it`.
+  **Never swap `—` for ` - `**; a spaced hyphen reads exactly as wrong.
+- **Ranges and compounds:** plain hyphen. `Ages 3–4` → `Ages 3-4`,
+  `Figure–Ground` → `Figure-Ground`, `aged 2–12` → `aged 2-12`.
+- **Title separators:** colon, or the site's existing `·`.
+  `OTsheet.ai — Free Printable…` → `OTsheet.ai: Free Printable…`.
+
+**Exempt:** code comments, these .md docs, test names, build/console logs.
+Readers never see them, and rewriting them is churn.
+
+**The check** (authoritative, zero false positives). After `npm run build`:
+
+```bash
+grep -rlP '[\x{2014}\x{2013}]' dist    # must print nothing
+```
+
+The whole shipped artifact must be dash-free, and was as of 2026-07-15 (32
+prerendered routes + `llms.txt` + the JS bundle, 0 hits). This is exact
+because minification drops JS/TS comments, so every remaining dash is real
+copy. Two things it depends on: `index.html`'s own HTML comments are NOT
+minified away and ship into all 32 pages (keep them dash-free), and `public/`
+is copied verbatim into `dist/`, which is what puts `llms.txt` in scope.
+
+Faster dev-time grep, before a build — line-based, so it also prints code
+comments (exempt). Skim the hits, don't just count them; anything inside a
+*string* or JSX text is a real violation:
+
+```bash
+grep -rnP '[\x{2014}\x{2013}]' src index.html public/llms.txt \
+  --include='*.tsx' --include='*.ts' --include='*.html' --include='*.txt' \
+  | grep -vP '^[^:]+:\d+:\s*(//|\*|/\*|\{/\*)'
+```
 
 ## Definition of done
 
 `npx tsc --noEmit` clean, `npm test` green, lint clean on touched files; for
 renderer/layout changes also the print QA above; for engine changes add a
-regression test. Then record a dated entry in [NOTES.md](NOTES.md) (what/why/
-verification), and update this file ONLY if a fact it states became false.
+regression test; **for any copy change, the dash check in §Copy style**. Then
+record a dated entry in [NOTES.md](NOTES.md) (what/why/verification), and
+update this file ONLY if a fact it states became false.

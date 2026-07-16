@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const DEFAULT_TITLE = 'OTsheet.ai — Free Printable OT Worksheets for Kids (Handwriting & Visual Perception)';
+const DEFAULT_TITLE = 'OTsheet.ai: Free Printable OT Worksheets for Kids (Handwriting & Visual Perception)';
 
 /**
  * Per-route <title> + meta description. This only helps crawlers that execute

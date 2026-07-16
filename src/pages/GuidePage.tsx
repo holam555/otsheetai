@@ -62,7 +62,7 @@ export default function GuidePage() {
   const templateStrip = relatedTemplates.length > 0 && (
     <section aria-label="Try a worksheet" className="rounded-2xl bg-primary/5 border border-primary/15 p-4 sm:p-5">
       <h2 className="font-display text-lg font-bold text-foreground mb-1 flex items-center gap-2">
-        <Printer className="w-5 h-5 text-primary" /> Try it now — print one of these
+        <Printer className="w-5 h-5 text-primary" /> Try it now: print one of these
       </h2>
       <p className="text-sm text-muted-foreground mb-4">Free, customizable, no signup.</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -142,7 +142,7 @@ export default function GuidePage() {
         )}
 
         <p className="text-xs text-muted-foreground border-t border-border pt-4">
-          General educational information, not medical advice. Every child develops differently — if you have concerns, talk to your pediatrician or an occupational therapist.
+          General educational information, not medical advice. Every child develops differently. If you have concerns, talk to your pediatrician or an occupational therapist.
         </p>
       </main>
 

@@ -18,7 +18,7 @@ const NotFound = () => {
         </h1>
         <div className="dotted-divider my-4" aria-hidden="true" />
         <p className="text-sm text-muted-foreground">
-          The worksheet you're after may have moved — every printable lives in the gallery.
+          The worksheet you're after may have moved. Every printable lives in the gallery.
         </p>
         <Link
           to="/"

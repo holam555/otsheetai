@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             <p className="text-muted-foreground">
               Every worksheet is generated in your browser. No worksheet content, and no child’s name or
               age, is uploaded or shared with us. When you print, the file goes straight to your own
-              printer or “Save as PDF” — not through any server.
+              printer or “Save as PDF”, not through any server.
             </p>
           </section>
 
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
             <p className="text-muted-foreground">
               When you copy a “Share” link, the worksheet’s settings are encoded directly in the link’s
               web address. Anyone you send it to can open that exact worksheet. Only share links with
-              people you intend to — a link may contain the name you typed on the sheet.
+              people you intend to, because a link may contain the name you typed on the sheet.
             </p>
           </section>
 
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               We use privacy-friendly analytics (Vercel Web Analytics) to count how many people visit and
               which worksheets are popular. It sets no cookies and does not build advertising profiles. We
               strip the details out of worksheet links before anything is recorded, so a child’s name is
-              never sent — we only see, for example, that the “Trace My Name” page was opened. We record
+              never sent. We only see, for example, that the “Trace My Name” page was opened. We record
               when a worksheet is printed together with its type, but never with any child’s name or age.
             </p>
           </section>

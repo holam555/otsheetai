@@ -4,7 +4,7 @@ import { getLetterStrokes } from '@/lib/letterPaths';
 import { childAgeToBand } from '@/lib/defaultConfig';
 import { CATEGORY_STYLES, categoryForMode } from '@/lib/categoryColors';
 
-const AGE_LABEL: Record<string, string> = { '3-4': 'Ages 3–4', '5-6': 'Ages 5–6', '7-8': 'Ages 7–8' };
+const AGE_LABEL: Record<string, string> = { '3-4': 'Ages 3-4', '5-6': 'Ages 5-6', '7-8': 'Ages 7-8' };
 const CHALLENGE_LABEL: Record<string, string> = { easier: 'Easier', standard: 'Just right', harder: 'Harder' };
 
 interface Props {
@@ -1509,7 +1509,7 @@ function renderHandwritingMode(config: WorksheetConfig, data: WorksheetData): st
       const maxCols = Math.floor(contentW / boxSize);
       const charCount = Math.min(chnChars.length, maxCols);
 
-      svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Chinese — Grid Box (方格紙)</text>`;
+      svg += `<text x="${MARGIN}" y="${startY - 4}" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#64748B">Chinese Grid Box (方格紙)</text>`;
       for (let c = 0; c < charCount; c++) {
         const bx = MARGIN + c * boxSize;
         const borderAttrs = getCellBorderAttrs(config, '#94A3B8', 1);

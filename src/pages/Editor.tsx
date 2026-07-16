@@ -121,8 +121,8 @@ export default function Editor() {
   }, [template, templateId, profileBase, effectiveProfileId, initialShare, shareBase]);
 
   usePageMeta(
-    template ? `${template.title} — Free Printable Worksheet (${ageBandLabel[template.ageBand]})` : undefined,
-    template ? `Free printable ${template.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[template.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print — no signup.` : undefined
+    template ? `${template.title}: Free Printable Worksheet (${ageBandLabel[template.ageBand]})` : undefined,
+    template ? `Free printable ${template.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[template.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print. No signup.` : undefined
   );
 
   const [config, setConfig] = useState<WorksheetConfig>(initialConfig);
@@ -327,7 +327,7 @@ export default function Editor() {
             <div className="mt-3 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-2.5 text-sm">
               <span className="text-lg">🌱</span>
               <p className="flex-1 text-foreground">
-                {activeProfile?.name} has done this a few times — ready for a {nextDifficulty} challenge?
+                {activeProfile?.name} has done this a few times. Ready for a {nextDifficulty} challenge?
               </p>
               <Button size="sm" onClick={() => { setConfig((c) => ({ ...c, difficulty: nextDifficulty })); setChipDismissed(true); }} className="font-display">
                 Try {nextDifficulty}

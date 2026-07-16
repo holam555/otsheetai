@@ -24,7 +24,7 @@ export default function SiteFooter() {
             </div>
             <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
               Printable practice sheets for growing hands and sharp little eyes.
-              Free to print, always — no accounts, no paywalls.
+              Free to print, always. No accounts, no paywalls.
             </p>
             <p className="font-hand text-xl text-secondary mt-3 -rotate-2">made with care ✎</p>
           </div>

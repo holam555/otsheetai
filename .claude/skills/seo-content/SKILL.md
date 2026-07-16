@@ -35,7 +35,7 @@ Mirror the proven GoalPage pattern exactly:
   `faq: { q; a }[]`, optional `milestones: { age; expect }[]` table.
 - `src/pages/GuidePage.tsx`: renders sections, a milestones table when
   present, an inline strip of related `TemplateCard`s after section 2 ("Try it
-  now — print one of these"), FAQ, and links to related goal pages. JSON-LD:
+  now: print one of these"), FAQ, and links to related goal pages. JSON-LD:
   `Article` + `FAQPage` + `BreadcrumbList`.
 - Route `/guides/:slug` in `AppRoutes.tsx`; add guides to
   `entry-prerender.tsx` routes (title/desc from data) and `public/sitemap.xml`;
@@ -116,3 +116,9 @@ guides.ts for what's already written; `updated` field tracks review dates._
   we can't stand behind, drop the topic.
 - Keep `llms.txt`, sitemap, and the guides index in lockstep — an orphan
   guide is invisible to both audiences.
+- **No em dash (—) or en dash (–) in anything a reader sees**: article prose,
+  headings, FAQ answers, titles, meta descriptions, `llms.txt`. Rewrite with a
+  comma, colon, parentheses or a full stop; never substitute ` - `. Ranges use
+  a plain hyphen (`Ages 5-6`). Full rule + the grep check: [CLAUDE.md](../../../CLAUDE.md)
+  §Copy style. This is the easiest rule to break while drafting prose, so
+  check before you commit the guide.

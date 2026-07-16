@@ -1,6 +1,44 @@
 # OTsheet redesign — handoff notes
 
-_Last updated: 2026-07-10. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+_Last updated: 2026-07-15. **Start with [ROADMAP.md](ROADMAP.md)** — it contains the current phased backlog with decisions already made. This file is the historical session log. The app lives in `otsheetai/`._
+
+## 2026-07-15 — Em/en dash sweep of all user-visible copy (Opus)
+User asked that the website never use an em dash (—) or en dash (–), that
+existing ones be fixed, and that the rule go in CLAUDE.md. Scope confirmed
+with the user: user-visible copy only. Code comments (~93 occurrences) were
+deliberately left alone; readers never see them and rewriting them is churn
+with regression risk. Docs (.md) and test names are exempt too.
+- **Rewrote, did not substitute.** Em dashes in prose were re-written per
+  sentence (comma / colon / parentheses / full stop). A blind `—` → ` - `
+  swap was rejected: a spaced hyphen reads exactly as wrong. En dashes were
+  mechanical (ranges and compounds → plain hyphen): `Ages 3–4` → `Ages 3-4`,
+  `Figure–Ground` → `Figure-Ground`, `aged 2–12` → `aged 2-12`.
+- **Titles** now use a colon: `OTsheet.ai: Free Printable OT Worksheets…`,
+  keeping the site's existing `·` site-name separator.
+- Touched: `index.html` (title/meta/OG/Twitter/JSON-LD), `entry-prerender.tsx`,
+  `use-page-meta.ts`, `goalCopy.ts`, `guides.ts`, `templates.ts`,
+  `defaultConfig.ts`, `Gallery/GuidesIndex/GuidePage/PrivacyPage/Editor/
+  NotFound`, `SiteFooter`, `TemplateCard` (aria-label), `CustomizeControls`
+  (incl. a `placeholder="—"` → `"?"`), `WorksheetPreview` (the
+  `Chinese — Grid Box (方格紙)` label printed into the SVG), `public/llms.txt`.
+- **Also fixed one HTML comment** in `index.html` (font note). It is exempt by
+  the rule, but it is not minified away and shipped into all 32 prerendered
+  pages, and it was the single last dash in `dist/`. Removing it makes the
+  build check exact (see below) instead of "zero except one known hit".
+- **Rule + check written to [CLAUDE.md](CLAUDE.md) §Copy style**, wired into
+  Definition of done, and mirrored into `.claude/skills/seo-content/SKILL.md`
+  (that skill drafts the prose most likely to reintroduce dashes). Fixed a
+  stale UI quote in that skill while there ("Try it now — print one of these").
+- Verified: tsc clean; 80/80 tests; build + 32-route prerender green;
+  `grep -rlP '[—–]' dist` returns nothing (whole shipped artifact, incl.
+  llms.txt and the JS bundle, is dash-free; minification drops the exempt code
+  comments, which is why the check is exact). Live DOM sweep on :8090 across
+  gallery/guides/goal/privacy/editor/404 found 0 dashes in text nodes and in
+  aria-label/title/placeholder/alt. Print QA for the renderer change: the
+  `Chinese Grid Box (方格紙)` label only renders on the mixed CJK+Latin
+  non-gridbox path (no shipped template hits it; reachable by typing Chinese
+  into a tri-line handwriting sheet), exercised via the real editor input:
+  label correct, bbox sweep 0 overflows.
 
 ## 2026-07-10 — Website redesign pass: A3 + A4 remainder + polish (Fable)
 User asked for a site redesign guided by external skills (nutlope/hallmark,

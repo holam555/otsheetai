@@ -141,7 +141,7 @@ export default function Gallery() {
               kid
             </h1>
             <p className="text-muted-foreground mt-4 text-base sm:text-lg max-w-md mx-auto lg:mx-0">
-              Occupational-therapy practice sheets you can tune to the child in front of you —
+              Occupational-therapy practice sheets you can tune to the child in front of you:
               handwriting, visual perception, fine motor. Free, no signup.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 justify-center lg:justify-start">
@@ -228,7 +228,7 @@ export default function Gallery() {
             {anyFilter ? `${filtered.length} matching ${filtered.length === 1 ? 'worksheet' : 'worksheets'}` : `All ${TEMPLATES.length} worksheets`}
           </SectionHeading>
           {filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16">No worksheets match those filters yet — try clearing some.</p>
+            <p className="text-center text-muted-foreground py-16">No worksheets match those filters yet. Try clearing some.</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filtered.map((t) => (
@@ -245,7 +245,7 @@ export default function Gallery() {
           <section aria-label="Guides for parents" className="pt-2">
             <div className="dotted-divider mb-8" aria-hidden="true" />
             <SectionHeading
-              sub="Therapist-informed answers to the questions parents actually ask — with free printables to practise."
+              sub="Therapist-informed answers to the questions parents actually ask, with free printables to practise."
               right={<Link to="/guides" className="text-sm font-semibold text-primary hover:underline whitespace-nowrap">All guides →</Link>}
             >
               Guides for parents

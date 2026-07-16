@@ -46,9 +46,9 @@ const SITE = 'https://otsheetai.vercel.app';
 export const routes: PrerenderRoute[] = [
   {
     path: '/',
-    title: 'OTsheet.ai — Free Printable OT Worksheets for Kids (Handwriting & Visual Perception)',
+    title: 'OTsheet.ai: Free Printable OT Worksheets for Kids (Handwriting & Visual Perception)',
     description:
-      'Free printable occupational therapy worksheets for children aged 2–12: handwriting practice, name tracing, letter reversals, visual perception, scissor skills, mazes and more. Customize and print in seconds — no signup.',
+      'Free printable occupational therapy worksheets for children aged 2-12: handwriting practice, name tracing, letter reversals, visual perception, scissor skills, mazes and more. Customize and print in seconds, no signup.',
   },
   {
     path: '/privacy',
@@ -62,8 +62,8 @@ export const routes: PrerenderRoute[] = [
   })),
   {
     path: '/guides',
-    title: 'Guides for Parents — Handwriting & Fine Motor · OTsheet.ai',
-    description: 'Practical, therapist-informed guides for parents: letter reversals, scissor skills, pre-writing and more — each with free printables.',
+    title: 'Guides for Parents: Handwriting & Fine Motor · OTsheet.ai',
+    description: 'Practical, therapist-informed guides for parents: letter reversals, scissor skills, pre-writing and more, each with free printables.',
   },
   ...GUIDES.map((g) => ({
     path: `/guides/${g.slug}`,
@@ -72,8 +72,8 @@ export const routes: PrerenderRoute[] = [
   })),
   ...TEMPLATES.map((t) => ({
     path: `/edit/${t.id}`,
-    title: `${t.title} — Free Printable Worksheet (${ageBandLabel[t.ageBand]}) · OTsheet.ai`,
-    description: `Free printable ${t.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[t.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print — no signup.`,
+    title: `${t.title}: Free Printable Worksheet (${ageBandLabel[t.ageBand]}) · OTsheet.ai`,
+    description: `Free printable ${t.clinicalName.toLowerCase()} worksheet for kids (${ageBandLabel[t.ageBand].toLowerCase()}). Customize difficulty, shapes and theme, then print. No signup.`,
   })),
 ];
 

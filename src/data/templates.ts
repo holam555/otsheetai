@@ -45,7 +45,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'find-shapes',
     title: 'Find the Hidden Shapes',
-    clinicalName: 'Figure–Ground / Visual Discrimination',
+    clinicalName: 'Figure-Ground / Visual Discrimination',
     skillTag: 'Visual scanning',
     mode: 'find',
     ageBand: '5-6',
@@ -89,7 +89,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'copy-pattern',
     title: 'Copy the Picture',
-    clinicalName: 'Visual–Motor Copying',
+    clinicalName: 'Visual-Motor Copying',
     skillTag: 'Visual-motor',
     mode: 'copy',
     ageBand: '5-6',
@@ -144,7 +144,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'figure-ground',
     title: 'Hidden Shapes',
-    clinicalName: 'Figure–Ground',
+    clinicalName: 'Figure-Ground',
     skillTag: 'Figure-ground',
     mode: 'figureGround',
     ageBand: '5-6',
@@ -210,7 +210,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'maze',
     title: 'Find Your Way',
-    clinicalName: 'Maze / Visual–Motor Planning',
+    clinicalName: 'Maze / Visual-Motor Planning',
     skillTag: 'Planning',
     mode: 'maze',
     ageBand: '7-8',
@@ -276,7 +276,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'pixel-art',
     title: 'Color by Grid',
-    clinicalName: 'Pixel Art / Visual–Motor',
+    clinicalName: 'Pixel Art / Visual-Motor',
     skillTag: 'Visual-motor',
     mode: 'pixelArt',
     ageBand: '7-8',
@@ -305,7 +305,7 @@ export function getTemplate(id: string): Template | undefined {
 }
 
 export const ageBandLabel: Record<AgeBand, string> = {
-  '3-4': 'Ages 3–4',
-  '5-6': 'Ages 5–6',
-  '7-8': 'Ages 7–8',
+  '3-4': 'Ages 3-4',
+  '5-6': 'Ages 5-6',
+  '7-8': 'Ages 7-8',
 };

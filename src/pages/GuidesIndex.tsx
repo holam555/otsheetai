@@ -7,8 +7,8 @@ import { GUIDES } from '@/data/guides';
 
 export default function GuidesIndex() {
   usePageMeta(
-    'Guides — Helping Kids with Handwriting & Fine Motor',
-    'Practical, therapist-informed guides for parents: letter reversals, scissor skills, pre-writing, handwriting readiness and more — each with free printables.'
+    'Guides: Helping Kids with Handwriting & Fine Motor',
+    'Practical, therapist-informed guides for parents: letter reversals, scissor skills, pre-writing, handwriting readiness and more, each with free printables.'
   );
 
   return (
@@ -25,7 +25,7 @@ export default function GuidesIndex() {
         <div>
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground leading-tight">Guides for parents</h1>
           <p className="text-muted-foreground mt-3 text-base max-w-2xl">
-            Plain-language, therapist-informed answers to the questions parents actually ask — plus the free
+            Plain-language, therapist-informed answers to the questions parents actually ask, plus the free
             printables to practise with. General educational information, not medical advice.
           </p>
         </div>

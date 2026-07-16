@@ -26,7 +26,7 @@ export default function TemplateCard({ template, to }: { template: Template; to?
       to={to ?? `/edit/${template.id}`}
       className="taped-card group block text-left focus:outline-none"
       style={{ '--rot': `${rot}deg` } as CSSProperties}
-      aria-label={`${template.title} — ${ageBandLabel[template.ageBand]}`}
+      aria-label={`${template.title}, ${ageBandLabel[template.ageBand]}`}
     >
       <div className="relative rounded-2xl border border-border bg-card shadow-paper overflow-hidden group-hover:shadow-lg group-focus-visible:ring-2 group-focus-visible:ring-primary transition-shadow">
         {/* Washi tape across the top-right corner (category-tinted, translucent). */}

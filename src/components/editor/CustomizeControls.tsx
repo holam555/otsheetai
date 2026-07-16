@@ -207,7 +207,7 @@ export default function CustomizeControls({ config, onChange }: Props) {
                 variant={config.challenge === ch.value ? 'default' : 'outline'}
                 size="sm"
                 disabled={clamped}
-                title={clamped ? (ch.value === 'easier' ? 'Ages 3–4 already get the gentlest version' : 'Ages 7–8 already get the toughest version') : undefined}
+                title={clamped ? (ch.value === 'easier' ? 'Ages 3-4 already get the gentlest version' : 'Ages 7-8 already get the toughest version') : undefined}
                 onClick={() => update({ challenge: ch.value, ...applyGrading(mode, band, ch.value) })}
                 className="font-display text-xs"
               >
@@ -216,7 +216,7 @@ export default function CustomizeControls({ config, onChange }: Props) {
             );
           })}
         </div>
-        <p className="text-[10px] text-muted-foreground">Tuned to the age — nudge if it feels too easy or too hard.</p>
+        <p className="text-[10px] text-muted-foreground">Tuned to the age. Nudge if it feels too easy or too hard.</p>
       </div>
 
       {/* ============ CORE: mode essentials ============ */}
@@ -431,7 +431,7 @@ export default function CustomizeControls({ config, onChange }: Props) {
           </div>
           {(config.oddOneOutType === 'letters' || config.oddOneOutType === 'numbers') && (
             <div className="flex items-center gap-3 pt-1">
-              <Input value={config.oddOneOutCustomTarget ?? ''} onChange={(e) => update({ oddOneOutCustomTarget: e.target.value.slice(0, 1) })} maxLength={1} className="font-mono text-lg text-center w-14 h-10" placeholder="—" />
+              <Input value={config.oddOneOutCustomTarget ?? ''} onChange={(e) => update({ oddOneOutCustomTarget: e.target.value.slice(0, 1) })} maxLength={1} className="font-mono text-lg text-center w-14 h-10" placeholder="?" />
               <p className="text-[10px] text-muted-foreground leading-tight">
                 {config.oddOneOutCustomTarget ? `"${config.oddOneOutCustomTarget}" is the odd one out in every row` : 'Leave empty for auto targets'}
               </p>
